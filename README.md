@@ -1,8 +1,7 @@
 # dreamehome
 ![Logo](admin/dreamehome.png)
-
-# ioBroker.dreamehome
 Dreame Home adapter for ioBroker
+# ioBroker.dreamehome
 [![NPM version](https://img.shields.io/npm/v/iobroker.dreame.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreame.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 ![Number of Installations](https://iobroker.live/badges/dreamehome-installed.svg)
