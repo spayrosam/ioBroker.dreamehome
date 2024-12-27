@@ -78,7 +78,7 @@
     ],
     "plugins": {
       "sentry": {
-        "dsn": "https://802f699c7aa84a62b0bcb54b31485352@sentry.iobroker.net/226"
+        "dsn": "https://github.com/spayrosam/ioBroker.dreamehome"
       }
     }
   },
