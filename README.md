@@ -20,7 +20,7 @@ Dreame Home adapter for ioBroker
 -->
 
 ### **Thanks to**
-TA2k <tombox2020@gmail.com>
+https://github.com/TA2k/ioBroker.dreame by TA2k
 
 ## License
 
