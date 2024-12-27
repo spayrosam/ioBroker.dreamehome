@@ -71,16 +71,12 @@
         "js-controller": ">=5.0.0"
       }
     ],
+     "installedFrom": "https://github.com/spayrosam/ioBroker.dreamehome",
     "globalDependencies": [
       {
         "admin": ">=5.1.13"
       }
-    ],
-    "plugins": {
-      "sentry": {
-        "dsn": "https://github.com/spayrosam/ioBroker.dreamehome"
-      }
-    }
+    ]
   },
   "encryptedNative": ["password"],
   "protectedNative": ["password"],
