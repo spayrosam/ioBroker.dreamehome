@@ -6,6 +6,28 @@ Dreame Home adapter for ioBroker
 [![NPM version](https://img.shields.io/npm/v/iobroker.dreame.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreame.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 
+**Attention!!**
+
+**Canvas is required for generating the map. Without it, the adapter will terminate with an error.**
+
+***Check if canvas is installed using the following command:***
+```
+cd /opt/iobroker/
+npm list canvas
+```
+***If canvas is not installed, run the following command to install it:***
+```
+cd /opt/iobroker/
+npm install canvas
+```
+
+***Then, check again by running the first command to ensure that canvas is properly installed.***
+
+*To download the map, please set the object dreamehome.0.xxxxxxxx.map.NewMap to true.*
+
+*To switch between floors, the object dreamehome.0.xxxxxxxx.map.MapNumber must be switched to Map 1 or Map 2.*
+
+*The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
 
 <!--
