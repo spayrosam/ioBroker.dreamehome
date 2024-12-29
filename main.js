@@ -35,25 +35,8 @@ const DreameSetCleaningMode = {
     1: 'Mopping',
     2: 'Sweeping and Mopping'
 };
-let Waterstr = ''
-for (let i = 1; i < 6; i++) {
-    Waterstr = Waterstr + i + ':Low ' + i + ',';
-}
-for (let i = 6; i < 17; i++) {
-    Waterstr = Waterstr + i + ':Middle ' + i + ',';
-}
-for (let i = 17; i < 28; i++) {
-    Waterstr = Waterstr + i + ':Height ' + i + ',';
-}
-for (let i = 28; i < 33; i++) {
-    Waterstr = Waterstr + i + ':Ultra ' + i + ',';
-}
-const DreameSetWaterVolume = Object.fromEntries(Waterstr.replace(/,.$/, '').split(',').map(i => i.split(':')));
-const DreameRepeat = {
-    1: '1',
-    2: '2',
-    3: '3'
-};
+
+
 const DreameRoute = {
     1: 'Standart',
     2: 'Intensive',
@@ -561,6 +544,50 @@ const DreameSuctionLevel = {
         3: "Turbo"
     }
 };
+
+var DreameSetWaterVolume = {"EN": { "-1": "Unknown"},"DE": {"-1": "Unbekannt"}};
+for (let i = 1; i < 33; i++) {
+    ((i < 33) ? DreameSetWaterVolume["EN"][i] = "Ultra " + i : "") && (DreameSetWaterVolume["DE"][i] = "Ultra " + i);
+    ((i < 28) ? DreameSetWaterVolume["EN"][i] = "Height " + i : "") && (DreameSetWaterVolume["DE"][i] = "Hoch " + i);
+    ((i < 17) ? DreameSetWaterVolume["EN"][i] = "Middle " + i : "") && (DreameSetWaterVolume["DE"][i] = "Mittel " + i);
+    ((i < 6) ? DreameSetWaterVolume["EN"][i] = "Low " + i : "") && (DreameSetWaterVolume["DE"][i] = "Niedrig " + i);
+}
+
+const DreameSetRoute = {
+	"EN": {
+		"-1": "Unknown",
+        1: "Standart",
+        2: "Intensive",
+        3: "Deep",
+        546: "Intelligent",
+	    512: "Unknown1",
+	    768: "Unknown2"
+		},
+    "DE": {
+		"-1": "Unbekannt",
+		1: "Standart",
+        2: "Intensiv",
+        3: "Tief",
+        546: "Intelligent",
+	    512: "Unbekannt1",
+	    768: "Unbekannt2"
+	}
+};
+
+const DreameSetRepeat = {
+    "EN": {
+	"-1": "Unknown",
+	1: '1',
+    2: '2',
+    3: '3'
+	},
+    "DE": {
+	"-1": "Unbekannt",
+	1: '1',
+    2: '2',
+    3: '3'
+	}
+};
 const DreameWaterVolume = {
     "EN": {
         "-1": "Unknown",
@@ -682,6 +709,7 @@ const DreameCleaningMode = {
         3840: "Customize room cleaning"
     },
     "DE": {
+		"-1": "Unbekannt",
         0: "Staubsaugen",
         1: "Wischen",
         2: "Saugen und Wischen",
@@ -698,6 +726,7 @@ const DreameChargingStatus = {
         5: "Return to charge"
     },
     "DE": {
+		"-1": "Unbekannt",
         1: "Aufladen",
         2: "Nicht geladen",
         3: "Aufladung abgeschlossen",
@@ -713,6 +742,7 @@ const DreameWaterTank = {
         99: "Mop in station"
     },
     "DE": {
+		"-1": "Unbekannt",
         0: "Nicht installiert",
         1: "Installiert",
         10: "Mopp installiert",
@@ -727,6 +757,7 @@ const DreameDirtyWaterTank = {
         1: "Not installed",
     },
     "DE": {
+		"-1": "Unbekannt",
 		0: "Installiert",
         1: "Nicht installiert",
     }
@@ -740,6 +771,7 @@ const DreamePureWaterTank = {
 		3: "No warning",
     },
     "DE": {
+		"-1": "Unbekannt",
 		0: "Tank nicht installiert",
         2: "Kein Wasser mehr",
 		3: "Keine Warnung",
@@ -884,7 +916,7 @@ const DreameStateProperties = {
     "S27P1": "Pure water tank",
     "S27P2": "Dirty water tank",
     "S28P2": "Clean carpet first",
-    "S99P98": "Cleaning towards the floor",
+	"S99P98": "Cleaning towards the floor",
     "S10001P1": "Stream status",
     "S10001P2": "Stream audio",
     "S10001P4": "Stream record",
@@ -908,7 +940,9 @@ const DreameActionProperties = {
     "S2A2": "Pause",
     "S3A1": "Charge",
     "S4A1": "Start custom",
-	"S4A1C1": "Fast mapping",
+	"S4A1C1": "Start zone cleaning",
+	"S4A1C2": "Start points cleaning",
+	"S4A1C3": "Fast mapping",
     "S4A2": "Stop",
     "S4A3": "Clear warning",
     "S4A4": "Start washing",
@@ -921,6 +955,7 @@ const DreameActionProperties = {
 	"S6A2C2": "Rename map",
 	"S6A2C3": "Delete map",
 	"S6A2C4": "Rotate map",
+	"S6A2C5": "Clean Order",
     "S6A3": "Backup map",
     "S6A4": "Wifi map",
     "S7A1": "Locate",
@@ -946,7 +981,9 @@ const DreameActionParams = {
     "S2A2": "false", // Pause
     "S3A1": "false", // Charge
     "S4A1": [{"piid": 1,"value": 18},{"piid": 10,"value": "{\"selects\": [[1,1,3,2,1]]}"}], //Start custom
-	"S4A1C1": [{"value": 21}], // Fast mapping
+	"S4A1C1": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"areas\": [[-525,475,1225,3025,3,0,2]]}"}], //Start zone cleaning X1,Y1,X2,Y2,Repeat,SuctionLevel,WaterVolume => X -525,1225 Y 475,3025 W 1750 H 2550
+	"S4A1C2": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"points\": [[-525,475,3,0,2]]}"}], //Start points cleaning X,Y,Repeat,SuctionLevel,WaterVolume => X -525 Y 1225
+	"S4A1C3": [{"value": 21}], // Fast mapping
     "S4A2": "false", // Stop
     "S4A3": "false", // Clear warning
     "S4A4": "false", // Start washing
@@ -959,6 +996,7 @@ const DreameActionParams = {
 	"S6A2C2": [{"piid": 4,"value": "{\"nrism\":{\"map_id\":{\"name\":\"New_name\"}}}"}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
 	"S6A2C3": [{"piid": 4,"value": "{\"cm\":{},\"mapid\":map_id}"}], // Update map data | Delete map
 	"S6A2C4": [{"piid": 4,"value": "{\"smra\":{\"map_id\":{\"ra\":90}}}"}], // Update map data | Rotate map
+	"S6A2C5": [{"piid": 4,"value":"{\"cleanOrder\":[[1,2,3]]}"}], // Update map data | cleanOrder
     "S6A3": "false", // Backup map
     "S6A4": "false", // Wifi map
     "S7A1": "false", // Locate
@@ -972,6 +1010,7 @@ const DreameActionParams = {
     "S15A1": "false", // Start auto empty
     "S17A1": "false", // Reset secondary filter
     "S18A1": "false", // Reset mop pad
+	"S18A1C1": [{"piid": 1,"value": 19},{"piid": 21,"value": "-525,475,1225,3025"}], //Start zone cleaning \"areas\": [[-525,475,1225,3025,3,0,2]]
     "S19A1": "false", // Reset silver ion
     "S20A1": "false", // Reset detergent
     //"S10001A1": "false", // Stream video
@@ -1018,7 +1057,7 @@ var DH_Auth = "",
     DH_BDomain = "",
 	DH_Domain = "",
     DH_filename = "",
-    DH_Map = "",
+    DH_Map = {},
 	DH_MapID = "",
 	DH_MapIDs = [],
 	DH_CurMap = 0,
@@ -1032,7 +1071,6 @@ var DH_UpdateTheMap = true;
 
 //================> Global Get Robot position (Segment)
 var CheckArrayRooms = [];
-var Mrooms = [];
 
 class Dreamehome extends utils.Adapter {
     /**
@@ -1070,8 +1108,6 @@ class Dreamehome extends utils.Adapter {
 
 		DH_UpdateMapInterval = setInterval(function(){DH_UpdateTheMap = true;}, 1000);
 
-
-        this.subscribeStates('*.remote.*');
 		this.subscribeStates('*.control.*');
         this.log.info('Login and request Dreame data from cloud');
         await this.setObjectNotExists('settings.showlog', {
@@ -1242,7 +1278,6 @@ class Dreamehome extends utils.Adapter {
             } catch (error) {
                 this.log.error(error);
                 if (CheckUObject == null) {
-                    //this.setStateAsync(In_path + 'map.Update', true, true);
                     CheckUObject = true;
                 }
             }
@@ -1264,7 +1299,6 @@ class Dreamehome extends utils.Adapter {
             } catch (error) {
                 this.log.error(error);
                 if (CheckSCObject == null) {
-                    //this.setStateAsync(In_path + 'map.Start-Clean', false, true);
                     CheckSCObject = false;
                 }
             }
@@ -1286,49 +1320,17 @@ class Dreamehome extends utils.Adapter {
             } catch (error) {
                 this.log.error(error);
                 if (CheckRCObject == null) {
-                    //this.setStateAsync(In_path + 'map.Restart', false, true);
                     CheckRCObject = false;
                 }
             }
 
-            /* for (var ikey in Dreameproperties) {
-                 var GetUseriiD = Dreameproperties[ikey].siid + "-" + Dreameproperties[ikey].piid;
-                 await this.SearchIID(GetUseriiD, GetUserDevice);
-             }*/
             await this.DH_connectMqtt();
             this.refreshTokenInterval = setInterval(async () => {
                     await this.DH_refreshToken();
                 },
                 (DH_Expires - 100 || 3500) * 1000, );
             this.subscribeStates('*.map.*');
-
-			if (DH_Map) {
-                Mrooms = DH_Map["walls_info"].storeys[0].rooms;
-                for (var iRoom in Mrooms) {
-                    var walls = Mrooms[iRoom]["walls"];
-                    var CheckArrayRoomsX = [],
-                        CheckArrayRoomsY = [];
-                    //this.log.info(JSON.stringify(walls));
-                    for (var iWall in walls) {
-                        CheckArrayRoomsX.push(walls[iWall]["beg_pt_x"]);
-                        CheckArrayRoomsX.push(walls[iWall]["end_pt_x"]);
-                        CheckArrayRoomsY.push(walls[iWall]["beg_pt_y"]);
-                        CheckArrayRoomsY.push(walls[iWall]["end_pt_y"]);
-
-                    }
-                    var SortiRoom = {};
-                    SortiRoom.Id = Mrooms[iRoom]["room_id"];
-                    var SegmentType = DH_Map["seg_inf"][Mrooms[iRoom]["room_id"]].type;
-                    if (SegmentType == 0) {
-                        SortiRoom.Name = await this.DH_Base64DecodeUnicode(DH_Map["seg_inf"][Mrooms[iRoom]["room_id"]].name);
-                    } else {
-                        SortiRoom.Name = SegmentToName[UserLang][SegmentType];
-                    }
-                    SortiRoom.X = CheckArrayRoomsX;
-                    SortiRoom.Y = CheckArrayRoomsY;
-                    CheckArrayRooms.push(SortiRoom);
-                }
-            }
+			await this.DH_GetSetRooms();
         }
     }
 
@@ -1562,7 +1564,7 @@ class Dreamehome extends utils.Adapter {
                     native: {},
                 });
 
-                //await this.setState(In_path + 'map.CloudData', JSON.stringify(DH_Map), true);
+                //await this.setState(In_path + 'map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
                 await this.setState(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
                 //const DH_DecodeMap = JSON.stringify(RetFileData["mapstr"][0]["map"]).toString();
 
@@ -1652,10 +1654,10 @@ class Dreamehome extends utils.Adapter {
                     if (!DH_jsonread) {
 						this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
                     } else {
-						DH_Map = DH_jsonread;
+						DH_Map[DH_CurMap] = DH_jsonread;
 					}
 
-                    //await this.setState(DH_Did + '.map.CloudData', JSON.stringify(DH_Map), true);
+                    //await this.setState(DH_Did + '.map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
                     DH_input_Raw = null;
                     DH_jsonread = null;
                     DH_jsondecode = null;
@@ -1694,6 +1696,95 @@ class Dreamehome extends utils.Adapter {
         } while ((DH_Retries < DH_RetryCount) || (DH_FetchState == false));
         return null;
     }
+	async DH_GetSetRooms() {
+        if (DH_Map) {
+			var Mrooms = [];
+            Mrooms = DH_Map[DH_CurMap]["walls_info"].storeys[0].rooms;
+            for (var iRoom in Mrooms) {
+                var walls = Mrooms[iRoom]["walls"];
+                var CheckArrayRoomsX = [],
+                    CheckArrayRoomsY = [];
+                //this.log.info(JSON.stringify(walls));
+                for (var iWall in walls) {
+                    CheckArrayRoomsX.push(walls[iWall]["beg_pt_x"]);
+                    CheckArrayRoomsX.push(walls[iWall]["end_pt_x"]);
+                    CheckArrayRoomsY.push(walls[iWall]["beg_pt_y"]);
+                    CheckArrayRoomsY.push(walls[iWall]["end_pt_y"]);
+
+                }
+                var SortiRoom = {};
+                SortiRoom.Id = Mrooms[iRoom]["room_id"];
+                var SegmentType = DH_Map[DH_CurMap]["seg_inf"][Mrooms[iRoom]["room_id"]].type;
+                if (SegmentType == 0) {
+                    SortiRoom.Name = await this.DH_Base64DecodeUnicode(DH_Map[DH_CurMap]["seg_inf"][Mrooms[iRoom]["room_id"]].name);
+                } else {
+                    SortiRoom.Name = (SegmentToName[UserLang][SegmentType] !== undefined) ? SegmentToName[UserLang][SegmentType] : "UnrecognizedRoom" + SortiRoom.Id;
+                }
+                SortiRoom.X = CheckArrayRoomsX;
+                SortiRoom.Y = CheckArrayRoomsY;
+                CheckArrayRooms.push(SortiRoom);
+                await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".SuctionLevel", DreameSuctionLevel[UserLang], SortiRoom.Name + " Suction Level");
+                await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".WaterVolume", DreameSetWaterVolume[UserLang], SortiRoom.Name + " Water Volume");
+				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".Repeat", DreameSetRepeat[UserLang], SortiRoom.Name + " Repeat");
+				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningMode", DreameCleaningMode[UserLang], SortiRoom.Name + " Cleaning Mode");
+				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningRoute", DreameSetRoute[UserLang], SortiRoom.Name + " Cleaning Route");
+            }
+			Mrooms = null;
+			var Mcarpets = [];
+			Mcarpets = DH_Map[DH_CurMap]["carpet_info"];
+            for (var icarpets in Mcarpets) {
+				for (var iCHroomID in CheckArrayRooms) {
+				    if (CheckArrayRooms[iCHroomID].Id == parseInt(Mcarpets[icarpets][4])) {
+						let CarpetCord = {Cord: [Mcarpets[icarpets][0], Mcarpets[icarpets][1], Mcarpets[icarpets][2], Mcarpets[icarpets][3]]};
+						await this.DH_setCarpetPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleanCarpet" + parseInt(icarpets),
+						CheckArrayRooms[iCHroomID].Name + " Carpet" + Mcarpets[icarpets][4], CarpetCord);
+						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetRepetition" + parseInt(icarpets),
+						DreameSetRepeat[UserLang], SortiRoom.Name + " Carpet Repeat");
+						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetSuctionLevel" + parseInt(icarpets),
+						DreameSetRepeat[UserLang], SortiRoom.Name + " Carpet Suction Level");
+						this.log.info("Found Carpet N' " + icarpets + " in room " + CheckArrayRooms[iCHroomID].Name);
+						break;
+				    }
+				}
+			}
+			Mcarpets = null;
+			try {
+			    await this.DH_GetRobotPosition(DH_Map[DH_CurMap]["robot"], CheckArrayRooms);
+			} catch (SRPerror) {
+                this.log.warn("Unable to Set Current room cleaning name | In Value: " + DH_Map[DH_CurMap]["robot"] + " | Error: " + SRPerror );
+            }
+        }
+    }
+	async DH_setRoomPath(SegSPath, SegSState, SegSName) {
+		await this.extendObject(SegSPath,{
+			type: 'state',
+			common: {
+				name: SegSName,
+				type: 'number',
+				role: 'level',
+				states: SegSState,
+				write: true,
+				read: true,
+				def: -1
+			},
+			native:
+			{},
+		});
+	}
+	async DH_setCarpetPath(CarpSPath, CarpSName, CarpSnative) {
+		await this.extendObject(CarpSPath,{
+			type: 'state',
+			common: {
+				name: CarpSName,
+				type: 'boolean',
+				role: 'switch',
+				write: true,
+				read: true,
+				def: false,
+			},
+			native: CarpSnative
+		});
+	}
     async DH_GenerateMap() {
 		await this.DH_RequestNewMap()
 		if (!DH_Map) {
@@ -1707,15 +1798,15 @@ class Dreamehome extends utils.Adapter {
         var ExportHTML = '<html> <head> </head> <body>  <div id="Cam" class="CamPer">';
         var DH_FillRooms = false;
         var DH_RoomsNumberState = [];
-        var rooms = DH_Map["walls_info"].storeys[0].rooms; //First Map
+        var rooms = DH_Map[DH_CurMap]["walls_info"].storeys[0].rooms; //First Map
         //alert(JSON.stringify(rooms));
-        var doors = DH_Map["walls_info"].storeys[0].doors;
+        var doors = DH_Map[DH_CurMap]["walls_info"].storeys[0].doors;
         //alert(JSON.stringify(doors));
-        var carpet = DH_Map["carpet_info"];
+        var carpet = DH_Map[DH_CurMap]["carpet_info"];
         //alert(JSON.stringify(carpet));
-        var funiture = DH_Map["funiture_info"];
-        var charger = DH_Map["charger"];
-        var origin = DH_Map["origin"];
+        var funiture = DH_Map[DH_CurMap]["funiture_info"];
+        var charger = DH_Map[DH_CurMap]["charger"];
+        var origin = DH_Map[DH_CurMap]["origin"];
         //==================>Get Zero X and Y
         var costXMin = Number.POSITIVE_INFINITY,
             costXMax = Number.NEGATIVE_INFINITY,
@@ -2675,9 +2766,6 @@ class Dreamehome extends utils.Adapter {
         } catch (error) {
             this.log.error(error);
         }
-
-
-
         //Reset PosHistory
         if ((DH_OldTaskStatus == 0) &&
             ((DH_NewTaskStatus == 1) || (DH_NewTaskStatus == 2) || (DH_NewTaskStatus == 3) || (DH_NewTaskStatus == 4) || (DH_NewTaskStatus == 5))) {
@@ -2698,7 +2786,7 @@ class Dreamehome extends utils.Adapter {
     }
 
 	async DH_GetRobotPosition(Position, SegmentObject) {
-		//this.log.info("==========> " + JSON.stringify(Position) + " Rooms " + JSON.stringify(SegmentObject));
+		//this.log.info("Robot Position: " + JSON.stringify(Position) + " Rooms Array: " + JSON.stringify(SegmentObject));
         var Inside = 0;
         for (var iSegCoor in SegmentObject) {
             var a = 0, b = SegmentObject[iSegCoor].X.length - 1;
@@ -2714,7 +2802,6 @@ class Dreamehome extends utils.Adapter {
             if (Inside == 1) {
 				if (LogData) {
                 }
-
                 //this.log.info(Inside + ": Room Number: " + SegmentObject[iSegCoor].Id + " Room Name: " + SegmentObject[iSegCoor].Name);
 				await this.setState(DH_Did + ".state.CurrentRoomCleaningName", SegmentObject[iSegCoor].Name, true);
 				await this.setState(DH_Did + ".state.CurrentRoomCleaningNumber", SegmentObject[iSegCoor].Id, true);
@@ -2963,21 +3050,6 @@ class Dreamehome extends utils.Adapter {
     async DH_uncompress(In_Compressed, In_path) {
         var input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
 		var decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString()
-
-        //this.log.info(' Zlib inflate  : ' + decode);
-        /*csvar mapHeader = decode.toString().split("{");
-    let GetHeader = mapHeader[0];
-	this.log.info(' decode Header 1: ' + GetHeader);
-	try {
-		var encodedDataH = Buffer.from(GetHeader, 'base64');
-		this.log.info(' Base64 decode Header : ' + encodedDataH);
-		var decodeHeader = zlib.inflateSync(encodedDataH);
-		} catch (e) {
-        this.log.info(' Error decode Header 2: ' + e);
-        } finally {
-        this.log.info(' decode Header 2: ' + decodeHeader);
-        }
-    */
         var jsondecode = decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
         var jsonread = (_ => {
             try {
@@ -3088,7 +3160,13 @@ class Dreamehome extends utils.Adapter {
 
 						if (path.toString().lastIndexOf('.robot') != -1) {
 							//Get Room
-							await this.DH_GetRobotPosition(JSON.parse(value), CheckArrayRooms)
+							try {
+								await this.DH_GetRobotPosition(JSON.parse(value), CheckArrayRooms);
+							} catch (SRPerror) {
+								this.log.warn("Unable to Set Current room cleaning name | In Value: " + value + " | Error: " + SRPerror );
+                            }
+
+
 							//this.log.info("==> DH_NowTaskStatus is |" + DH_NowTaskStatus + "|");
 							if (((DH_NowTaskStatus == 1) || (DH_NowTaskStatus == 2) || (DH_NowTaskStatus == 3) || (DH_NowTaskStatus == 4) || (DH_NowTaskStatus == 5)) &&
 							((DH_NowStatus == 2) || (DH_NowStatus == 4) || (DH_NowStatus == 18) || (DH_NowStatus == 19) || (DH_NowStatus == 20))){
@@ -3301,78 +3379,92 @@ class Dreamehome extends utils.Adapter {
         return Object.assign({}, ...matches.map((m) => m)); //JSON.parse(m)));
     }
 
-    async UpdateRoomSettings(RoomInd, ChangeType, ChangeVal) {
-        //this.log.info('Changed:' + ChangeType + ' to ' + ChangeVal);
-        var stateSuctionLevel, stateWaterVolume, stateRepeats, stateCleaningMode, stateRoute, stateSuctionLevelOb, stateWaterVolumeOb, stateRepeatsOb,
-            stateCleaningModeOb, stateRouteOb;
-        var RoomIdOb = await this.getStateAsync(RoomInd + ".RoomOrder");
-        const RoomId = RoomIdOb.val;
-        var TosRetString = '{\"customeClean\":[[' + RoomId;
-        switch (ChangeType) {
-            case 1:
-                stateSuctionLevel = ChangeVal;
-                stateWaterVolumeOb = await this.getStateAsync(RoomInd + ".WaterVolume");
-                stateWaterVolume = stateWaterVolumeOb.val;
-                stateRepeatsOb = await this.getStateAsync(RoomInd + ".Repeat");
-                stateRepeats = stateRepeatsOb.val;
-                stateCleaningModeOb = await this.getStateAsync(RoomInd + ".CleaningMode");
-                stateCleaningMode = stateCleaningModeOb.val;
-                stateRouteOb = await this.getStateAsync(RoomInd + ".Route");
-                stateRoute = stateRouteOb.val;
-                TosRetString += "," + stateSuctionLevel + "," + stateWaterVolume + "," + stateRepeats + "," + stateCleaningMode + "," + stateRoute + ']]}';
+	async DH_CleanZonePoint(ClPZType, ClPZones, ClPZRepeat, ClPZSucLevel, ClPZWatVol) {
+		if (!(typeof ClPZRepeat === "number" && ClPZRepeat > -1)) {  return false; }
+		if (!(typeof ClPZSucLevel === "number" && ClPZSucLevel > -1)) {  return false; }
+		if (!(typeof ClPZWatVol === "number" && ClPZWatVol > -1)) {  return false; }
+        var SetClPZType = (ClPZType === 1) ? "areas" : "points";
+        var ClPZRet = {};
+        var ClPZAction = [];
+        for (let ClPZone of ClPZones) {
+            if ((!Array.isArray(ClPZone) || ClPZone.length !== 4) && (SetClPZType == "areas")) {
+                this.log.warn("Invalid zone coordinates: " + ClPZone);
+                return false;
                 break;
-            case 2:
-                stateSuctionLevelOb = await this.getStateAsync(RoomInd + ".Level");
-                stateSuctionLevel = stateSuctionLevelOb.val;
-                stateWaterVolume = ChangeVal;
-                stateRepeatsOb = await this.getStateAsync(RoomInd + ".Repeat");
-                stateRepeats = stateRepeatsOb.val;
-                stateCleaningModeOb = await this.getStateAsync(RoomInd + ".CleaningMode");
-                stateCleaningMode = stateCleaningModeOb.val;
-                stateRouteOb = await this.getStateAsync(RoomInd + ".Route");
-                stateRoute = stateRouteOb.val;
-                TosRetString += "," + stateSuctionLevel + "," + stateWaterVolume + "," + stateRepeats + "," + stateCleaningMode + "," + stateRoute + ']]}';
+            }
+            if ((!Array.isArray(ClPZone) || ClPZone.length !== 2) && (SetClPZType == "points")) {
+                this.log.warn("Invalid points coordinates: " + ClPZone);
+                return false;
                 break;
-            case 3:
-                stateSuctionLevelOb = await this.getStateAsync(RoomInd + ".Level");
-                stateSuctionLevel = stateSuctionLevelOb.val;
-                stateWaterVolumeOb = await this.getStateAsync(RoomInd + ".WaterVolume");
-                stateWaterVolume = stateWaterVolumeOb.val;
-                stateRepeats = ChangeVal;
-                stateCleaningModeOb = await this.getStateAsync(RoomInd + ".CleaningMode");
-                stateCleaningMode = stateCleaningModeOb.val;
-                stateRouteOb = await this.getStateAsync(RoomInd + ".Route");
-                stateRoute = stateRouteOb.val;
-                TosRetString += "," + stateSuctionLevel + "," + stateWaterVolume + "," + stateRepeats + "," + stateCleaningMode + "," + stateRoute + ']]}';
-                break;
-            case 4:
-                stateSuctionLevelOb = await this.getStateAsync(RoomInd + ".Level");
-                stateSuctionLevel = stateSuctionLevelOb.val;
-                stateWaterVolumeOb = await this.getStateAsync(RoomInd + ".WaterVolume");
-                stateWaterVolume = stateWaterVolumeOb.val;
-                stateRepeatsOb = await this.getStateAsync(RoomInd + ".Repeat");
-                stateRepeats = stateRepeatsOb.val;
-                stateCleaningMode = ChangeVal;
-                stateRouteOb = await this.getStateAsync(RoomInd + ".Route");
-                stateRoute = stateRouteOb.val;
-                TosRetString += "," + stateSuctionLevel + "," + stateWaterVolume + "," + stateRepeats + "," + stateCleaningMode + "," + stateRoute + ']]}';
-                break;
-            case 5:
-                stateSuctionLevelOb = await this.getStateAsync(RoomInd + ".Level");
-                stateSuctionLevel = stateSuctionLevelOb.val;
-                stateWaterVolumeOb = await this.getStateAsync(RoomInd + ".WaterVolume");
-                stateWaterVolume = stateWaterVolumeOb.val;
-                stateRepeatsOb = await this.getStateAsync(RoomInd + ".Repeat");
-                stateRepeats = stateRepeatsOb.val;
-                stateCleaningModeOb = await this.getStateAsync(RoomInd + ".CleaningMode");
-                stateCleaningMode = stateCleaningModeOb.val;
-                stateRoute = ChangeVal;
-                TosRetString += "," + stateSuctionLevel + "," + stateWaterVolume + "," + stateRepeats + "," + stateCleaningMode + "," + stateRoute + ']]}';
-                break;
+            }
+            if (SetClPZType == "areas") {
+                let X_Cor = [ClPZone[0], ClPZone[2]].sort((a, b) => a - b);
+                let Y_Cor = [ClPZone[1], ClPZone[3]].sort((a, b) => a - b);
+                let W_Cor = (X_Cor[1] - X_Cor[0]);
+                let H_Cor = (Y_Cor[1] - Y_Cor[0]);
+				if (LogData) {
+                    this.log.info("Send Clean-Zone action | X " + X_Cor + " Y " + Y_Cor + " W " + W_Cor + " H " + H_Cor + " Repeat " + ClPZRepeat + " SuctionLevel " + ClPZSucLevel + " WaterVolume " + ClPZWatVol);
+                }
+                ClPZAction.push([
+                    Math.round(ClPZone[0]),
+                    Math.round(ClPZone[1]),
+                    Math.round(ClPZone[2]),
+                    Math.round(ClPZone[3]),
+                    Math.max(1, ClPZRepeat),
+                    ClPZSucLevel,
+                    ClPZWatVol,
+                ]);
+            } else if (SetClPZType == "points") {
+				if (LogData) {
+                    this.log.info("Send Clean-Points action | X " + ClPZone[0] + " Y " + ClPZone[1] + " Repeat " + ClPZRepeat + " SuctionLevel " + ClPZSucLevel + " WaterVolume " + ClPZWatVol);
+                }
+                ClPZAction.push([
+                    Math.round(ClPZone[0]),
+                    Math.round(ClPZone[1]),
+                    Math.max(1, ClPZRepeat),
+                    ClPZSucLevel,
+                    ClPZWatVol,
+                ]);
+            }
+
         }
-        //this.log.info(' ======> Command:' + TosRetString);
-        return TosRetString.toString();
+        ClPZRet[SetClPZType] = ClPZAction;
+        return JSON.stringify(ClPZRet);
     }
+
+	async DH_SendActionCleanCarpet(CarpetAction) {
+        const requestId = Math.floor(Math.random() * 9000) + 1000;
+        var AiidAction = [{
+            "piid": 1,
+            "value": 19
+        }, {
+            "piid": 10,
+            "value": CarpetAction
+        }];
+        var SETURLData = {
+            did: DH_Did,
+            id: requestId,
+            data: {
+                did: DH_Did,
+                id: requestId,
+                method: 'action',
+                params: {
+                    did: DH_Did,
+                    siid: 4,
+                    aiid: 1,
+                    in: AiidAction
+                },
+            },
+
+        };
+        try {
+            await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
+        } catch (err) {
+            this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+        }
+
+    }
+
     async DH_refreshToken() {
 
         await this.DH_requestClient({
@@ -3456,6 +3548,32 @@ class Dreamehome extends utils.Adapter {
 					this.setStateAsync(id, false, true);
 					return;
                 }
+				if (id.toString().indexOf('.map.MapNumber') != -1) {
+                    if (DH_Auth !== "") {
+                        await this.DH_RequestNewMap();
+                        await this.DH_GetSetRooms();
+                    }
+                }
+				if (id.toString().indexOf('.CleanCarpet') != -1) {
+					if (state.val) {
+					    const stateObj = await this.getObjectAsync(id);
+				        if (stateObj && stateObj.native.Cord) {
+						    let SCarpetCrdAction = [];
+						    SCarpetCrdAction.push(stateObj.native.Cord)
+							var stateObjCR = await this.getStateAsync(id.replace(".CleanCarpet", ".CarpetRepetition"));
+							var stateCR = (stateObjCR !== null && typeof stateObjCR === 'object') ? stateObjCR.val : 1;
+							var stateObjCSV = await this.getStateAsync(id.replace(".CleanCarpet", ".CarpetSuctionLevel"));
+							var stateCSV = (stateObjCSV !== null && typeof stateObjCSV === 'object') ? stateObjCSV.val : 0;
+				            let RetCom = await this.DH_CleanZonePoint(1, SCarpetCrdAction, stateCR, stateCSV, 0);
+							if (RetCom) {
+								await this.DH_SendActionCleanCarpet(RetCom);
+						        this.log.info("Clean Carpet: " + stateObj.common.name + " | Coordinates: " + JSON.stringify(stateObj.native.Cord) + " | Repetition: " + stateCR + " | Suction Level: " + stateCSV);
+				            }
+
+
+						}
+				    }
+			    }
 				if (id.toString().indexOf('.control.') != -1) {
                     for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
                         var ControlObject = SPvalue.replace(/\w\S*/g, function(SPName) {
