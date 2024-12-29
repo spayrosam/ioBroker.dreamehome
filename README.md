@@ -40,6 +40,7 @@ npm install canvas
 
 ### **Thanks to**
 https://github.com/TA2k/ioBroker.dreame by TA2k
+
 https://github.com/Tasshack/dreame-vacuum by Tasshack
 
 ## License
