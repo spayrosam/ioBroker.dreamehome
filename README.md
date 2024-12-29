@@ -29,7 +29,10 @@ npm install canvas
 
 *The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
-
+1. Fixed the crash after map download.
+2. Added carpet cleaning function.
+3. Added zone cleaning and spot cleaning features.
+4. Room names are now visible under the Map.0 or M.01 folder
 <!--
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
@@ -37,6 +40,7 @@ npm install canvas
 
 ### **Thanks to**
 https://github.com/TA2k/ioBroker.dreame by TA2k
+https://github.com/Tasshack/dreame-vacuum by Tasshack
 
 ## License
 
