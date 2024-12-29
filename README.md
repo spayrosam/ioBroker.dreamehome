@@ -30,9 +30,10 @@ npm install canvas
 *The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
 1. Fixed the crash after map download.
-2. Added carpet cleaning function.
+2. Added carpet cleaning function  *(To start the carpet cleaning, select the repetition under object CarpetRepetitionX and the suction strength under object CarpetSuctionLevelX, then set the object CleanCarpetX to true)*.
 3. Added zone cleaning and spot cleaning features.
 4. Room names are now visible under the Map.0 or M.01 folder
+  
 <!--
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
