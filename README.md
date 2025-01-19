@@ -27,6 +27,11 @@ npm install canvas
 
 *The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
+**0.0.4**
+1. The map has been improved and room settings are now visible.
+2. Additionally, additional animations have been added to the charging station..
+   ![Screenshot](screenshot.png)
+   
 **0.0.3**
 1. An animation has been added for the charging station.
 2. Additionally, the history of the robot's position on the map has been corrected, and the map has been improved for better accuracy and user experience.
