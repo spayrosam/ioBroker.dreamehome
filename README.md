@@ -27,6 +27,32 @@ npm install canvas
 
 *The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
+**0.0.6**
+New Control Features Added:
+- Resume Clean Mode: Off/On
+- Child Lock: Off/On
+- Auto Add Detergent: Off/On
+- Auto Mount Mop: Off/On
+- Clean Genius: Off/Routine Cleaning/Deep Cleaning
+- Smart Auto Wash: Off/Works in Deep Mode/Works in Routine & Deep Mode
+- Smart Auto Mop: Off/Works in Deep Mode/Works in Routine & Deep Mode
+- Carpet Boost: Off/On
+- Intensive Carpet Cleaning: Off/On
+- Mop Scalable: Intelligence/Standard/High Frequency
+- Mop Extension for Gap Cleaning: Off/On
+- Intensive Cleaning for Furniture Legs: Off/On
+- Fill-in Light: Off/On
+- Collision-Avoidance Mode: Off/On
+- Clean Route: Quick/Standard/Intensive/Deep
+- Live Video Prompts: The camera is blinking/Voice prompts
+- Volume: 1 to 100 
+
+Control Adjusted: 
+- Automatic switch off of the Genius Mode when the Custom Mode is activated.
+- The map folder has been optimized, and objects have been prepared for communication with the generated VIS.HTML
+  ![Screenshot](screenshot2.png)
+
+  
 **0.0.5**
 1. The map has been improved and room settings are now visible.
 2. Additionally, additional animations have been added to the charging station..
