@@ -574,6 +574,19 @@ const DreameSetRoute = {
 	}
 };
 
+const DreameSetCleanRoom = {
+	"EN": {
+		"-1": "Unknown",
+        1: "Yes",
+        2: "No"
+		},
+    "DE": {
+		"-1": "Unbekannt",
+		1: "Ja",
+        2: "Nein"
+	}
+};
+
 const DreameSetRepeat = {
     "EN": {
 	"-1": "Unknown",
@@ -939,16 +952,33 @@ const DreameActionProperties = {
     "S2A1": "Start",
     "S2A2": "Pause",
     "S3A1": "Charge",
+	"S3P3C1": "Off-peack Charging",
     "S4A1": "Start custom",
 	"S4A1C1": "Start zone cleaning",
 	"S4A1C2": "Start points cleaning",
 	"S4A1C3": "Fast mapping",
-    "S4A2": "Stop",
+    "S4A2C1": "Stop",
     "S4A3": "Clear warning",
     "S4A4": "Start washing",
     //"S4A6": "Get photo info",
     "S4A8": "Shortcuts",
+	"S4P11E1": "Resume Cleane Mode",
+	"S4P27E1": "Child lock",
+	"S4P37E1": "Auto add detergent",
+	"S4P45E1": "Auto mount mop",
 	"S4P50C1": "Auto switch settings",
+	"S4P50E2": "Clean Genius",
+	"S4P50E3": "Auto Rewashing",
+	"S4P50E4": "Auto recleaning",
+	"S4P50E5": "Carpet Boost",
+	"S4P50E6": "Intensive Carpet cleaning",
+	"S4P50E7": "AI driven MopExtend",
+	"S4P50E8": "Mop Extension for Gap cleaning",
+	"S4P50E9": "Intensive Cleaning for Furniture Legs",
+	"S4P50E10": "Fill Light",
+	"S4P50E11": "Collision-Avoidance Mode",
+	"S4P50E12": "Clean Route",
+	"S4P50E13": "Live Video Prompts",
     "S6A1": "Request map",
     "S6A2": "Update map data",
 	"S6A2C1": "Change map",
@@ -959,6 +989,7 @@ const DreameActionProperties = {
     "S6A3": "Backup map",
     "S6A4": "Wifi map",
     "S7A1": "Locate",
+	"S7P1E1": "Volume",
     "S7A2": "Test sound",
     "S8A1": "Delete schedule",
     "S8A2": "Delete cruise schedule",
@@ -980,17 +1011,34 @@ const DreameActionParams = {
     "S2A1": "false", // Start
     "S2A2": "false", // Pause
     "S3A1": "false", // Charge
+	"S3P3C1": [{"siid":3,"piid":3,"value":"{\"enable\":false,\"startTime\":\"22:00\",\"endTime\":\"08:00\"}"}],// Off-peack Charging
     "S4A1": [{"piid": 1,"value": 18},{"piid": 10,"value": "{\"selects\": [[1,1,3,2,1]]}"}], //Start custom
 	"S4A1C1": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"areas\": [[-525,475,1225,3025,3,0,2]]}"}], //Start zone cleaning X1,Y1,X2,Y2,Repeat,SuctionLevel,WaterVolume => X -525,1225 Y 475,3025 W 1750 H 2550
 	"S4A1C2": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"points\": [[-525,475,3,0,2]]}"}], //Start points cleaning X,Y,Repeat,SuctionLevel,WaterVolume => X -525 Y 1225
 	"S4A1C3": [{"value": 21}], // Fast mapping
-    "S4A2": "false", // Stop
+    "S4A2C1": "false", // Stop
     "S4A3": "false", // Clear warning
     "S4A4": "false", // Start washing
     //"S4A6": "false", // Get photo info
     "S4A8": "false", // Shortcuts
-	"S4P50C1": ["{\"k\":\"AutoDry\",\"v\":1},{\"k\":\"SmartAutoWash\",\"v\":2},{\"k\":\"CarpetOnlyClean\",\"v\":1},{\"k\":\"MopEffectSwitch\",\"v\":1},{\"k\":\"FluctuationTestResult\",\"v\":0},{\"k\":\"CleanRoute\",\"v\":1},{\"k\":\"SuperWash\",\"v\":0},{\"k\":\"MopScalable\",\"v\":2},{\"k\":\"SuctionMax\",\"v\":0},{\"k\":\"LessColl\",\"v\":1},{\"k\":\"CarpetFineClean\",\"v\":1},{\"k\":\"FillinLight\",\"v\":1},{\"k\":\"MonitorHumanFollow\",\"v\":0},{\"k\":\"MopScalableVersion\",\"v\":0},{\"k\":\"SmartDrying\",\"v\":0},{\"k\":\"LacuneMopScalable\",\"v\":1},{\"k\":\"HotWash\",\"v\":1},{\"k\":\"CleanType\",\"v\":0},{\"k\":\"DetergentNote\",\"v\":1},{\"k\":\"MeticulousTwist\",\"v\":-7},{\"k\":\"MopEffectState\",\"v\":3},{\"k\":\"MaterialDirectionClean\",\"v\":0},{\"k\":\"PetPartClean\",\"v\":0},{\"k\":\"RobotCarpetPressEnable\",\"v\":1},{\"k\":\"MopScalable2\",\"v\":1},{\"k\":\"MonitorPromptLevel\",\"v\":1},{\"k\":\"UVLight\",\"v\":0},{\"k\":\"MopFullyScalable\",\"v\":0},{\"k\":\"StainIdentify\",\"v\":1},{\"k\":\"SmartAutoMop\",\"v\":2},{\"k\":\"SmartCharge\",\"v\":1},{\"k\":\"FluctuationConfirmResult\",\"v\":0},{\"k\":\"SmartHost\",\"v\":0}"],//"Auto switch settings",
-    "S6A1": [{"piid": 2,"value": "{\"req_type\":1,\"frame_type\":\"I\",\"force_type\":1}"}], // Request map
+	"S4P11E1": [{"siid":4,"piid":11,"value": 1}], //Resume Cleane Mode 0: off 1: on
+	"S4P27E1": [{"siid":4,"piid":27,"value": 1}], //Child lock 0: off 1: on
+	"S4P37E1":  [{"siid":4,"piid":37,"value": 1}], //Auto add detergent  0: off 1: on
+	"S4P45E1": [{"siid":4,"piid":45,"value": 1}], //Auto mount mop 0: off 1: on
+	"S4P50C1": [{"siid":4,"piid":50,"value": "{\"k\":\"AutoDry\",\"v\":1},{\"k\":\"SmartAutoWash\",\"v\":2},{\"k\":\"CarpetOnlyClean\",\"v\":1},{\"k\":\"MopEffectSwitch\",\"v\":1},{\"k\":\"FluctuationTestResult\",\"v\":0},{\"k\":\"CleanRoute\",\"v\":1},{\"k\":\"SuperWash\",\"v\":0},{\"k\":\"MopScalable\",\"v\":2},{\"k\":\"SuctionMax\",\"v\":0},{\"k\":\"LessColl\",\"v\":1},{\"k\":\"CarpetFineClean\",\"v\":1},{\"k\":\"FillinLight\",\"v\":1},{\"k\":\"MonitorHumanFollow\",\"v\":0},{\"k\":\"MopScalableVersion\",\"v\":0},{\"k\":\"SmartDrying\",\"v\":0},{\"k\":\"LacuneMopScalable\",\"v\":1},{\"k\":\"HotWash\",\"v\":1},{\"k\":\"CleanType\",\"v\":0},{\"k\":\"DetergentNote\",\"v\":1},{\"k\":\"MeticulousTwist\",\"v\":-7},{\"k\":\"MopEffectState\",\"v\":3},{\"k\":\"MaterialDirectionClean\",\"v\":0},{\"k\":\"PetPartClean\",\"v\":0},{\"k\":\"RobotCarpetPressEnable\",\"v\":1},{\"k\":\"MopScalable2\",\"v\":1},{\"k\":\"MonitorPromptLevel\",\"v\":1},{\"k\":\"UVLight\",\"v\":0},{\"k\":\"MopFullyScalable\",\"v\":0},{\"k\":\"StainIdentify\",\"v\":1},{\"k\":\"SmartAutoMop\",\"v\":2},{\"k\":\"SmartCharge\",\"v\":1},{\"k\":\"FluctuationConfirmResult\",\"v\":0},{\"k\":\"SmartHost\",\"v\":0}"}],//"Auto switch settings",
+	"S4P50E2": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartHost\",\"v\":1}"}], //"Clean Genius",
+	"S4P50E3": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartAutoWash\",\"v\":1}"}], //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+	"S4P50E4": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartAutoMop\",\"v\":1}"}], //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+	"S4P50E5": [{"siid":4,"piid":50,"value": "{\"k\":\"RobotCarpetPressEnable\",\"v\":1}"}], //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
+	"S4P50E6": [{"siid":4,"piid":50,"value": "{\"k\":\"CarpetFineClean\",\"v\":1}"}], //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
+	"S4P50E7": [{"siid":4,"piid":50,"value": "{\"k\":\"MopScalable\",\"v\":1}"}], //MopScalable 1: Intelligence 7: Standard 2: High frequency
+	"S4P50E8": [{"siid":4,"piid":50,"value": "{\"k\":\"LacuneMopScalable\",\"v\":1}"}], //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
+	"S4P50E9": [{"siid":4,"piid":50,"value": "{\"k\":\"MopScalable2\",\"v\":1}"}], //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
+	"S4P50E10": [{"siid":4,"piid":50,"value": "{\"k\":\"FillinLight\",\"v\":1}"}], //FillinLight 0: off 1: on
+	"S4P50E11": [{"siid":4,"piid":50,"value": "{\"k\":\"LessColl\",\"v\":1}"}], //Collision-Avoidance Mode / LessColl 0: off 1: on
+	"S4P50E12": [{"siid":4,"piid":50,"value": "{\"k\":\"CleanRoute\",\"v\":1}"}], //CleanRoute 0: off 1: on
+	"S4P50E13": [{"siid":4,"piid":50,"value": "{\"k\":\"MonitorPromptLevel\",\"v\":1}"}], //Live Video Prompts 0: Weak 1: Strong
+	"S6A1": [{"piid": 2,"value": "{\"req_type\":1,\"frame_type\":\"I\",\"force_type\":1}"}], // Request map
     "S6A2": [{"piid": 4,"value":"{\"customeClean\":[[1,2,27,2,2,2]]}"}], // Update map data | Room Settings
 	"S6A2C1": [{"piid": 4,"value": "{\"sm\":{},\"mapid\":map_id}"}], // Update map data | Change map:
 	"S6A2C2": [{"piid": 4,"value": "{\"nrism\":{\"map_id\":{\"name\":\"New_name\"}}}"}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
@@ -1000,6 +1048,7 @@ const DreameActionParams = {
     "S6A3": "false", // Backup map
     "S6A4": "false", // Wifi map
     "S7A1": "false", // Locate
+	"S7P1E1": [{"siid":7,"piid":1,"value": 60}], //Volume 1 to 100
     "S7A2": "false", // Test sound
     "S8A1": "false", // Delete schedule
     "S8A2": "false", // Delete cruise schedule
@@ -1018,6 +1067,28 @@ const DreameActionParams = {
     //"S10001A3": "false", // Stream property
     //"S10001A4": "false", // Stream code
 };
+
+const DreameActionExteParams = {
+	"S4P11E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}},//Resume Cleane Mode 0: off 1: on
+	"S4P27E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Child lock 0: off 1: on
+	"S4P37E1":  {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Auto add detergent  0: off 1: on
+	"S4P45E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Auto mount mop 0: off 1: on
+	"S4P50E2": {"EN": {0: "Off", 1: "Routine Cleaning", 2: "Deep Cleaning"}, "DE": {0: "Aus", 1: "Routinereinigungsmodus", 2: "Tiefenreinigungsmodus"}}, //"Clean Genius",
+	"S4P50E3": {"EN": {0: "Off", 1: "active in deep cleaning mode", 2: "active in deep and routine cleaning mode"}, "DE": {0: "Aus", 1: "aktiv im Tiefenreinigungsmodus",
+		2: "aktiv im Tiefen- und Routinereinigungsmodus"}}, //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+	"S4P50E4": {"EN": {0: "Off", 1: "active in deep cleaning mode", 2: "active in deep and routine cleaning mode"}, "DE": {0: "Aus", 1: "aktiv im Tiefenreinigungsmodus",
+		2: "aktiv im Tiefen- und Routinereinigungsmodus"}}, //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+	"S4P50E5": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
+	"S4P50E6": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
+	"S4P50E7": {"EN": {0: "Intelligence", 7: "Standard", 2: "High frequency"}, "DE": {0: "Intelligenz", 7: "Standard", 2: "Hochfrequenz"}}, //MopScalable 1: Intelligence 7: Standard 2: High frequency
+	"S4P50E8": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
+	"S4P50E9": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
+	"S4P50E10": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //FillinLight 0: off 1: on
+	"S4P50E11": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Collision-Avoidance Mode / LessColl 0: off 1: on
+	"S4P50E12": {"EN": {0: "Off", 1: "Standard", 2: "Intensive", 3: "Deep", 4: "Quick"}, "DE": {0: "Aus", 1: "Standard", 2: "Intensiv", 3: "Tief", 4: "Schnell"}}, //CleanRoute 01: Standard 2: Intensive 3: Deep, 4: Quick
+	"S4P50E13": {"EN": {0: "The camera is blinking", 1: "Voice prompts"}, "DE": {0: "Die Kameraanzeige blinkt", 1: "Sprachansagen"}}, //Live Video Prompts 0: Weak 1: Strong
+	"S7P1E1": {"EN": {0: "Min", 100: "Max"}, "DE": {0: "Min", 100: "Max"}}, //Volume 1 to 100
+}
 
 var LogData; // = false;
 var URLTK = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLWF1dGgvb2F1dGgvdG9rZW4=";
@@ -1355,6 +1426,7 @@ class Dreamehome extends utils.Adapter {
                 (DH_Expires - 100 || 3500) * 1000, );
             this.subscribeStates('*.map.*');
 			await this.DH_GetSetRooms();
+			await this.DH_GetSetRoomCleanSettings();
         }
     }
 
@@ -1494,32 +1566,7 @@ class Dreamehome extends utils.Adapter {
         });
         await this.DH_RequestNewMap();
 		//await this.DH_GetControl();
-
-
-		for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
-            try {
-                let path = DH_Did + ".control." + SPvalue.replace(/\w\S*/g, function(SPName) {
-                    return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                }).replace(/\s/g, '');
-
-                var RetPointValue = DreameActionParams[SPkey];
-                if (path) {
-					var GetobjExist = await this.getObjectAsync(path);
-					if (!GetobjExist) {
-						if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                            RetPointValue = JSON.stringify(RetPointValue);
-						} else {
-							RetPointValue = JSON.parse(RetPointValue);
-						}
-						await this.DH_getType(RetPointValue, path, SPkey);
-						this.log.info("Set and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
-						await this.setState(path, RetPointValue, true);
-					}
-				}
-            } catch (err) {
-                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
-            }
-        }
+        await this.DH_RequestControlState();
     }
 
     async DH_PropObject(InData, InPath, InLog) {
@@ -1784,6 +1831,7 @@ class Dreamehome extends utils.Adapter {
 				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".Repeat", DreameSetRepeat[UserLang], SortiRoom.Name + " Repeat");
 				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningMode", DreameCleaningMode[UserLang], SortiRoom.Name + " Cleaning Mode");
 				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningRoute", DreameSetRoute[UserLang], SortiRoom.Name + " Cleaning Route");
+				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".Cleaning", DreameSetCleanRoom[UserLang], SortiRoom.Name + " Cleaning");
             }
 			Mrooms = null;
 			var Mcarpets = [];
@@ -1797,7 +1845,7 @@ class Dreamehome extends utils.Adapter {
 						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetRepetition" + parseInt(icarpets),
 						DreameSetRepeat[UserLang], SortiRoom.Name + " Carpet Repeat");
 						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetSuctionLevel" + parseInt(icarpets),
-						DreameSetRepeat[UserLang], SortiRoom.Name + " Carpet Suction Level");
+						DreameSuctionLevel[UserLang], SortiRoom.Name + " Carpet Suction Level");
 						this.log.info("Found Carpet N' " + icarpets + " in room " + CheckArrayRooms[iCHroomID].Name);
 						break;
 				    }
@@ -1840,6 +1888,72 @@ class Dreamehome extends utils.Adapter {
 			},
 			native: CarpSnative
 		});
+	}
+	async DH_RequestControlState() {
+		for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
+            try {
+                let path = DH_Did + ".control." + SPvalue.replace(/\w\S*/g, function(SPName) {
+                    return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                }).replace(/\s/g, '');
+
+                var RetPointValue = DreameActionParams[SPkey];
+                if (path) {
+					var GetobjExist = await this.getObjectAsync(path);
+					if ((!GetobjExist) || (SPkey.indexOf("E") !== -1)) {
+						if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+                            RetPointValue = JSON.stringify(RetPointValue);
+						} else {
+							RetPointValue = JSON.parse(RetPointValue);
+						}
+
+						if ((SPkey.indexOf("P") !== -1) && (SPkey.indexOf("E") !== -1)) {
+							RetPointValue = DreameActionExteParams[SPkey][UserLang];
+						}
+						await this.DH_getType(RetPointValue, path, SPkey, DreameActionParams[SPkey][0]["value"]);
+
+						if ((SPkey.indexOf("P") !== -1) && (SPkey.indexOf("E") !== -1)) {
+
+							let Readpath = DH_Did + ".state." + (DreameStateProperties[SPkey.split("E")[0]]).replace(/\w\S*/g, function(SPName) {
+                                return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                                }).replace(/\s/g, '');
+								try {
+									var ReadRetPointValue = await this.getStateAsync(Readpath);
+
+                                    RetPointValue = Object.keys(DreameActionExteParams[SPkey][UserLang])[ReadRetPointValue.val];
+
+									let ExtendToSearch = JSON.stringify(JSON.parse(DreameActionParams[SPkey][0]["value"])["k"]);
+
+									if (ExtendToSearch !== "undefined") {
+										let jsonExtendData = JSON.parse(ReadRetPointValue.val);
+										for (var Ex in jsonExtendData) {
+                                            if (JSON.stringify(jsonExtendData[Ex]["k"]) == ExtendToSearch) {
+												RetPointValue = jsonExtendData[Ex]["v"];
+												break;
+											}
+                                        }
+									}
+
+									if (SPkey == "S7P1E1") {
+										RetPointValue = ReadRetPointValue.val;
+									}
+									RetPointValue = parseInt(RetPointValue);
+									if ((RetPointValue < 0) && (RetPointValue > -3)) {RetPointValue = 0;} // Fix negative Value
+
+                                } catch (error) {
+									RetPointValue = parseInt(Object.keys(DreameActionExteParams[SPkey][UserLang])[0]);
+									if (LogData) {
+									    this.log.warn('Failed to split "' + SPvalue + '" State failed: ' + error);
+									}
+                                }
+						}
+						this.log.info("Set and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
+						await this.setState(path, RetPointValue, true);
+					}
+				}
+            } catch (err) {
+                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+            }
+        }
 	}
     async DH_GenerateMap() {
 		await this.DH_RequestNewMap()
@@ -3176,6 +3290,7 @@ class Dreamehome extends utils.Adapter {
             '         iBGcanvasEvent.height = iBGCanvas.height;' +
             '         iBGcanvasEvent.getContext("2d").drawImage(iBGCanvas, 0, 0, iBGCanvas.width, iBGCanvas.height);' +
             '         var pixelData = iBGcanvasEvent.getContext("2d").getImageData(event.offsetX, event.offsetY, 1, 1).data;' +
+			'         let CleanRoomIs = "2";' +
             '         for (let i = 0; i < RoomsIDVis.length; i++) {' +
             '           var DH_GetConvertedRoomBG = DH_hexToRgbA(ColorsItems[RoomsIDVis[i].replace("Room", "")]);' +
             '           var DH_ConvertetRoomBG = [DH_GetConvertedRoomBG.R, DH_GetConvertedRoomBG.G, DH_GetConvertedRoomBG.B, DH_GetConvertedRoomBG.A];' +
@@ -3184,10 +3299,18 @@ class Dreamehome extends utils.Adapter {
             '             if (DH_RoomsNumberState[RoomsIDVis[i].replace("Room", "")] == 0) {' +
             '               DH_RoomsNumberState[RoomsIDVis[i].replace("Room", "")] = 1;' +
             '               MapImage.setAttribute("style", " filter: contrast(100%) saturate(4) drop-shadow(0 0 0.75rem rgba(" + pixelData + ")) drop-shadow(0 0 0.5rem rgb(0, 0, 0)) drop-shadow(0 0 0.2rem rgb(255, 255, 255));");' +
-            '             } else {' +
+            '               CleanRoomIs = "1";' +
+			'             } else {' +
             '               DH_RoomsNumberState[RoomsIDVis[i].replace("Room", "")] = 0;' +
             '               MapImage.setAttribute("style", "");' +
             '             }' +
+			'             for (var ar in CenterCoordinateRoom) {' +
+            '               let ObjNRoomC = JSON.parse(JSON.stringify(CenterCoordinateRoom[ar]));' +
+            '               if (Object.values(ObjNRoomC)[0] == RoomsIDVis[i].replace("Room", "")) {' +
+		    '                 vis.conn._socket.emit("setState", "dreamehome.0.' + DH_Did + '.map.' + DH_CurMap + '." + CenterCoordinateRoom[ar].RM + ".Cleaning", CleanRoomIs);' +
+			'             	  break;' +
+		    '               }' +
+			'             }' +
             '             break;' +
             '           }' +
             '         }' +
@@ -3767,6 +3890,17 @@ class Dreamehome extends utils.Adapter {
 							Setvalue = await this.DH_SetPropSPID("S" + element.siid + 'P' + element.piid, Setvalue);
                             await this.DH_getType(Setvalue, path, "S" + element.siid + 'P' + element.piid);
                             await this.DH_setState(path, Setvalue, true);
+
+							let AppChanged = false;
+                            for (var ex in DreameActionExteParams) {
+                                if (ex.indexOf("S" + element.siid + 'P' + element.piid) !== -1) {
+								    AppChanged = true;
+								    break;
+								}
+							}
+							if (AppChanged) {
+								await this.DH_RequestControlState();
+					        }
                         }
                     }
                 }
@@ -4076,7 +4210,7 @@ class Dreamehome extends utils.Adapter {
             native: {},
         });
     }
-    async DH_getType(element, createpath, SetSPiid = '') {
+    async DH_getType(element, createpath, SetSPiid = '', SetExtendVal = "") {
 		if ((element == 'undefined') || (element == null)) {element = "";}
 		try {
             element = JSON.parse(element);
@@ -4114,7 +4248,7 @@ class Dreamehome extends utils.Adapter {
                 break;
         }
 
-        let Stwrite = false, Stname = '', Stunit = '', Stnative = {}, Stsiid = '', Stpiid = '';
+        let Stwrite = false, Stname = '', Stunit = '', Stnative = {}, Sstates = {}, Stsiid = '', Stpiid = '';
 		Stname = createpath.split(/[\s.]/).pop().replace(/(?<!^)([A-Z])/g, ' $1');
 
 		if (SetSPiid != ''){
@@ -4127,11 +4261,17 @@ class Dreamehome extends utils.Adapter {
 				Delimiter = "C";
 				Stwrite = true;
 			}
+			if (SetSPiid.indexOf("E") !== -1) {
+				Delimiter = "E";
+				Stwrite = true;
+			}
 			if (Delimiter == "C") {
 			    Stsiid = (SetSPiid.split("S")[1] || "").split("A")[0];
 				if ((SetSPiid.indexOf("P") !== -1) && (SetSPiid.indexOf("C") !== -1)) {
 					Stsiid = (SetSPiid.split("S")[1] || "").split("P")[0];
 				}
+			} else if (Delimiter == "E") {
+			    Stsiid = (SetSPiid.split("S")[1] || "").split("P")[0];
 			} else {
 			    Stsiid = (SetSPiid.split("S")[1] || "").split(Delimiter)[0];
 			}
@@ -4148,12 +4288,23 @@ class Dreamehome extends utils.Adapter {
 				    Stpiid = (SetSPiid.split("A")[1] || "").split("C")[0];
 				    Stnative = {siid: Stsiid, aiid: Stpiid, did: DH_Did, model: DH_Model};
 			    }
+			} else if (Delimiter == "E") {
+				Stpiid = (SetSPiid.split("P")[1] || "").split("E")[0];
+				Stnative = {siid: Stsiid, piid: Stpiid, value: SetExtendVal, did: DH_Did, model: DH_Model};
+				setrolT[0] = "number";
+				setrolT[1] = "level";
+				if (SetSPiid !== "S7P1E1") {
+				    Sstates = element;
+				} else {
+					setrolT[1] = "value";
+				}
 			}
 		}
 
-		if (createpath.match(/left|batterylevel$/gi)){
+		if (createpath.match(/left|batterylevel|CleaningCompleted|CameraBrightness$/gi) || (createpath.split(/[\s.]/).pop() == "Volume")){
 			Stunit = '%';
 		}
+
 		if (createpath.match(/timeleft|time$/gi)){
 			Stunit = 'hours';
 		}
@@ -4164,7 +4315,7 @@ class Dreamehome extends utils.Adapter {
 			Stunit = 'm²';
 		}
 
-        await this.extendObject(createpath, {
+		let ExtendObjectProp = {
             type: 'state',
             common: {
                 name: Stname,
@@ -4175,8 +4326,16 @@ class Dreamehome extends utils.Adapter {
                 read: true,
             },
             native: Stnative,
-        });
-
+        }
+		if (Delimiter == "E") {
+			if (SetSPiid == "S7P1E1") {
+			    ExtendObjectProp["common"]["min"] = 0;
+				ExtendObjectProp["common"]["max"] = 100;
+			} else {
+				ExtendObjectProp["common"]["states"] = Sstates;
+			}
+		}
+        await this.extendObject(createpath, ExtendObjectProp);
 		if (LogData) {
             this.log.info('common Type is: ' + setrolT + " | common Role is: " + setrolT[1] + " | " + Typeof + " is: " + element);
 		}
@@ -4221,6 +4380,68 @@ class Dreamehome extends utils.Adapter {
     async jsonFromString(str) {
         const matches = str.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
         return Object.assign({}, ...matches.map((m) => m)); //JSON.parse(m)));
+    }
+
+	async DH_GetSetRoomCleanSettings() {
+        let PromDreameCleanset = await this.getStateAsync(DH_Did + ".mqtt.cleanset");
+		var ArrDreameCleanset = (PromDreameCleanset !== null && typeof PromDreameCleanset === 'object') ? JSON.parse(PromDreameCleanset.val) : "undefined";
+
+        if (ArrDreameCleanset !== "undefined") {
+			if (LogData) {
+			    this.log.info("ArrDreameCleanset " +  JSON.stringify(ArrDreameCleanset));
+			    this.log.info("CheckArrayRooms " +  JSON.stringify(CheckArrayRooms));
+			}
+
+            for (var r in ArrDreameCleanset) {
+			//1: DreameLevel, 2: DreameSetWaterVolume, 3: DreameRepeat, 4: DreameRoomNumber, 5: DreameCleaningMode, 6: Route
+                for (var iCHroomID in CheckArrayRooms) {
+				    if (CheckArrayRooms[iCHroomID].Id == r) {
+						this.log.info("Get " + CheckArrayRooms[iCHroomID].Name + " Settings = " +
+				        " Number: " + r +
+				        " Repeat: " + ArrDreameCleanset[r][2] +
+				        " Level: " +  ArrDreameCleanset[r][0] +
+						" Water: " +  ArrDreameCleanset[r][1] +
+				        " Order: " + ArrDreameCleanset[r][3] +
+				        " Mode: " +  ArrDreameCleanset[r][4] +
+				        " Route: " +  ArrDreameCleanset[r][5]
+						)
+					    await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".SuctionLevel", ArrDreameCleanset[r][0]);
+                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".WaterVolume", ArrDreameCleanset[r][1]);
+                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".Repeat", ArrDreameCleanset[r][2]);
+                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleaningMode", ArrDreameCleanset[r][4]);
+                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleaningRoute", ArrDreameCleanset[r][5]);
+						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".Cleaning", 2);
+						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetRepetition", ArrDreameCleanset[r][2]);
+						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetSuctionLevel", ArrDreameCleanset[r][0]);
+					    break;
+				    }
+			    }
+            }
+        }
+    }
+
+
+	async DH_GSRCS(GSRCSObj, GSRCSVal) {
+		if ((GSRCSObj.split(/[\s.]/).pop() == "CarpetRepetition") || (GSRCSObj.split(/[\s.]/).pop() == "CarpetSuctionLevel")) {
+			const TmpObstates = await this.getStatesAsync(GSRCSObj + '*');
+			if (TmpObstates) {
+				for (var iObN in TmpObstates) {
+					this.log.info("The carpet name " + iObN.split(/[\s.]/).pop() + " has been found, setting the " + GSRCSObj.split(/[\s.]/).pop().replace("Carpet", "") + " status to " + GSRCSVal );
+					await this.DH_GSRCS(iObN, GSRCSVal);
+				}
+			}
+			return;
+		}
+        let iGSRCSObj = await this.getStateAsync(GSRCSObj);
+		var iGSRCSVal = (iGSRCSObj !== null) ? iGSRCSObj.val : "undefined";
+        if ((iGSRCSVal == "undefined") || (iGSRCSVal == "-1")) {
+			if (LogData) {
+			    this.log.info("Set " + GSRCSObj + " to " + GSRCSVal);
+		    }
+			await this.setState(GSRCSObj, GSRCSVal, true);
+        }
+
+
     }
 
 	async DH_CleanZonePoint(ClPZType, ClPZones, ClPZRepeat, ClPZSucLevel, ClPZWatVol) {
@@ -4419,11 +4640,13 @@ class Dreamehome extends utils.Adapter {
 				    }
 			    }
 				if (id.toString().indexOf('.control.') != -1) {
+					var SETURLData;
                     for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
                         var ControlObject = SPvalue.replace(/\w\S*/g, function(SPName) {
                             return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
                         }).replace(/\s/g, '');
                         if (id.split('.').pop() == ControlObject) {
+							var PropertiesMethod = false;
                             const requestId = Math.floor(Math.random() * 9000) + 1000;
                             this.log.info("Send Command: " + SPvalue);
                             var GetSIID = parseInt((SPkey.split("S")[1] || "").split("A")[0]);
@@ -4435,39 +4658,91 @@ class Dreamehome extends utils.Adapter {
 							}
 							if (SPkey.indexOf("P") !== -1) {
 				                GetAIID = parseInt((SPkey.split("P")[1] || "").split("C")[0]);
+								PropertiesMethod = true
 			                }
 
-                            var GetSIIDAIID = GetSIID + "." + GetAIID;
 							var PiidAction = '[1]'
 							if (DreameActionParams[SPkey] !== "false") {
 								PiidAction = state.val;
 								if (Object.prototype.toString.call(PiidAction).match(/\s([\w]+)/)[1].toLowerCase() !== 'boolean') {
 									try {
 										PiidAction = JSON.parse(PiidAction);
-										//this.log.info('Validate ' + PiidAction);
                                     } catch (errJS) {
 									   this.log.warn('Error! ' + PiidAction + ' value is not json');
 									}
 							    }
+
+								if (SPkey.indexOf("E") !== -1) {
+								    PropertiesMethod = true
+								    const stateObj = await this.getObjectAsync(id);
+									if (stateObj && stateObj.native.value) {
+									    let PiidActionValue = state.val;
+										try {
+										    let PiidActionTmpValue = JSON.parse(stateObj.native.value);
+											PiidActionTmpValue["v"] = state.val;
+											PiidActionValue = JSON.stringify(PiidActionTmpValue);
+										} catch (errUS) {
+									        //this.log.warn('Error! Update ' + SPvalue + ' value is not json');
+									    }
+										let TSSIID = parseInt(stateObj.native.siid);
+										let TSPIID = parseInt(stateObj.native.piid);
+										PiidAction = [{siid: TSSIID,
+													   piid: TSPIID,
+											          "value": PiidActionValue
+											         }];
+										this.log.info("Send Extended Command: " + JSON.stringify(PiidAction));
+						            }
+							    }
                             }
 
-                            var SETURLData = {
-                                did: DH_Did,
-                                id: requestId,
-                                data: {
+							if (PropertiesMethod) {
+								SETURLData = {
+									did: DH_Did,
+                                    id: requestId,
+									data: {
+										did: DH_Did,
+                                        id: requestId,
+                                        method: 'set_properties',
+										params: {},
+									},
+                                };
+								SETURLData.data.params.did = DH_Did;
+								SETURLData.data.params = PiidAction;
+                            } else {
+								SETURLData = {
                                     did: DH_Did,
                                     id: requestId,
-                                    method: 'action',
-                                    params: {
-                                        did: DH_Did,
-                                        siid: GetSIID,
-                                        aiid: GetAIID,
-                                        in: PiidAction
+									data: {
+										did: DH_Did,
+                                        id: requestId,
+                                        method: 'action',
+                                        params: {
+                                            did: DH_Did,
+                                            siid: GetSIID,
+                                            aiid: GetAIID,
+                                            in: PiidAction
+                                        },
                                     },
-                                },
 
-                            };
+                                };
+							}
                             try {
+								if ((SPkey == "S4A1") || (SPkey == "S4A1C1") || (SPkey == "S4A1C2") || (SPkey == "S18A1C1")) {
+									PiidAction = [{siid: 4,piid: 50, "value": "{\"k\":\"SmartHost\",\"v\":0}"}];
+									var RESETCData = {
+									    did: DH_Did,
+                                        id: requestId,
+									    data: {
+										    did: DH_Did,
+                                            id: requestId,
+                                            method: 'set_properties',
+										    params: {},
+									    },
+                                    };
+									RESETCData.data.params.did = DH_Did;
+								    RESETCData.data.params = PiidAction;
+									await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, RESETCData);
+								}
                                 var GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
                                 let path = DH_Did + ".control." + SPvalue.replace(/\w\S*/g, function(SPName) {
                                     return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
