@@ -27,6 +27,12 @@ npm install canvas
 
 *The objects Start-Clean, Update, and Restart are currently disabled..*
 ## Changelog
+
+**0.0.7**
+- Fix for Command Execution Issues Due to Domain Changes from Dreame
+- New Control Features Added:
+![grafik](https://github.com/user-attachments/assets/51153bf7-1492-4bfd-ab38-9da0f416f367)
+
 **0.0.6**
 New Control Features Added:
 - Resume Clean Mode: Off/On
