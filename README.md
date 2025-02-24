@@ -26,7 +26,11 @@ npm install canvas
 *To switch between floors, the object dreamehome.0.xxxxxxxx.map.MapNumber must be switched to Map 1 or Map 2.*
 
 *The objects Start-Clean, Update, and Restart are currently disabled..*
+
+
 ## Changelog
+
+$${\color{red}The \space question \space of \space how \space to \space format \space the \space created \space VIS.HTML \space has \space come \space up.}$$ To do this, copy the content from dreamehome.0.xxxxxx.vis.vishtml0 or vishtml1 and format it at https://codebeautify.org/htmlviewer $${\color{blue}(Beautify \space HTML)}$$. Then, create an HTML widget in VIS and paste the formatted content into it.
 
 **0.0.7**
 - Fix for Command Execution Issues Due to Domain Changes from Dreame
