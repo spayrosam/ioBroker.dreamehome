@@ -79,16 +79,7 @@ var DH_ScaleValue = 20; // Min 14 | Default 14.5
 var DH_OldTaskStatus = -1, DH_NewTaskStatus = -1, DH_NowTaskStatus = -1, DH_NowStatus = -1, DH_CleanStatus = false, DH_SetLastStatus = false, DH_CompletStatus = 0;
 var UserLang = "EN";
 //<=================End Global
-const AlexaInfo = {
-    "EN": {
-        0: 'Alexa is active, and the robot accepts voice commands. You can simply say: "Alexa, vacuum the living room twice on high," or "Alexa, mop the living room once," or "Alexa, vacuum and mop the living room three times," or "Alexa, vacuum the living room and then mop." The robot will then clean the living room as requested.',
-        1: "The Alexa adapter was not found, and the robot does not accept voice commands. To resolve this, please install the Alexa adapter."
-	},
-    "DE": {
-        0: 'Alexa ist aktiv, und der Roboter akzeptiert Sprachbefehle. Du kannst einfach sagen: "Alexa, Wohnzimmer 2 mal stark saugen" oder "Alexa, Wohnzimmer 1 mal nass wischen" oder "Alexa, Wohnzimmer 3 mal saugen und wischen" oder "Alexa, Wohnzimmer saugen und dann wischen." Der Roboter wird dann wie gewünscht das Wohnzimmer reinigen.',
-        1: "Der Alexa-Adapter wurde nicht gefunden, und der Roboter akzeptiert keine Sprachbefehle. Um dies zu �ndern, installiere bitte den Alexa-Adapter."
-	}
-};
+
 const SegmentToName = {
     "EN": {
         0: "Room",
@@ -1117,6 +1108,9 @@ const DreameActionExteParams = {
 
 var LogData; // = false;
 var AlexaIsPresent = false;
+let lastCommandTime = 0;  // Variable to store the timestamp of the last processed command
+let currentTime = Date.now();
+let timeDiff = currentTime - lastCommandTime;  // Calculate the time difference
 var Alexarooms = [];
 var Alexanumbers = {
             "one": 1,
@@ -1129,11 +1123,98 @@ var Alexanumbers = {
 const suctionLevels = {
 	"EN": ["light", "medium", "strong", "maximum"],
     "DE": ["leicht", "mittel", "stark", "maximal"]
-}
+};
+const suctionSynonyms = {
+    "EN": {
+        "medium": "Standard",
+        "normal": "Standard",
+        "standard": "Standard",
+        "strong": "Strong",
+        "maximum": "Turbo",
+        "quiet": "Quiet",
+        "silent": "Quiet",
+        "turbo": "Turbo"
+    },
+	"DE": {
+        "mittel": "Standard",
+        "normal": "Standard",
+        "standard": "Standard",
+        "stark": "Strong",
+        "maximal": "Turbo",
+        "leise": "Quiet",
+        "ruhig": "Quiet",
+        "turbo": "Turbo"
+    }
+};
 const moppingLevels = {
     "EN": ["dry", "half-wet", "wet"],
 	"DE": ["trocken", "halbnass", "nass"]
 };
+const moppingSynonyms = {
+	"EN": {
+        "dry": "Low",
+        "half-wet": "Medium",
+        "wet": "High",
+		"low": "Low",
+        "medium": "Medium",
+        "high": "High"
+    },
+    "DE": {
+        "trocken": "Low",
+        "halbnass": "Medium",
+        "nass": "High",
+		"niedrig": "Low",
+        "mittel": "Medium",
+        "hoch": "High"
+    }
+};
+const AlexacleanModes = {
+    "EN": {
+        1: "Customize room cleaning",
+        5120: "Sweeping and mopping",
+        5121: "Mopping",
+        5122: "Sweeping",
+        5123: "Mopping after sweeping"
+    },
+    "DE": {
+        1: "Raumreinigung anpassen",
+        5120: "Saugen und Wischen",
+        5121: "Wischen",
+        5122: "Staubsaugen",
+        5123: "Wischen nach dem Saugen"
+    }
+};
+
+const AlexacancelKeywords = {
+	"EN": [
+        "cancel cleaning", "stop cleaning", "robot off", "pause cleaning",
+        "please cancel cleaning"
+    ],
+    "DE": [
+        "reinigung abbrechen", "reinigung stoppen", "stop reinigung",
+        "roboter aus", "pause reinigung", "reinigung bitte abbrechen"
+    ]
+};
+
+const AlexaInfo = {
+    "EN": {
+        0: 'Alexa is active, and the robot accepts voice commands. You can simply say: "Alexa, vacuum the living room twice on high," or "Alexa, mop the living room once," or "Alexa, vacuum and mop the living room three times," or "Alexa, vacuum the living room and then mop." The robot will then clean the living room as requested.',
+        1: "The Alexa adapter was not found, and the robot does not accept voice commands. To resolve this, please install the Alexa adapter.",
+		2: "Cleaning is active, please give your command with 'Cancel cleaning'.",
+		3: "Cleaning canceled.",
+		4: 'Multiple distinct cleaning modes detected, please specify the cleaning mode for each room clearly.',
+		5: (room) => `Please specify the cleaning mode for ${room}. You forgot to define the clean mode, suction level, or water level.`
+	},
+    "DE": {
+        0: 'Alexa ist aktiv, und der Roboter akzeptiert Sprachbefehle. Du kannst einfach sagen: "Alexa, Wohnzimmer 2 mal stark saugen" oder "Alexa, Wohnzimmer 1 mal nass wischen" oder "Alexa, Wohnzimmer 3 mal saugen und wischen" oder "Alexa, Wohnzimmer saugen und dann wischen." Der Roboter wird dann wie gewünscht das Wohnzimmer reinigen.',
+        1: "Der Alexa-Adapter wurde nicht gefunden, und der Roboter akzeptiert keine Sprachbefehle. Um dies zu ändern, installiere bitte den Alexa-Adapter.",
+		2: "Reinigung ist aktiv, bitte gebe deinen Befehl mit 'Reinigung abbrechen'.",
+		3: "Reinigung abgebrochen.",
+		4: 'Mehrere unterschiedliche Reinigungsmodi erkannt, bitte gib für jeden Raum den Reinigungsmodus klar an.',
+		5: (room) => `Bitte gib den Reinigungsmodus für ${room} an. Du hast den Reinigungsmodus, das Sauglevel oder den Wasserlevel vergessen zu definieren.`
+	}
+};
+
 var URLTK = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLWF1dGgvb2F1dGgvdG9rZW4=";
 var DH_URLTK = new Buffer.from(URLTK, 'base64');
 var URLLST = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9saXN0VjI=";
@@ -2066,7 +2147,9 @@ class Dreamehome extends utils.Adapter {
 									}
                                 }
 						}
-						this.log.info("Set and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
+						if (LogData) {
+						    this.log.info("Set and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
+						}
 						await this.setState(path, RetPointValue, true);
 					}
 				}
@@ -4712,6 +4795,55 @@ class Dreamehome extends utils.Adapter {
         });
     }
 
+
+    async DH_AlexasuctionLevel(language, levelName) {
+        const normalizedLevel = suctionSynonyms[language]?.[levelName.toLowerCase()] || levelName;
+
+        for (const [number, name] of Object.entries(DreameSuctionLevel[language])) {
+            if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
+                return number;
+            }
+        }
+        return -1;
+    }
+
+
+    async DH_AlexamoppingLevel(language, levelName) {
+        const normalizedLevel = moppingSynonyms[language]?.[levelName.toLowerCase()] || levelName;
+
+        for (const [number, name] of Object.entries(DreameWaterVolume[language])) {
+            if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
+                return number;
+            }
+        }
+        return -1;
+    }
+
+    async processCommand(command) {
+        let roomCommands = "";
+        let currentCommand = '';
+        let words = command.split(' ');
+        for (let i = 0; i < words.length; i++) {
+			// Check if the word is a room name or "und" or "and"
+            let isRoomName = Alexarooms.some(room => room.RM.toLowerCase() === words[i].toLowerCase());
+
+            if ((words[i].toLowerCase() === 'und' && isRoomName) || (words[i].toLowerCase() === 'and' && isRoomName)) {
+				// If "und" or "and" is followed by a room name, treat it as a delimiter and start a new command
+                if (currentCommand) {
+                    roomCommands += currentCommand.trim();
+                }
+                currentCommand = words[i]; // Start a new command with the "und" or "and"
+            } else {
+                currentCommand += (words[i].toLowerCase() === 'und' || words[i].toLowerCase() === 'and' ? ' ' : ' ' + words[i]);
+            }
+        }
+        if (currentCommand.trim()) {
+            roomCommands += currentCommand.trim();
+        }
+        return roomCommands;
+    }
+
+
     /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      * @param {() => void} callback
@@ -4946,103 +5078,202 @@ class Dreamehome extends utils.Adapter {
 
             }
 
-
-            if (id.indexOf(".summary") !== -1 && AlexaIsPresent) {
+            if ((id.indexOf(".summary") !== -1) && AlexaIsPresent) {
                 let command = state.val;
+
+                if (command == '') { //Check if the event is triggered only when the state actually changes and is not empty
+                    return;
+                }
+				let processedCommands = await this.processCommand(command);
+
                 let selectedRooms = [];
                 let roomActions = {}; // Stores actions per room
                 let readableLog = [];
-				let cleaningMode = 1; // Default mode set to 1 (Saugen und Wischen / Vacuum and Mop)
+                let cleaningMode = 1; // Default mode set to 1 (Saugen und Wischen / Vacuum and Mop)
                 let cleanGeniusValue = 1; // Default value for CleanGenius
+                let isCleaningCommand = false;
+                let roomFound = false;
+                let ambiguousCommand = false; // Flag to track ambiguous commands
+                let roomsWithCommands = {}; // Object to track rooms with commands
+                let currentRoom = null;
+                let singleRoomName = "";
 
-				let cleaningModes = {
-                    "EN": {
-                        1: "Customize room cleaning",
-                        5120: "Sweeping and mopping",
-                        5121: "Mopping",
-                        5122: "Sweeping",
-                        5123: "Mopping after sweeping"
-                    },
-                    "DE": {
-                        1: "Raumreinigung anpassen",
-                        5120: "Saugen und Wischen",
-                        5121: "Wischen",
-                        5122: "Staubsaugen",
-                        5123: "Wischen nach dem Saugen"
+
+                // Split the command into parts based on 'and', 'und', or commas
+                let commandParts = processedCommands.split(/and|und|,/); //command.split(/\b(?:and|und|,)\b/i).map(p => p.trim());
+
+                // Check if the command includes any cancel-related keywords
+                if (AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword))) {
+                    // Check if cleaning is active or paused and if we should interrupt
+                    let cleaningCompleted = await this.getStateAsync(DH_Did + ".state.CleaningCompleted");
+                    let cleaningPaused = await this.getStateAsync(DH_Did + ".state.CleaningPaused");
+                    if ((cleaningCompleted.val > 0 && cleaningCompleted.val !== null) || cleaningPaused.val === 1) {
+                        await this.setStateAsync(DH_Did + ".control.Stop", true);
+                        await this.setStateAsync(DH_Did + ".control.Charge", true);
+                        this.log.info(AlexaInfo[UserLang][3]);
+                        let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
+                        if (LastAlexa?.val) {
+                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexa.val}.Commands.speak`, AlexaInfo[UserLang][3]);
+                        }
+                        return; // Exit the function, no further processing needed
                     }
-                };
-				const modeMessages = UserLang === "DE" ? cleaningModes.DE : cleaningModes.EN;
+                }
 
-                // Split the command into words
-                let commandParts = command.split(/and|und|,/); // Split by 'and', 'und', ','
-
-                // Process each part to find corresponding rooms
-                commandParts.forEach(part => {
-                    let roomFound = false;
+                // Iterate through command parts asynchronously
+                for (const part of commandParts) {
                     let roomNumber = null;
+                    let foundInThisPart = false;
 
                     // Check if each part has a room name
-                    Alexarooms.forEach(Alexaroom => {
+                    for (const Alexaroom of Alexarooms) {
                         if (part.toLowerCase().includes(Alexaroom.RM.toLowerCase())) {
                             roomNumber = Alexaroom.RN;
+                            currentRoom = Alexaroom.RN; // Found room
+                            singleRoomName = Alexaroom.RM;
                             selectedRooms.push(roomNumber);
                             roomActions[roomNumber] = {
                                 name: Alexaroom.RM,
                                 suction: null,
                                 mopping: null,
-                                repetitions: 1
+                                repetitions: 1,
+                                cleaningModes: [] // Store multiple cleaning modes for each room
                             };
-                            roomFound = true;
+
+                            foundInThisPart = true;
+                            break; // Exit once the room is found
                         }
-                    });
+                    }
 
-                    if (!roomFound) return;
+                    if (foundInThisPart) roomFound = true; //Only set it if this part has actually found something
+                    if (!foundInThisPart) continue; //If no room is found in this part, move on to the next part
+                    this.log.info("Room detected " + JSON.stringify(roomActions));
+                    if (!roomNumber && currentRoom) {
+                        roomNumber = currentRoom;
+                    }
 
-                    suctionLevels[UserLang].forEach(level => {
-                        if (part.toLowerCase().includes(level)) {
-                            roomActions[roomNumber].suction = level;
+                    if (currentRoom) {
+                        suctionLevels[UserLang].forEach(level => {
+                            if (part.toLowerCase().includes(level)) {
+                                roomActions[roomNumber].suction = level;
+                                isCleaningCommand = true;
+                            }
+                        });
+                        for (const [synonym, mappedLevel] of Object.entries(suctionSynonyms[UserLang])) {
+                            if (part.toLowerCase().includes(synonym)) {
+                                roomActions[roomNumber].suction = mappedLevel;
+                                isCleaningCommand = true;
+                                break;
+                            }
                         }
-                    });
 
-                    moppingLevels[UserLang].forEach(level => {
-                        if (part.toLowerCase().includes(level)) {
-                            roomActions[roomNumber].mopping = level;
+                        moppingLevels[UserLang].forEach(level => {
+                            if (part.toLowerCase().includes(level)) {
+                                roomActions[roomNumber].mopping = level;
+                                isCleaningCommand = true;
+                            }
+                        });
+                        for (const [synonym, mappedLevel] of Object.entries(moppingSynonyms[UserLang])) {
+                            if (part.toLowerCase().includes(synonym)) {
+                                roomActions[roomNumber].mopping = mappedLevel;
+                                isCleaningCommand = true;
+                                break;
+                            }
                         }
-                    });
 
-                    const repetitionMatch = part.match(/\b(one|two|three|ein|zwei|drei)\s*(times|mal)\b/i);
-                    if (repetitionMatch) {
-                        roomActions[roomNumber].repetitions = Alexanumbers[repetitionMatch[1]] || 1;
-                    }
+                        const repetitionMatch = part.match(/\b(one|two|three|ein|zwei|drei)\s*(times|mal)\b/i);
+                        if (repetitionMatch) {
+                            roomActions[roomNumber].repetitions = Alexanumbers[repetitionMatch[1]] || 1;
+                        }
 
-                    if (part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) {
-                        cleaningMode = cleaningMode === 1 ? 5122 : cleaningMode; // Set vacuuming mode (default if not set)
-                        cleanGeniusValue = 0; // If vacuuming mode is selected, CleanGenius should be false
-                    }
-                    if (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping")) {
-                        cleaningMode = cleaningMode === 1 ? 5121 : cleaningMode; // Set mopping mode (default if not set)
-                        cleanGeniusValue = 0; // If mopping mode is selected, CleanGenius should be false
-                    }
-                    if (part.toLowerCase().includes("wischen nach saugen") || part.toLowerCase().includes("mopping after sweeping")) {
-                        cleaningMode = 5123; // Set mop after vacuum mode
-                        cleanGeniusValue = 0; // If mop after vacuum mode is selected, CleanGenius should be false
-                    }
-                });
+                        // Check if any cleaning mode keywords are mentioned
+                        if (part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) {
+                            roomActions[roomNumber].cleaningModes.push(5122); // Add cleaning mode to the list
+                            cleaningMode = 5122;
+                            cleanGeniusValue = 0;
+                            isCleaningCommand = true;
+                        }
+                        if (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping")) {
+                            cleaningMode = 5121;
+                            roomActions[roomNumber].cleaningModes.push(5121); // Add cleaning mode to the list
+                            cleanGeniusValue = 0;
+                            isCleaningCommand = true;
+                        }
 
-				// If no mode was explicitly set (e.g., if no "Saugen" or "Wischen" or "Mopping" was mentioned), keep it 1
-                if (cleaningMode === 1 && !commandParts.some(part => part.toLowerCase().includes("saugen") || part.toLowerCase().includes("wischen") || part.toLowerCase().includes("sweeping") || part.toLowerCase().includes("mopping") || part.toLowerCase().includes("wischen nach saugen") || part.toLowerCase().includes("mopping after sweeping"))) {
+                        if ((part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) &&
+                            (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping"))) {
+                            cleaningMode = 5120;
+                            roomActions[roomNumber].cleaningModes.push(5120); // Add cleaning mode to the list
+                            cleanGeniusValue = 0;
+                            isCleaningCommand = true;
+                        }
+                        if (part.toLowerCase().includes("wischen nach saugen") || part.toLowerCase().includes("mopping after sweeping")) {
+                            cleaningMode = 5123;
+                            roomActions[roomNumber].cleaningModes.push(5123); // Add cleaning mode to the list
+                            cleanGeniusValue = 0;
+                            isCleaningCommand = true;
+                        }
+                        roomsWithCommands[roomNumber] = roomActions[roomNumber].cleaningModes; // Store cleaning modes for the room
+                    }
+                }
+
+                if (timeDiff < 2000) { // If the command is received within 2 seconds
+                    this.log.info("Command ignored: Repeated command within 2 seconds");
+                    return;
+                }
+
+                this.log.info(`Test command: ${command} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)}`);
+                // If no room was found, exit early
+                if ((!roomFound) || (!isCleaningCommand)) {
+                    this.log.info("No rooms detected, no cleaning process started.");
+                    return;
+                }
+
+                lastCommandTime = currentTime; // Store the new timestamp => Proceed with command processing if the time difference is >= 2 seconds
+
+
+                let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
+                let LastAlexaID = "";
+                if (LastAlexa) {
+                    LastAlexaID = LastAlexa.val;
+                }
+
+
+                // Check if there are any rooms with a defined cleaning mode, suction level, or mopping level
+                for (const room of selectedRooms) {
+                    // If a room has a defined mode, suction level, or mopping level, but another room is missing a command
+                    if (roomActions[room] && !roomActions[room].suction && !roomActions[room].mopping) {
+                        ambiguousCommand = true; // This means there is ambiguity in the command
+                    }
+                }
+
+                // If ambiguity is detected, ask for clarification
+                if (ambiguousCommand) {
+                    if (LastAlexaID) {
+                        if (selectedRooms.length == 1) {
+                            this.log.info("Speak 1: " + AlexaInfo[UserLang][5](singleRoomName));
+                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, AlexaInfo[UserLang][5](singleRoomName));
+                        } else {
+                            this.log.info("Speak 1: " + AlexaInfo[UserLang][4]);
+                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, AlexaInfo[UserLang][4]);
+                        }
+                    }
+                    return; // Exit early if ambiguity is found
+                }
+
+                // If no mode was explicitly set, keep it 1 (Saugen und Wischen / Vacuum and Mop)
+                if (cleaningMode === 1 && !commandParts.some(part => part.toLowerCase().includes("saugen") || part.toLowerCase().includes("wischen") || part.toLowerCase().includes("sweeping") || part.toLowerCase().includes("mopping"))) {
                     cleanGeniusValue = 1; // If no specific cleaning mode is mentioned, CleanGenius should be true
                 }
 
-                // Set cleaning mode globally (applicable for all rooms in the command)
-                await this.setStateAsync(DH_Did + ".control.CleaningMode", cleaningMode);
-                this.log.info(`Cleaning mode set to: ${cleaningMode} (${modeMessages[cleaningMode]})`);
 
-                // Set CleanGenius based on cleaning mode
-                await this.setStateAsync(DH_Did + ".control.CleanGenius", cleanGeniusValue);
-                this.log.info(`CleanGenius set to: ${cleanGeniusValue ? "On" : "Off"}`);
 
-                // If suction or mopping is null, set default minimal values
+                this.log.info(`Get command: ${command} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)} |
+                roomFound: ${roomFound}, isCleaningCommand: ${isCleaningCommand} | cleaning mode: ${JSON.stringify(roomsWithCommands)} |
+                Cleaning mode set to: ${cleaningMode} (${AlexacleanModes[UserLang][cleaningMode]}) | CleanGenius set to: ${cleanGeniusValue ? "On" : "Off"}
+                `);
+
+
+                // Ensure valid suction and mopping values are set
                 selectedRooms.forEach(roomNumber => {
                     const roomAction = roomActions[roomNumber];
                     if (!roomAction.suction) roomAction.suction = suctionLevels[UserLang][0]; // Set to minimum suction level
@@ -5062,15 +5293,8 @@ class Dreamehome extends utils.Adapter {
                     }
                 ];
 
-                if (selectedRooms.length === 0) {
-                    this.log.info("No room detected, no cleaning process started.");
-                    return;
-                }
-
-                this.log.info(`Test command: ${command} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)}`);
-
-                // Prepare the actions for each selected room
-                selectedRooms.forEach(roomNumber => {
+                // Prepare actions for each room
+                for (const roomNumber of selectedRooms) {
                     const roomAction = roomActions[roomNumber];
                     const repetitions = roomAction.repetitions || 1;
 
@@ -5078,77 +5302,123 @@ class Dreamehome extends utils.Adapter {
                     const suctionValue = suctionLevels[UserLang].indexOf(roomAction.suction) >= 0 ? suctionLevels[UserLang].indexOf(roomAction.suction) : 0;
                     const moppingValue = moppingLevels[UserLang].indexOf(roomAction.mopping) >= 0 ? moppingLevels[UserLang].indexOf(roomAction.mopping) : 0;
 
-                    // Prepare the array format for each room action
+                    // Prepare action array for each room
                     selectsArray.push([roomNumber, repetitions, suctionValue, moppingValue, multiRoomId]);
 
                     let logEntry = `${roomAction.name} ${roomAction.suction ? roomAction.suction + " saugen" : ""} ${roomAction.mopping ? roomAction.mopping + " wischen" : ""} ${repetitions} mal`;
                     readableLog.push(logEntry.trim());
 
                     multiRoomId++;
-                });
-
-                startClean[1].value += JSON.stringify(selectsArray) + "}";
-
-                // Check if cleaning is active or paused
-                let cleaningCompleted = await this.getStateAsync(DH_Did + ".state.CleaningCompleted");
-                let cleaningPaused = await this.getStateAsync(DH_Did + ".state.CleaningPaused");
-
-                // If cleaning is active, we check for cancel commands
-                if ((cleaningCompleted.val > 0 && cleaningCompleted.val !== null) || cleaningPaused.val === 1) {
-                    // List of possible cancel/stop commands
-                    let cancelKeywords = [
-                        "reinigung abbrechen", "cancel cleaning", "reinigung stoppen", "stop cleaning",
-                        "roboter aus", "robot off", "pause cleaning", "pause reinigung",
-                        "reinigung bitte abbrechen", "please cancel cleaning", "stop reinigung"
-                    ];
-
-                    let cancelCleaning = cancelKeywords.some(keyword => command.toLowerCase().includes(keyword));
-
-                    if (cancelCleaning) {
-                        // Stop the current cleaning
-                        await this.setStateAsync(DH_Did + ".control.Stop", true);
-
-                        // Start a new custom cleaning
-                        await this.setStateAsync(DH_Did + ".control.StartCustom", JSON.stringify(startClean), false);
-                        this.log.info("Cleaning stopped and a new cleaning process started.");
-
-                        // Send the new cleaning command to Alexa
-                        let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
-                        if (LastAlexa) {
-                            let LastAlexaID = LastAlexa.val;
-                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, readableLog.join(", "));
-                        }
-                    } else {
-						// Language-dependent messages
-                        let cleaningActiveMessageDe = "Reinigung ist aktiv, bitte gebe deinen Befehl mit 'Reinigung abbrechen'.";
-                        let cleaningActiveMessageEn = "Cleaning is active, please give your command with 'Cancel cleaning'.";
-                        // If cleaning is active (paused and not completed) and cancel command not found
-						// Notify Alexa that cleaning is active and the user needs to say "Reinigung abbrechen" or "Cancel cleaning"
-						let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
-						if (LastAlexa) {
-							var LastAlexaID = LastAlexa.val;
-							let message = (UserLang === "DE") ? cleaningActiveMessageDe : cleaningActiveMessageEn;
-							await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, message);
-						}
-
-						this.log.info("Cleaning is active, waiting for user to cancel the cleaning.");
-					}
-                } else {
-                    // If cleaning is not active, start a new cleaning process immediately, regardless of cancel command
-                    await this.setStateAsync(DH_Did + ".control.StartCustom", JSON.stringify(startClean), false);
-                    this.log.info("Started a new cleaning process without checking for cancel command.");
-
-                    // Send the new cleaning command to Alexa
-                    let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
-                    if (LastAlexa) {
-                        let LastAlexaID = LastAlexa.val;
-                        await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, readableLog.join(", "));
-                    }
                 }
 
-                // Output the start cleaning JSON
+                // Final action for all rooms
+                startClean[1].value += JSON.stringify(selectsArray) + "}";
+
+                // Check if cleaning is active or paused and if we should interrupt
+                let cleaningCompleted = await this.getStateAsync(DH_Did + ".state.CleaningCompleted");
+                let cleaningPaused = await this.getStateAsync(DH_Did + ".state.CleaningPaused");
+                if ((cleaningCompleted.val > 0 && cleaningCompleted.val !== null) || cleaningPaused.val === 1) {
+                    if (AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword))) {
+                        // Send the new cleaning command to Alexa
+                        if (LastAlexaID) {
+                            this.log.info("Speak 2: " + readableLog.join(", "));
+                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, readableLog.join(", "));
+                        }
+                        // Set cleaning mode globally
+                        await this.setStateAsync(DH_Did + ".control.CleaningMode", cleaningMode);
+
+                        setTimeout(async () => {
+							// Set CleanGenius based on cleaning mode
+                            await this.setStateAsync(DH_Did + ".control.CleanGenius", cleanGeniusValue);
+                        }, 400);
+                        let suctionLevel = -1;
+                        let moppingLevel = -1;
+                        let alexaUserSettings = 0;
+                        switch (cleaningMode) {
+                            case 1: //Customize room cleaning
+
+                            case 5120: //Sweeping and mopping
+                                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionValue)
+                                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingValue)
+                                alexaUserSettings = 3;
+                                //await this.setStateAsync(DH_Did + ".control.CleaningMode", 5120); //Retry
+                                break;
+                            case 5121: //Mopping
+                                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingValue)
+                                alexaUserSettings = 2;
+                                //await this.setStateAsync(DH_Did + ".control.CleaningMode", 5121); //Retry
+                                break;
+                            case 5122: //Sweeping
+                                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionValue)
+                                alexaUserSettings = 1;
+                                //await this.setStateAsync(DH_Did + ".control.CleaningMode", 5122); //Retry
+                                break;
+                            case 5123: //Mopping after sweeping
+                                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionValue)
+                                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingValue)
+                                alexaUserSettings = 3;
+                                //await this.setStateAsync(DH_Did + ".control.CleaningMode", 5123); //Retry
+                                break;
+                        }
+
+                        switch (alexaUserSettings) {
+                            case 1, 3:
+                                setTimeout(async () => {
+                                    await this.setStateAsync(DH_Did + ".control.SuctionLevel", suctionLevel, false);
+                                }, 600);
+                                this.log.info("Change Suction Level to " + suctionLevel);
+                                break;
+                            case 2, 3:
+                                setTimeout(async () => {
+                                    await this.setStateAsync(DH_Did + ".control..WaterVolume", suctionLevel, false);
+                                }, 600);
+                                this.log.info("Change Water Volume to " + moppingLevel);
+                                break;
+
+                        }
+
+
+                        // Stop the current cleaning
+                        setTimeout(async () => {
+                            await this.setStateAsync(DH_Did + ".control.Stop", true);
+                        }, 800);
+
+                        setTimeout(async () => {
+							// Start a new custom cleaning
+                            await this.setStateAsync(DH_Did + ".control.StartCustom", JSON.stringify(startClean), false);
+                        }, 1000);
+                        this.log.info("Cleaning stopped and a new cleaning process started.");
+
+                    } else {
+                        if (LastAlexaID) {
+                            this.log.info("Speak 3: " + AlexaInfo[UserLang][2]);
+                            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, AlexaInfo[UserLang][2]);
+                        }
+
+                        this.log.info("Cleaning is active, waiting for user to cancel the cleaning.");
+                    }
+                } else {
+                    if (LastAlexaID) {
+                        this.log.info("Speak 4: " + readableLog.join(", "));
+                        await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${LastAlexaID}.Commands.speak`, readableLog.join(", "));
+                    }
+                    // Set cleaning mode globally
+                    await this.setStateAsync(DH_Did + ".control.CleaningMode", cleaningMode);
+                    setTimeout(async () => {
+						// Set CleanGenius based on cleaning mode
+                        await this.setStateAsync(DH_Did + ".control.CleanGenius", cleanGeniusValue);
+                    }, 400);
+                    // If cleaning is not active, start a new cleaning process immediately
+                    setTimeout(async () => {
+                        await this.setStateAsync(DH_Did + ".control.StartCustom", JSON.stringify(startClean), false);
+                    }, 1000);
+
+                    this.log.info("Started a new cleaning process without checking for cancel command.");
+                }
+                //Reset alexa2.0.History.summary
+                await this.setForeignStateAsync(id, "");
+
                 this.log.info(`Start Clean Command: ${JSON.stringify(startClean)}`);
-                this.log.info(`Start Clean JSON: ${JSON.stringify(startClean)}`);
                 this.log.info(`Readable Log: ${readableLog.join(", ")}`);
             }
 
