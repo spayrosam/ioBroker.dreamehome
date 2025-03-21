@@ -32,78 +32,70 @@ npm install canvas
 
 $${\color{red}The \space question \space of \space how \space to \space format \space the \space created \space VIS.HTML \space has \space come \space up.}$$ To do this, copy the content from dreamehome.0.xxxxxx.vis.vishtml0 or vishtml1 and format it at https://codebeautify.org/htmlviewer $${\color{blue}(Beautify \space HTML)}$$. Then, create an HTML widget in VIS and paste the formatted content into it.
 
+### **Version 0.9.0 (2025-03-21)**
+
+#### **New Features:**
+
+- **Alexa Command Recognition:** The system now recognizes various cleaning commands and supports multiple languages (English and German). It processes different cleaning modes, room names, and suction/mopping levels.  
+  - **Example Alexa command (English):** "Alexa, vacuum the living room twice on high."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, sauge das Wohnzimmer zweimal auf hoch."
+
+- **Room Recognition:** The system identifies specific rooms in a command and applies the requested cleaning mode. It can handle multiple rooms in a single command.  
+  - **Example Alexa command (English):** "Alexa, clean the kitchen and the bathroom."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, reinige die Küche und das Badezimmer."
+
+- **Cleaning Modes:** New cleaning modes are available based on the provided `AlexacleanModes`, such as Vacuum (5122), Mopping (5121), and Mop after Vacuum (5123).  
+  - **Example Alexa command (English):** "Alexa, mop after vacuuming the bathroom."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, wische nach dem Saugen im Badezimmer."
+
+- **Suction and Mopping Levels:** The system now recognizes different suction and mopping levels based on the provided levels and synonyms, allowing detailed cleaning requests.  
+  - **Example Alexa command (English):** "Alexa, vacuum the living room on strong and mop it on wet."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, sauge das Wohnzimmer auf stark und wische es nass."
+
+- **Cancellation of Cleaning:** The system recognizes cancellation commands from the `AlexacancelKeywords` list and allows users to stop ongoing cleaning sessions.  
+  - **Example Alexa command (English):** "Alexa, cancel cleaning."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, abbreche die Reinigung."
+
+#### **Improvements:**
+
+- **Room-Specific Cleaning:** Commands can now be given for specific rooms, and the robot will clean accordingly. If no room is specified, it will prompt the user to clarify.  
+  - **Example Alexa command (English):** "Alexa, clean the living room."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, reinige das Wohnzimmer."  
+  - **Response (English):** "Please specify the cleaning mode for the living room."  
+    **Antwort (Deutsch):** "Bitte gib den Reinigungsmodus für das Wohnzimmer an."
+
+- **Error Handling:** The system now handles missing cleaning mode, suction level, or water level in commands by prompting for the missing information.  
+  - **Example response (English):** "Please specify the cleaning mode for the kitchen. You forgot to define the clean mode, suction level, or water level."  
+    **Beispielantwort (Deutsch):** "Bitte gib den Reinigungsmodus für die Küche an. Du hast den Reinigungsmodus, das Sauglevel oder den Wasserlevel vergessen zu definieren."
+
+#### **Bug Fixes:**
+
+- **Command Ambiguity:** Fixed an issue where commands for multiple rooms were misinterpreted or ignored when no cleaning mode was specified.  
+  - **Example Alexa command (English):** "Alexa, clean the kitchen and the bathroom without specifying the mode."  
+    **Beispiel Alexa-Befehl (Deutsch):** "Alexa, reinige die Küche und das Badezimmer, ohne den Modus anzugeben."  
+  - **Response (English):** "Please specify the cleaning mode for the kitchen and the bathroom."  
+    **Antwort (Deutsch):** "Bitte gib den Reinigungsmodus für die Küche und das Badezimmer an."
+
+#### **Other Changes:**
+
+- **Enhanced Voice Feedback:** The system now provides more detailed and helpful feedback via Alexa, especially when a command is incomplete or unclear.  
+  - **Example feedback (English):** "Cleaning mode: 5122 (Sweeping), Rooms: Living Room, Kitchen."  
+    **Beispielfeedback (Deutsch):** "Reinigungsmodus: 5122 (Staubsaugen), Räume: Wohnzimmer, Küche."
+
+---
+
 **0.0.8**
 
-New Features Added:
-- Voice Commands Accepted with Alexa Adapter:
-    Please note that voice commands will be accepted only if the Alexa adapter is installed and properly configured.
-- Voice Commands for Room Cleaning:
-    Users can now use voice commands like "Vacuum," "Mop," "Vacuum and Mop," and "Mop after Vacuum" to customize the cleaning process. Voice commands for repetitions (e.g., "clean three times") are also supported.
-- Mode Management for Different Cleaning Types:
-    A new mechanism has been implemented to distinguish between various cleaning modes:
-        . Vacuum and Mop, Mop, Vacuum, Mop after Vacuum
-- Automatic Activation of CleanGenius:
-    If no specific cleaning mode is mentioned, the CleanGenius mode will be automatically set to true; otherwise, it will be set to false.
-- Multiple Rooms with Different Settings:
-    The adapter now supports cleaning multiple rooms with different cleaning modes. Users can specify different cleaning actions for each room.
-- Enhanced Voice Command Processing:    The voice commands for room cleaning have been improved to correctly recognize combinations such as "Vacuum in the living room and mop in the bathroom."
-- Optimized Room Assignment:
-    The assignment of cleaning modes and repetitions to multiple rooms has been optimized to allow for more precise execution.
+New Features Added: Voice Commands Accepted with Alexa Adapter:
 
-  **Example Voice Commands:**
-    1. "Vacuum the living room"
-   
-    *Expected Outcome: The robot will start vacuuming the living room using the Vacuum mode (Mode 5122).*
-   
-    2. "Mop the kitchen"
-   
-    *Expected Outcome: The robot will start mopping the kitchen using the Mop mode (Mode 5121).*
-   
-    3. "Vacuum and mop the bedroom"
-   
-    *Expected Outcome: The robot will first vacuum the bedroom and then mop it using Vacuum and Mop mode (Mode 5120).*
-   
-    4. "Mop after vacuum in the hallway"
-   
-    *Expected Outcome: The robot will first vacuum the hallway and then mop it using the Mop after Vacuum mode (Mode 5123).*
-    
-    5. "Clean the bathroom three times"
-   
-    *Expected Outcome: The robot will clean the bathroom using the default cleaning mode (either Vacuum or Mop, depending on the command) and repeat it 3 times.*
-   
-    6. "Clean the living room and the kitchen"
-    
-    *Expected Outcome: The robot will clean both the living room and the kitchen, each with the default cleaning mode. If no mode is specified, Vacuum and Mop mode (Mode 5120) will be applied by default.*
-
-   **Beispiel-Sprachbefehle:**
-    1. "Staubsauge das Wohnzimmer"
-    
-    *Erwartetes Ergebnis: Der Roboter beginnt, das Wohnzimmer mit dem Staubsaugmodus (Modus 5122) zu reinigen.*
-
-    2. "Wische die Küche"
-   
-    *Erwartetes Ergebnis: Der Roboter beginnt, die Küche mit dem Wischmodus (Modus 5121) zu reinigen.*
-   
-    3. "Staubsaugen und Wischen im Schlafzimmer"
-    
-    *Erwartetes Ergebnis: Der Roboter wird zuerst das Schlafzimmer saugen und danach wischen, im Staubsaugen und Wischen Modus (Modus 5120).*
-    
-    4. "Wischen nach dem Saugen im Flur"
-    
-    *Erwartetes Ergebnis: Der Roboter wird zuerst den Flur saugen und danach wischen, im Wischen nach Saugen Modus (Modus 5123).*
-   
-    5. "Reinige das Badezimmer drei Mal"
-    
-    *Erwartetes Ergebnis: Der Roboter wird das Badezimmer mit dem Standard-Reinigungsmodus (entweder Staubsaugen oder Wischen, je nach Befehl) reinigen und dies 3 Mal wiederholen.*
-    
-    6. "Reinige das Wohnzimmer und die Küche"
-    
-    *Erwartetes Ergebnis: Der Roboter wird sowohl das Wohnzimmer als auch die Küche reinigen, wobei der Standard-Reinigungsmodus verwendet wird. Falls kein Modus angegeben ist, wird der Staubsaugen und Wischen Modus (Modus 5120) verwendet.*
+---
 
 **0.0.7**
 - Fix for Command Execution Issues Due to Domain Changes from Dreame
 - New Control Features Added:
 ![grafik](https://github.com/user-attachments/assets/51153bf7-1492-4bfd-ab38-9da0f416f367)
+
+---
 
 **0.0.6**
 New Control Features Added:
@@ -130,16 +122,20 @@ Control Adjusted:
 - The map folder has been optimized, and objects have been prepared for communication with the generated VIS.HTML
   ![Screenshot](screenshot2.png)
 
-  
+ ---
+ 
 **0.0.5**
 1. The map has been improved and room settings are now visible.
 2. Additionally, additional animations have been added to the charging station..
    ![Screenshot](screenshot.png)
-   
+---
+**0.0.4**
+---
 **0.0.3**
 1. An animation has been added for the charging station.
 2. Additionally, the history of the robot's position on the map has been corrected, and the map has been improved for better accuracy and user experience.
 
+---
 **0.0.2**
 1. Fixed the crash after map download.
 2. Added carpet cleaning function  *(To start the carpet cleaning, select the repetition under object CarpetRepetitionX and the suction strength under object CarpetSuctionLevelX, then set the object CleanCarpetX to true)*.
