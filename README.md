@@ -32,6 +32,176 @@ npm install canvas
 
 $${\color{red}The \space question \space of \space how \space to \space format \space the \space created \space VIS.HTML \space has \space come \space up.}$$ To do this, copy the content from dreamehome.0.xxxxxx.vis.vishtml0 or vishtml1 and format it at https://codebeautify.org/htmlviewer $${\color{blue}(Beautify \space HTML)}$$. Then, create an HTML widget in VIS and paste the formatted content into it.
 
+---
+
+**Changelog - DreameHome Adapter (iobroker)**
+
+**Version 0.1.0 (30.03.2025)**  
+
+### New Features:
+- **Increased Flexibility in Cleaning Control:**  
+  The adapter now allows you to set a different cleaning mode (suction, mopping, or a combination of both) for each room individually. This goes beyond the default limitations of the Dreame robot, which usually accepts only one cleaning mode for all rooms.
+
+- **Support for Alternative Room and Cleaning Descriptors:**  
+  Room names and cleaning actions are now more flexible. Terms like "Living room mop wet" or "Parlor mop intensive" are automatically treated as equivalent, so you can use different terms to trigger the same cleaning mode.
+
+- **Automatic Mapping of Rooms and Commands:**  
+  The adapter translates alternative room identifiers (e.g., "Living room," "Parlor," "salon") into the accepted standard identifiers, enabling seamless and user-friendly control. Similarly, various phrasing for suction or mopping (e.g., "vacuuming" or "sweeping") are correctly recognized and mapped to the appropriate cleaning mode.
+
+### Examples of New Commands:
+- "Living room mop wet" = "Parlor mop intensive"
+- "Bedroom vacuum strong" = "Master bedroom vacuum intensive" = "Masterroom vacuum heavy"
+- "Kitchen vacuum and mop wet and ultra" = "Kitchen nook vacuum and mop drenched and full"
+
+### Improvements:
+- **Avoidance of Duplicate or Conflicting Commands:**  
+  The system automatically checks if conflicting cleaning modes or repeated commands for the same room are sent within a short time frame to prevent unwanted duplicate actions.
+
+- **Better Control of Active Cleaning Processes:**  
+  If a cleaning process is already running, the adapter detects this and asks the user if the ongoing process should be stopped and a new one started. This ensures a smoother user experience and prevents simultaneous cleaning operations.
+
+---
+
+### Scenario 1: Multiple Rooms with Mixed Modes and Repetitions
+- **Command**: „**Living room vacuum high and Kitchen vacuum medium and Kitchen mop low 2 times**“
+- **Explanation**:
+  - „**Living room vacuum high**“: The robot starts vacuuming the living room at high suction power.
+  - „**Kitchen vacuum medium**“: In the kitchen, the vacuum mode is set to medium.
+  - „**Kitchen mop low 2 times**“: In the kitchen, the mop mode is set to low, and the mopping process is repeated twice.
+  
+  **Action**: The robot will first clean the living room (vacuum high), then the kitchen (vacuum medium), and afterward perform the low mopping mode in the kitchen twice.
+
+### Scenario 2: Two Rooms with One Mode (Only Vacuuming or Mopping)
+- **Command**: „**Hallway vacuum high and Bathroom mop intensive**“
+- **Explanation**:
+  - „**Hallway vacuum high**“: The robot will work in the hallway with the highest vacuum mode.
+  - „**Bathroom mop intensive**“: The bathroom will be mopped with the highest mop mode (Intensive).
+
+  **Action**: The robot will start vacuuming in the hallway on high mode and then move to the bathroom to mop intensively.
+
+### Scenario 3: User Abort with Missing Modes
+- **Command**: „**Living room vacuum and Kitchen mop**“
+- **Explanation**:
+  - The vacuuming mode for the kitchen is missing, making this an incomplete command.
+  
+  **Action**: Since the vacuuming mode for the kitchen is not specified and a gap in the command is detected, Alexa will prompt the user to correct the missing mode.
+
+  **Alexa Response**: „**The following rooms are missing settings: Living room: Suction level and Kitchen: Mopping level. Please define the missing values.**“
+
+### Scenario 4: Different Cleaning Modes with Room and Mode Synonyms
+- **Command**: „**Parlor vacuum intensive and Kitchen mop after vacuum low and strong and Bathroom mop intensive**“
+- **Explanation**:
+  - The user uses the synonym „Parlor“ instead of „Living room.“ Since DreameHome supports this flexibility, „Parlor“ is recognized as „Living room,“ and the mode „Vacuum intensive“ is applied.
+  - The kitchen is cleaned with „Vacuum low followed by mopping strong,“ and the bathroom is mopped intensively.
+  
+  **Action**: The robot will perform the following actions:
+  - **Parlor (Living room) vacuum intensive**
+  - **Kitchen mop low after vacuum strong**
+  - **Bathroom mop intensive**
+
+### Scenario 5: Repeated Cleaning of a Room
+- **Command**: „**Living room vacuum high 3 times and Bathroom mop intensive 2 times**“
+- **Explanation**:
+  - The robot is asked to clean the living room three times with the "high" vacuum mode and the bathroom twice with the "intensive" mop mode.
+  
+  **Action**: The robot will start cleaning the living room with high suction mode and repeat the process three times. Afterward, it will move to the bathroom to mop intensively twice.
+
+### Scenario 6: Stopping Cleaning When an Abort Command Is Given
+- **Command**: „**"stop cleaning", "stop vacuuming", "stop cleaning process", "robot off", "please stop cleaning", "end cleaning", "pause cleaning", "vacuuming stop", "vacuum cleaner off", "robot turn off", "vacuuming end", "cleaning stop", "vacuuming disable", "floor cleaning stop", "vacuum cleaner turn off", "vacuumer off", "robot deactivate", "dreame stop", "dreame off", "dreame stop cleaning"**“
+- **Explanation**:
+  - A user can give the command "Stop cleaning" at any time to end the ongoing process.
+
+  **Action**: When the stop command is given, the robot will immediately stop cleaning and return to its charging station. If the robot is actively cleaning, the process will be aborted.
+
+  **Alexa Response**: „**The cleaning has been stopped, and the robot is returning to the charging station.**“
+
+---
+
+---
+
+**Changelog - DreameHome Adapter (iobroker)**
+
+**Version 0.1.0 (30.03.2025)**  
+
+### Neuigkeiten:
+- **Erweiterte Flexibilität bei der Reinigungssteuerung:**  
+  Der Adapter ermöglicht es jetzt, für jedes Zimmer individuell festzulegen, ob der Dreame-Saugroboter nur saugt, wischt oder eine Kombination aus beiden ausführt. Dies geht über die standardmäßigen Einschränkungen des Dreame-Roboters hinaus, der normalerweise nur einen Reinigungsmodus für alle Räume akzeptiert.
+
+- **Unterstützung für alternative Zimmer- und Reinigungsbezeichner:**  
+  Die Zimmernamen und Reinigungsarten sind jetzt flexibler. Begriffe wie "Wohnzimmer wischen nass" oder "Stube wischen intensiv" werden automatisch als gleichwertig behandelt, sodass du verschiedene Begriffe verwenden kannst, um den gleichen Reinigungsmodus zu aktivieren.
+
+- **Automatische Zuordnung von Räumen und Befehlen:**  
+  Der Adapter übersetzt alternative Bezeichner für Räume (z. B. "Wohnzimmer", "Stube", "salon") in die akzeptierten Standardbezeichner, was eine nahtlose und benutzerfreundliche Steuerung ermöglicht. Ebenso werden verschiedene Formulierungen für das Saugen oder Wischen (z. B. "staubsaugen" oder "sweeping") korrekt erkannt und dem richtigen Reinigungsmodus zugeordnet.
+
+### Beispiele für neue Befehle:
+- "Wohnzimmer wischen Nass" = "Stube wischen Intensiv"
+- "Schlafzimmer staubsaugen Kraftvoll" = "Hauptschlafzimmer saugen Intensiv" = "masterzimmer saugen Stark"
+- "Küche saugen und wischen Nass und Ultra" = "Kochnische saugen und wischen Durchnässt und Voll"
+
+### Verbesserungen:
+- **Vermeidung von doppelten oder widersprüchlichen Befehlen:**  
+  Das System prüft automatisch, ob für ein und dasselbe Zimmer widersprüchliche Reinigungsmodi oder wiederholte Befehle innerhalb eines kurzen Zeitraums gesendet wurden, um unerwünschte Doppelaktionen zu vermeiden.
+
+- **Bessere Steuerung bei aktiven Reinigungsprozessen:**  
+  Sollte ein Reinigungsprozess bereits laufen, erkennt der Adapter dies und fragt den Benutzer, ob der laufende Prozess gestoppt und ein neuer gestartet werden soll. Dies sorgt für eine flüssige Benutzererfahrung und verhindert gleichzeitige Reinigungsvorgänge.
+
+---
+
+### Szenario 1: Mehrere Räume mit gemischten Modi und Wiederholungen
+- **Befehl**: „**Wohnzimmer saugen hoch und Küche saugen mittel und Küche wischen niedrig 2 mal**“
+- **Erklärung**:
+  - „**Wohnzimmer saugen hoch**“: Der Roboter startet im Wohnzimmer mit dem Saugmodus auf hoher Stufe.
+  - „**Küche saugen mittel**“: In der Küche wird der Saugmodus auf mittlerer Stufe eingestellt.
+  - „**Küche wischen niedrig 2 mal**“: In der Küche wird der Wischmodus auf niedriger Stufe eingestellt, und der Wischvorgang wird zweimal wiederholt.
+  
+  **Aktion**: Der Roboter wird zuerst das Wohnzimmer reinigen (Saugen hoch), dann die Küche (Saugen mittel), und danach den Wischmodus auf niedrig in der Küche zweimal ausführen.
+
+### Szenario 2: Zwei Räume mit einem Modus (nur Saugen oder Wischen)
+- **Befehl**: „**Flur saugen hoch und Bad wischen intensiv**“
+- **Erklärung**:
+  - „**Flur saugen hoch**“: Der Roboter wird im Flur mit dem höchsten Saugmodus arbeiten.
+  - „**Bad wischen intensiv**“: Das Bad wird mit dem höchsten Wischmodus (Intensiv) gewischt.
+
+  **Aktion**: Der Roboter startet mit dem Saugen im Flur auf hoher Stufe und geht danach ins Bad, um dort intensiv zu wischen.
+
+### Szenario 3: Benutzerabbruch bei fehlenden Modi
+- **Befehl**: „**Wohnzimmer saugen und Küche wischen**“
+- **Erklärung**:
+  - Der Befehl fehlt für das „Saugen“ im Küchenbereich, was eine unvollständige Anweisung darstellt.
+  
+  **Aktion**: Da in der Küche der Saugmodus nicht angegeben wurde und eine Lücke im Befehl erkannt wird, fordert Alexa den Benutzer auf, den fehlenden Modus zu korrigieren.
+
+  **Antwort von Alexa**: „**Für folgende Räume fehlen Angaben: Wohnzimmer: Sauglevel und Küche: Wischlevel. Bitte definiere die fehlenden Werte.**“
+
+### Szenario 4: Unterschiedliche Reinigungsmodi mit Raum- und Modus-Synonymen
+- **Befehl**: „**Stube saugen intensiv und Küche wischen nach saugen niedrig und kraftvoll und Bad wischen intensiv**“
+- **Erklärung**:
+  - Der Benutzer verwendet das Synonym „Stube“ anstelle von „Wohnzimmer“. Da Dreamehome diese Flexibilität unterstützt, wird „Stube“ als „Wohnzimmer“ erkannt und der Modus „Saugen intensiv“ wird zugeordnet.
+  - Die Küche wird mit „Saugen niedrig danach Wischen stark“ und das Bad mit „Wischen intensiv“ gereinigt.
+  
+  **Aktion**: Der Roboter wird die folgenden Schritte ausführen:
+  - **Stube (Wohnzimmer) saugen intensiv**
+  - **Küche wischen niedrig nach saugen stark**
+  - **Bad wischen intensiv**
+
+### Szenario 5: Wiederholte Reinigung eines Raumes
+- **Befehl**: „**Wohnzimmer saugen hoch 3 mal und Bad wischen intensiv 2 mal**“
+- **Erklärung**:
+  - Der Roboter soll das Wohnzimmer dreimal mit dem Saugmodus „hoch“ und das Bad zweimal mit dem Wischmodus „intensiv“ reinigen.
+  
+  **Aktion**: Der Roboter startet die Reinigung im Wohnzimmer mit hohem Saugmodus und wiederholt den Vorgang dreimal. Danach geht er ins Bad, um zweimal mit dem intensiven Wischmodus zu reinigen.
+
+### Szenario 6: Beenden der Reinigung, wenn ein Abbruchbefehl gegeben wird
+- **Befehl**: „**"reinigung abbrechen", "reinigung stoppen", "stop reinigung", "roboter aus", "reinigung bitte abbrechen", "reinigung beenden", "reinigung unterbrechen", "reinigung anhalten", "saugvorgang stoppen", "staubsauger aus", "roboter abschalten", "staubsaugen beenden", "putzen stoppen", "staubsaugen stoppen", "staubsaugen deaktivieren", "bodenreinigung stoppen", "staubsauger ausschalten", "sauger aus", "roboter deaktivieren", "dreame stoppen", "dreame aus", "dreame reinigen beenden"**“
+- **Erklärung**:
+  - Ein Benutzer kann jederzeit den Befehl „Stopp Reinigung“ geben, um den laufenden Vorgang zu beenden.
+
+  **Aktion**: Wenn der Befehl zum Stoppen der Reinigung kommt, wird der Roboter sofort gestoppt und zur Ladestation zurückgeschickt. Falls der Roboter gerade aktiv reinigt, wird der Vorgang abgebrochen.
+
+  **Antwort von Alexa**: „**Die Reinigung wurde gestoppt und der Roboter fährt zur Ladestation.**“
+
+---
+
 ### **Version 0.9.0 (2025-03-21)**
 
 #### **New Features:**
