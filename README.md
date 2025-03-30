@@ -114,37 +114,8 @@ $${\color{red}The \space question \space of \space how \space to \space format \
   **Action**: When the stop command is given, the robot will immediately stop cleaning and return to its charging station. If the robot is actively cleaning, the process will be aborted.
 
   **Alexa Response**: „**The cleaning has been stopped, and the robot is returning to the charging station.**“
-
+  
 ---
-
----
-
-**Changelog - DreameHome Adapter (iobroker)**
-
-**Version 0.1.0 (30.03.2025)**  
-
-### Neuigkeiten:
-- **Erweiterte Flexibilität bei der Reinigungssteuerung:**  
-  Der Adapter ermöglicht es jetzt, für jedes Zimmer individuell festzulegen, ob der Dreame-Saugroboter nur saugt, wischt oder eine Kombination aus beiden ausführt. Dies geht über die standardmäßigen Einschränkungen des Dreame-Roboters hinaus, der normalerweise nur einen Reinigungsmodus für alle Räume akzeptiert.
-
-- **Unterstützung für alternative Zimmer- und Reinigungsbezeichner:**  
-  Die Zimmernamen und Reinigungsarten sind jetzt flexibler. Begriffe wie "Wohnzimmer wischen nass" oder "Stube wischen intensiv" werden automatisch als gleichwertig behandelt, sodass du verschiedene Begriffe verwenden kannst, um den gleichen Reinigungsmodus zu aktivieren.
-
-- **Automatische Zuordnung von Räumen und Befehlen:**  
-  Der Adapter übersetzt alternative Bezeichner für Räume (z. B. "Wohnzimmer", "Stube", "salon") in die akzeptierten Standardbezeichner, was eine nahtlose und benutzerfreundliche Steuerung ermöglicht. Ebenso werden verschiedene Formulierungen für das Saugen oder Wischen (z. B. "staubsaugen" oder "sweeping") korrekt erkannt und dem richtigen Reinigungsmodus zugeordnet.
-
-### Beispiele für neue Befehle:
-- "Wohnzimmer wischen Nass" = "Stube wischen Intensiv"
-- "Schlafzimmer staubsaugen Kraftvoll" = "Hauptschlafzimmer saugen Intensiv" = "masterzimmer saugen Stark"
-- "Küche saugen und wischen Nass und Ultra" = "Kochnische saugen und wischen Durchnässt und Voll"
-
-### Verbesserungen:
-- **Vermeidung von doppelten oder widersprüchlichen Befehlen:**  
-  Das System prüft automatisch, ob für ein und dasselbe Zimmer widersprüchliche Reinigungsmodi oder wiederholte Befehle innerhalb eines kurzen Zeitraums gesendet wurden, um unerwünschte Doppelaktionen zu vermeiden.
-
-- **Bessere Steuerung bei aktiven Reinigungsprozessen:**  
-  Sollte ein Reinigungsprozess bereits laufen, erkennt der Adapter dies und fragt den Benutzer, ob der laufende Prozess gestoppt und ein neuer gestartet werden soll. Dies sorgt für eine flüssige Benutzererfahrung und verhindert gleichzeitige Reinigungsvorgänge.
-
 ---
 
 ### Szenario 1: Mehrere Räume mit gemischten Modi und Wiederholungen
