@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const globals = require('globals');
 const js = require('@eslint/js');
 
@@ -128,5 +127,4 @@ module.exports = [
       semi: ['error', 'always'],
     },
   },
->>>>>>> dec9f8c (Initial commit)
 ];

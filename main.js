@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 'use strict';
 /*
  * Created with @iobroker/create-adapter v2.6.3
@@ -12141,5 +12140,4 @@ if (require.main !== module) {
 } else {
     // otherwise start the instance directly
     new Dreamehome();
->>>>>>> dec9f8c (Initial commit)
 }
