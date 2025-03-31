@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../esm/index.js"],
+  "sourcesContent": ["export default function pathKey(options = {}) {\n\tconst {\n\t\tenv = process.env,\n\t\tplatform = process.platform\n\t} = options;\n\n\tif (platform !== 'win32') {\n\t\treturn 'PATH';\n\t}\n\n\treturn Object.keys(env).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAe,SAAR,QAAyB,UAAU,CAAC,GAAG;AAC7C,QAAM;AAAA,IACL,MAAM,QAAQ;AAAA,IACd,WAAW,QAAQ;AAAA,EACpB,IAAI;AAEJ,MAAI,aAAa,SAAS;AACzB,WAAO;AAAA,EACR;AAEA,SAAO,OAAO,KAAK,GAAG,EAAE,QAAQ,EAAE,KAAK,SAAO,IAAI,YAAY,MAAM,MAAM,KAAK;AAChF;",
+  "names": []
+}

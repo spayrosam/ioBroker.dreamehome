@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/arrays/index.ts"],
+  "sourcesContent": ["/**\n * Reduces an array to only unique values\n */\nexport function distinct<T extends number | string | boolean>(arr: T[]): T[] {\n\t// This is stupidly simple but seems to be one of the fastest methods to do this\n\treturn [...new Set(arr)];\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;;;;;AAGM,SAAU,SAA8C,KAAQ;AAErE,SAAO,CAAC,GAAG,IAAI,IAAI,GAAG,CAAC;AACxB;",
+  "names": []
+}

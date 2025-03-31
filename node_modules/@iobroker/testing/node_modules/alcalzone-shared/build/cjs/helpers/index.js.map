@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/helpers/index.ts"],
+  "sourcesContent": ["/**\n * Asserts that all possible cases of a value have been checked\n * @param value The value to check for exhaustiveness\n */\nexport function assertNever(value: never): never {\n\t// eslint-disable-next-line @typescript-eslint/restrict-template-expressions\n\tthrow new Error(`Unexpected value observed: ${value}`);\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;;;;;AAIM,SAAU,YAAY,OAAY;AAEvC,QAAM,IAAI,MAAM,8BAA8B,KAAK,EAAE;AACtD;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/deferred-promise/index.ts"],
+  "sourcesContent": ["export interface DeferredPromise<T> extends Promise<T> {\n\tresolve(value: T | PromiseLike<T>): void;\n\treject(reason?: any): void;\n}\n\nexport function createDeferredPromise<T = void>(): DeferredPromise<T> {\n\tlet res: (value: T | PromiseLike<T>) => void;\n\tlet rej: (reason?: any) => void;\n\n\tconst promise = new Promise<T>((resolve, reject) => {\n\t\tres = resolve;\n\t\trej = reject;\n\t}) as DeferredPromise<T>;\n\n\tpromise.resolve = res!;\n\tpromise.reject = rej!;\n\n\treturn promise;\n}\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAKA;;;;;AAAM,SAAU,wBAAqB;AACpC,MAAI;AACJ,MAAI;AAEJ,QAAM,UAAU,IAAI,QAAW,CAAC,SAAS,WAAU;AAClD,UAAM;AACN,UAAM;EACP,CAAC;AAED,UAAQ,UAAU;AAClB,UAAQ,SAAS;AAEjB,SAAO;AACR;",
+  "names": []
+}

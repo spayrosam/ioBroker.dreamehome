@@ -1,0 +1,76 @@
+{
+	"name": "@esm2cjs/npm-run-path",
+	"version": "5.1.1-cjs.0",
+	"description": "Get your PATH prepended with locally installed binaries. This is a fork of sindresorhus/npm-run-path, but with CommonJS support.",
+	"license": "MIT",
+	"repository": "esm2cjs/npm-run-path",
+	"funding": "https://github.com/sponsors/AlCalzone",
+	"author": {
+		"name": "Dominic Griesel",
+		"email": "d.griesel@gmx.net"
+	},
+	"exports": {
+		".": {
+			"import": "./esm/index.js",
+			"require": "./cjs/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"engines": {
+		"node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"cjs/",
+		"esm/"
+	],
+	"keywords": [
+		"npm",
+		"run",
+		"path",
+		"package",
+		"bin",
+		"binary",
+		"binaries",
+		"script",
+		"cli",
+		"command-line",
+		"execute",
+		"executable"
+	],
+	"dependencies": {
+		"@esm2cjs/path-key": "^4.0.0"
+	},
+	"devDependencies": {
+		"ava": "^3.15.0",
+		"tsd": "^0.17.0",
+		"xo": "^0.45.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"types": "esm/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"esm/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"cjs/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"*": [
+				"esm/*"
+			]
+		}
+	},
+	"xo": {
+		"ignores": [
+			"cjs",
+			"**/*.test-d.ts"
+		]
+	}
+}

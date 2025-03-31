@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/collections/index.ts"],
+  "sourcesContent": ["export { ExpiringSet } from \"./expiring-set.js\";\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;;;;;AAAA,0BAA4B;",
+  "names": []
+}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "name": "iobroker.dreamehome",
   "version": "0.1.0",
@@ -78,3 +79,85 @@
   },
   "readmeFilename": "README.md"
 }
+=======
+{
+  "name": "iobroker.dreamehome",
+  "version": "0.1.0",
+  "description": "Adapter for dreame home devices",
+  "author": {
+    "name": "Spayrosam",
+    "email": "spayrosam@gmail.com"
+  },
+  "homepage": "https://github.com/Spayrosam/ioBroker.dreamehome",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "dreame",
+    "dreamehome",
+    "vacuum"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Spayrosam/ioBroker.dreamehome.git"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "dependencies": {
+    "@iobroker/adapter-core": "^3.2.3",
+    "axios": "^1.7.9",
+    "crypto-js": "^4.2.0",
+    "json2iob": "^2.6.14",
+    "mqtt": "^5.10.3",
+    "pako": "^2.1.0"
+  },
+  "optionalDependencies": {
+    "canvas": "^3.1.0"
+  },
+  "devDependencies": {
+    "@alcalzone/release-script": "^3.8.0",
+    "@alcalzone/release-script-plugin-iobroker": "^3.7.2",
+    "@alcalzone/release-script-plugin-license": "^3.7.0",
+    "@alcalzone/release-script-plugin-manual-review": "^3.7.0",
+    "@iobroker/adapter-dev": "^1.3.0",
+    "@iobroker/eslint-config": "^2.0.1",
+    "@iobroker/testing": "^5.0.3",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/chai": "^4.3.14",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.13.7",
+    "chai": "^4.5.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^9.23.0",
+    "mocha": "^11.0.1",
+    "rimraf": "^3.0.2",
+    "sinon": "^19.0.4",
+    "sinon-chai": "^3.7.0",
+    "typescript": "~5.8.2"
+  },
+  "main": "main.js",
+  "files": [
+    "admin{,/!(src)/**}/!(tsconfig|tsconfig.*|.eslintrc).{json,json5}",
+    "admin{,/!(src)/**}/*.{html,css,png,svg,jpg,js}",
+    "lib/",
+    "www/",
+    "io-package.json",
+    "LICENSE",
+    "main.js"
+  ],
+  "scripts": {
+    "test:js": "mocha --config test/mocharc.custom.json \"{!(node_modules|test)/**/*.test.js,*.test.js,test/**/test!(PackageFiles|Startup).js}\"",
+    "test:package": "mocha test/package --exit",
+    "test:integration": "mocha test/integration --exit",
+    "test": "npm run test:js && npm run test:package",
+    "check": "tsc --noEmit -p tsconfig.check.json",
+    "lint": "eslint .",
+    "translate": "translate-adapter",
+    "release": "release-script --all"
+  },
+  "bugs": {
+    "url": "https://github.com/Spayrosam/ioBroker.dreamehome/issues"
+  },
+  "readmeFilename": "README.md"
+}
+>>>>>>> dec9f8c (Initial commit)

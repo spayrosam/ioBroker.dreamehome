@@ -1,0 +1,107 @@
+{
+	"name": "@esm2cjs/execa",
+	"version": "6.1.1-cjs.1",
+	"description": "Process execution for humans. This is a fork of sindresorhus/execa, but with CommonJS support.",
+	"license": "MIT",
+	"repository": "esm2cjs/execa",
+	"funding": "https://github.com/sponsors/AlCalzone",
+	"author": {
+		"name": "Dominic Griesel",
+		"email": "d.griesel@gmx.net"
+	},
+	"exports": {
+		".": {
+			"import": "./esm/index.js",
+			"require": "./cjs/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"engines": {
+		"node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+	},
+	"scripts": {
+		"test": "xo && c8 ava && tsd"
+	},
+	"files": [
+		"cjs/",
+		"esm/"
+	],
+	"keywords": [
+		"exec",
+		"child",
+		"process",
+		"execute",
+		"fork",
+		"execfile",
+		"spawn",
+		"file",
+		"shell",
+		"bin",
+		"binary",
+		"binaries",
+		"npm",
+		"path",
+		"local"
+	],
+	"dependencies": {
+		"@esm2cjs/human-signals": "^3.0.1",
+		"@esm2cjs/is-stream": "^3.0.0",
+		"@esm2cjs/npm-run-path": "^5.1.1-cjs.0",
+		"@esm2cjs/onetime": "^6.0.1-cjs.0",
+		"@esm2cjs/strip-final-newline": "^3.0.1-cjs.0",
+		"cross-spawn": "^7.0.3",
+		"get-stream": "^6.0.1",
+		"merge-stream": "^2.0.0",
+		"signal-exit": "^3.0.7"
+	},
+	"devDependencies": {
+		"@types/node": "^17.0.17",
+		"ava": "^4.0.1",
+		"c8": "^7.11.0",
+		"get-node": "^12.0.0",
+		"is-running": "^2.1.0",
+		"p-event": "^5.0.1",
+		"semver": "^7.3.5",
+		"tempfile": "^4.0.0",
+		"tsd": "^0.19.1",
+		"xo": "^0.48.0"
+	},
+	"c8": {
+		"reporter": [
+			"text",
+			"lcov"
+		],
+		"exclude": [
+			"**/fixtures/**",
+			"**/test.js",
+			"**/test/**"
+		]
+	},
+	"xo": {
+		"ignores": [
+			"cjs",
+			"**/*.test-d.ts",
+			"**/*.d.ts",
+			"test/fixtures"
+		]
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"types": "esm/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"esm/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"cjs/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"*": [
+				"esm/*"
+			]
+		}
+	}
+}

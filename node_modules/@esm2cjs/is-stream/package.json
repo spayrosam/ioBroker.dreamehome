@@ -1,0 +1,73 @@
+{
+	"name": "@esm2cjs/is-stream",
+	"version": "3.0.0",
+	"description": "Check if something is a Node.js stream. This is a fork of sindresorhus/is-stream, but with CommonJS support.",
+	"license": "MIT",
+	"repository": "esm2cjs/is-stream",
+	"funding": "https://github.com/sponsors/AlCalzone",
+	"author": {
+		"name": "Dominic Griesel",
+		"email": "d.griesel@gmx.net"
+	},
+	"exports": {
+		".": {
+			"import": "./esm/index.js",
+			"require": "./cjs/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"engines": {
+		"node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"cjs/",
+		"esm/"
+	],
+	"keywords": [
+		"stream",
+		"type",
+		"streams",
+		"writable",
+		"readable",
+		"duplex",
+		"transform",
+		"check",
+		"detect",
+		"is"
+	],
+	"devDependencies": {
+		"@types/node": "^16.4.13",
+		"ava": "^3.15.0",
+		"tempy": "^1.0.1",
+		"tsd": "^0.17.0",
+		"xo": "^0.44.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"types": "esm/index.d.ts",
+	"typesVersions": {
+		"*": {
+			"esm/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"cjs/index.d.ts": [
+				"esm/index.d.ts"
+			],
+			"*": [
+				"esm/*"
+			]
+		}
+	},
+	"xo": {
+		"ignores": [
+			"cjs",
+			"*.test-d.ts"
+		]
+	}
+}
