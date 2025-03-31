@@ -2,10 +2,7 @@
   "name": "iobroker.dreamehome",
   "version": "0.1.0",
   "description": "Adapter for dreame home devices",
-  "author": {
-    "name": "Spayrosam",
-    "email": "spayrosam@gmail.com"
-  },
+  "author": "Spayrosam <spayrosam@gmail.com>",
   "homepage": "https://github.com/Spayrosam/ioBroker.dreamehome",
   "license": "MIT",
   "keywords": [
@@ -16,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Spayrosam/ioBroker.dreamehome.git"
+    "url": "git+https://github.com/Spayrosam/ioBroker.dreamehome.git"
   },
   "engines": {
     "node": ">= 18"
@@ -76,5 +73,8 @@
   "bugs": {
     "url": "https://github.com/Spayrosam/ioBroker.dreamehome/issues"
   },
-  "readmeFilename": "README.md"
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  }
 }
