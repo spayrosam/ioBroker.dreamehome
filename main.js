@@ -9,14 +9,14 @@ const axios = require('axios').default;
 const Json2iob = require('json2iob');
 const crypto = require('crypto');
 const mqtt = require('mqtt');
-const zlib = require("node:zlib");
+const zlib = require('node:zlib');
 const { createCipheriv, createDecipheriv, randomBytes, createHash } = require('crypto');
 const {
-    createCanvas,
-    Canvas
+  createCanvas,
+  Canvas
 } = require('canvas');
 const {
-    Image
+  Image
 } = require('canvas');
 /**============> Check if canvas is installed using the following command:
 cd /opt/iobroker/
@@ -26,2079 +26,2112 @@ cd /opt/iobroker/
 npm install canvas
 ***============> Then, check again by running the first command to ensure that canvas is properly installed.*/
 const DreameLevel = {
-    0: 'Silent',
-    1: 'Basic',
-    2: 'Strong',
-    3: 'Full Speed'
+  0: 'Silent',
+  1: 'Basic',
+  2: 'Strong',
+  3: 'Full Speed'
 };
 const DreameSetCleaningMode = {
-    0: 'Sweeping',
-    1: 'Mopping',
-    2: 'Sweeping and Mopping'
+  0: 'Sweeping',
+  1: 'Mopping',
+  2: 'Sweeping and Mopping'
 };
 
 
 const DreameRoute = {
-    1: 'Standart',
-    2: 'Intensive',
-    3: 'Deep',
-    546: 'Intelligent'
+  1: 'Standart',
+  2: 'Intensive',
+  3: 'Deep',
+  546: 'Intelligent'
 };
 const DreameRoomClean = {
-    0: 'No',
-    1: 'Yes'
+  0: 'No',
+  1: 'Yes'
 };
-var UpdateCleanset = true;
-var CheckRCObject = false;
-var CheckSCObject = false;
-var CheckUObject = true;
-var IsRoomsSettings = [];
+const UpdateCleanset = true;
+let CheckRCObject = false;
+let CheckSCObject = false;
+let CheckUObject = true;
+const IsRoomsSettings = [];
 //=======================>Start Map Color
-var ColorsItems = ['#abc7f8', '#E6B3ff', '#f9e07d', '#b8e3ff', '#b8d98d', '#FFB399', '#99FF99', '#4DB3FF', '#80B388', '#E6B3B3', '#FF99E6', '#99E6E6', '#809980', '#E6FF80', '#FF33FF', '#FFFF99', '#00B3E6', '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D', '#80B300', '#809900', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC', '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF', '#1AB399', '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680', '#4D8066', '#1AFF33', '#999933', '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3', '#E64D66', '#4DB380', '#FF4D4D', '#6666FF'];
-var ColorsCarpet = ['#004080', '#003366', '#00264d', '#000080', '#000066', '#00004d', '#800080', '#660066', '#4d004d', '#602020', '#4d1919', '#391313', '#804000', '#663300', '#4d2600', '#008000', '#006600', '#004d00'];
-var RoomsStrokeColor = "black";
-var RoomsLineWidth = 4;
-var WallColor = "black";
-var WallStrokeColor = "black";
-var WallLineWidth = 4;
-var DoorsColor = "black";
-var DoorsStrokeColor = "black";
-var DoorsLineWidth = 4;
-var ChargerColor = "green";
-var ChargerStrokeColor = "white";
-var ChargerLineWidth = 3;
-var CarpetColor = "black";
-var CarpetStrokeColor = "blue";
-var CarpetLineWidth = 3;
+const ColorsItems = ['#abc7f8', '#E6B3ff', '#f9e07d', '#b8e3ff', '#b8d98d', '#FFB399', '#99FF99', '#4DB3FF', '#80B388', '#E6B3B3', '#FF99E6', '#99E6E6', '#809980', '#E6FF80', '#FF33FF', '#FFFF99', '#00B3E6', '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D', '#80B300', '#809900', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC', '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF', '#1AB399', '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680', '#4D8066', '#1AFF33', '#999933', '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3', '#E64D66', '#4DB380', '#FF4D4D', '#6666FF'];
+const ColorsCarpet = ['#004080', '#003366', '#00264d', '#000080', '#000066', '#00004d', '#800080', '#660066', '#4d004d', '#602020', '#4d1919', '#391313', '#804000', '#663300', '#4d2600', '#008000', '#006600', '#004d00'];
+const RoomsStrokeColor = 'black';
+const RoomsLineWidth = 4;
+const WallColor = 'black';
+const WallStrokeColor = 'black';
+const WallLineWidth = 4;
+const DoorsColor = 'black';
+const DoorsStrokeColor = 'black';
+const DoorsLineWidth = 4;
+const ChargerColor = 'green';
+const ChargerStrokeColor = 'white';
+const ChargerLineWidth = 3;
+const CarpetColor = 'black';
+const CarpetStrokeColor = 'blue';
+const CarpetLineWidth = 3;
 //<=================End Map Color
 //=================>Start Map Settings
-var fullQuality = "";
-var DH_ScaleValue = 20; // Min 14 | Default 14.5
+let fullQuality = '';
+const DH_ScaleValue = 20; // Min 14 | Default 14.5
 //<=================End Map Settings
 //=================>Start Global
-var DH_OldTaskStatus = -1, DH_NewTaskStatus = -1, DH_NowTaskStatus = -1, DH_NowStatus = -1, DH_CleanStatus = false, DH_SetLastStatus = false, DH_CompletStatus = 0;
-var UserLang = "EN";
+let DH_OldTaskStatus = -1, DH_NewTaskStatus = -1, DH_NowTaskStatus = -1, DH_NowStatus = -1, DH_CleanStatus = false, DH_SetLastStatus = false, DH_CompletStatus = 0;
+let UserLang = 'EN';
 //<=================End Global
 
 const SegmentToName = {
-    "EN": {
-        0: "Room",
-        1: "Living Room",
-        2: "Primary Bedroom",
-        3: "Study",
-        4: "Kitchen",
-        5: "Dining Hall",
-        6: "Bathroom",
-        7: "Balcony",
-        8: "Corridor",
-        9: "Utility Room",
-        10: "Closet",
-        11: "Meeting Room",
-        12: "Office",
-        13: "Fitness Area",
-        14: "Recreation Area",
-        15: "Secondary Bedroom"
-    },
-    "DE": {
-        0: "Raum",
-        1: "Wohnzimmer",
-        2: "Hauptschlafzimmer",
-        3: "Arbeitszimmer",
-        4: "Küche",
-        5: "Speisesaal",
-        6: "Badezimmer",
-        7: "Balkon",
-        8: "Korridor",
-        9: "Hauswirtschaftsraum",
-        10: "Schrank",
-        11: "Besprechungsraum",
-        12: "Büro",
-        13: "Fitnessbereich",
-        14: "Erholungsgebiet",
-        15: "Zweites Schlafzimmer"
-    }
+  'EN': {
+    0: 'Room',
+    1: 'Living Room',
+    2: 'Primary Bedroom',
+    3: 'Study',
+    4: 'Kitchen',
+    5: 'Dining Hall',
+    6: 'Bathroom',
+    7: 'Balcony',
+    8: 'Corridor',
+    9: 'Utility Room',
+    10: 'Closet',
+    11: 'Meeting Room',
+    12: 'Office',
+    13: 'Fitness Area',
+    14: 'Recreation Area',
+    15: 'Secondary Bedroom'
+  },
+  'DE': {
+    0: 'Raum',
+    1: 'Wohnzimmer',
+    2: 'Hauptschlafzimmer',
+    3: 'Arbeitszimmer',
+    4: 'Küche',
+    5: 'Speisesaal',
+    6: 'Badezimmer',
+    7: 'Balkon',
+    8: 'Korridor',
+    9: 'Hauswirtschaftsraum',
+    10: 'Schrank',
+    11: 'Besprechungsraum',
+    12: 'Büro',
+    13: 'Fitnessbereich',
+    14: 'Erholungsgebiet',
+    15: 'Zweites Schlafzimmer'
+  }
 };
 
 const DreameInformation = {
-	"EN": {
-		0: 'The currently set default Map number is set to ',
-        1: 'The default Map number is missing! Forced the default Map number to be set to 0 : Error Result ',
-        2: 'Unable to decode Map from MapID "',
-		3: 'Unable to genarate Map from MapID "',
-        4: '"! please set a valid MapId',
-        5: 'The map was successfully downloaded from the cloud',
-		6: 'The map was successfully downloaded from the cloud and the creation was successful. Format the file contents of ',
-		7: ' and paste it into the vis HTML widget',
-	},
-    "DE": {
-		0: 'Die aktuell eingestellte Standard-Kartennummer ist eingestellt auf ',
-        1: 'Die Standardkartennummer fehlt! Die standardmäßige Kartennummer wurde auf 0 gesetzt: Fehlerergebnis ',
-        2: 'Die Karte kann nicht aus MapID dekodiert werden; MapID "',
-		3: 'Die Karte kann nicht aus MapID erstellt werden; MapID "' ,
-        4: '"! Bitte legen Sie eine gültige MapId fest',
-        5: 'Die Karte wurde erfolgreich aus der Cloud heruntergeladen',
+  'EN': {
+    0: 'The currently set default Map number is set to ',
+    1: 'The default Map number is missing! Forced the default Map number to be set to 0 : Error Result ',
+    2: 'Unable to decode Map from MapID "',
+    3: 'Unable to genarate Map from MapID "',
+    4: '"! please set a valid MapId',
+    5: 'The map was successfully downloaded from the cloud',
+    6: 'The map was successfully downloaded from the cloud and the creation was successful. Format the file contents of ',
+    7: ' and paste it into the vis HTML widget',
+  },
+  'DE': {
+    0: 'Die aktuell eingestellte Standard-Kartennummer ist eingestellt auf ',
+    1: 'Die Standardkartennummer fehlt! Die standardmäßige Kartennummer wurde auf 0 gesetzt: Fehlerergebnis ',
+    2: 'Die Karte kann nicht aus MapID dekodiert werden; MapID "',
+    3: 'Die Karte kann nicht aus MapID erstellt werden; MapID "' ,
+    4: '"! Bitte legen Sie eine gültige MapId fest',
+    5: 'Die Karte wurde erfolgreich aus der Cloud heruntergeladen',
 	    6: 'Die Karte wurde erfolgreich aus der Cloud heruntergeladen und die Erstellung war erfolgreich. Formatieren Sie den Dateiinhalt von ',
-		7: ' und fügen Sie ihn in das vis-HTML-Widget ein',
-    }
-}
+    7: ' und fügen Sie ihn in das vis-HTML-Widget ein',
+  }
+};
 
 const DreameVacuumErrorCode = {
-    "EN": {
-        "-1": "Unknown",
-        0: "No error",
-        1: "Drop",
-        2: "Cliff",
-        3: "Bumper",
-        4: "Gesture",
-        5: "Bumper repeat",
-        6: "Drop repeat",
-        7: "Optical flow",
-        8: "Box",
-        9: "Tankbox",
-        10: "Waterbox empty",
-        11: "Box full",
-        12: "Brush",
-        13: "Side brush",
-        14: "Fan",
-        15: "Left wheel motor",
-        16: "Right wheel motor",
-        17: "Turn suffocate",
-        18: "Forward suffocate",
-        19: "Charger get",
-        20: "Battery low",
-        21: "Charge fault",
-        22: "Battery percentage",
-        23: "Heart",
-        24: "Camera occlusion",
-        25: "Move",
-        26: "Flow shielding",
-        27: "Infrared shielding",
-        28: "Charge no electric",
-        29: "Battery fault",
-        30: "Fan speed error",
-        31: "Leftwhell speed",
-        32: "Rightwhell speed",
-        33: "Bmi055 acce",
-        34: "Bmi055 gyro",
-        35: "Xv7001",
-        36: "Left magnet",
-        37: "Right magnet",
-        38: "Flow error",
-        39: "Infrared fault",
-        40: "Camera fault",
-        41: "Strong magnet",
-        42: "Water pump",
-        43: "Rtc",
-        44: "Auto key trig",
-        45: "P3v3",
-        46: "Camera idle",
-        47: "Blocked",
-        48: "Lds error",
-        49: "Lds bumper",
-        50: "Water pump 2",
-        51: "Filter blocked",
-        54: "Edge",
-        55: "Carpet",
-        56: "Laser",
-        57: "Edge 2",
-        58: "Ultrasonic",
-        59: "No go zone",
-        61: "Route",
-        62: "Route 2",
-        63: "Blocked 2",
-        64: "Blocked 3",
-        65: "Restricted",
-        66: "Restricted 2",
-        67: "Restricted 3",
-        68: "Remove mop",
-        69: "Mop removed",
-        70: "Mop removed 2",
-        71: "Mop pad stop rotate",
-        72: "Mop pad stop rotate 2",
-        75: "Unknown warning",
-        101: "Bin full",
-        102: "Bin open",
-        103: "Bin open 2",
-        104: "Bin full 2",
-        105: "Water tank",
-        106: "Dirty water tank",
-        107: "Water tank dry",
-        108: "Dirty water tank 2",
-        109: "Dirty water tank blocked",
-        110: "Dirty water tank pump",
-        111: "Mop pad",
-        112: "Wet mop pad",
-        114: "Clean mop pad",
-        116: "Clean tank level",
-        117: "Station disconnected",
-        118: "Dirty tank level",
-        119: "Washboard level",
-        120: "No mop in station",
-        121: "Dust bag full",
-        122: "Unknown warning 2",
-        124: "Washboard not working",
-        1000: "Return to charge failed"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Kein Fehler",
-        1: "Tropfen",
-        2: "Klippe",
-        3: "Sto�stange",
-        4: "Geste",
-        5: "Sto�stange wiederholen",
-        6: "Fallwiederholung",
-        7: "Optischer Fluss",
-        8: "Box",
-        9: "Tankbox",
-        10: "Wasserkasten leer",
-        11: "Kasten voll",
-        12: "Bürste",
-        13: "Seitenbürste",
-        14: "Gebläse",
-        15: "Linker Radmotor",
-        16: "Rechter Radmotor",
-        17: "Drehung ersticken",
-        18: "Vorwärts ersticken",
-        19: "Ladegerät holen",
-        20: "Batterie schwach",
-        21: "Fehler beim Aufladen",
-        22: "Prozentsatz der Batterie",
-        23: "Herz",
-        24: "Kamera verdeckt",
-        25: "Bewegung",
-        26: "Strömungsabschirmung",
-        27: "Infrarot-Abschirmung",
-        28: "Keine elektrische Ladung",
-        29: "Batteriefehler",
-        30: "Lüfterdrehzahlfehler",
-        31: "Geschwindigkeit des linken Rades",
-        32: "Geschwindigkeit des rechten Rades",
-        33: "Bmi055 acce",
-        34: "Bmi055 Kreisel",
-        35: "Xv7001",
-        36: "Linker Magnet",
-        37: "Rechter Magnet",
-        38: "Durchflussfehler",
-        39: "Infrarot-Fehler",
-        40: "Kamerafehler",
-        41: "Starker Magnet",
-        42: "Wasserpumpe",
-        43: "Rtc",
-        44: "Automatische Tastenauslösung",
-        45: "P3v3",
-        46: "Kamera im Leerlauf",
-        47: "Blockiert",
-        48: "Lds-Fehler",
-        49: "Lds-Sto�stange",
-        50: "Wasserpumpe 2",
-        51: "Filter blockiert",
-        54: "Rand",
-        55: "Teppich",
-        56: "Laser",
-        57: "Kante 2",
-        58: "Ultraschall",
-        59: "Verbotszone",
-        61: "Route",
-        62: "Route 2",
-        63: "Gesperrt 2",
-        64: "Gesperrt 3",
-        65: "Eingeschränkt",
-        66: "Eingeschränkt 2",
-        67: "Eingeschränkt 3",
-        68: "Mopp entfernen",
-        69: "Mopp entfernt",
-        70: "Wischmopp entfernt 2",
-        71: "Mop-Pad stoppt Drehung",
-        72: "Mop-Pad stoppt Drehung 2",
-        75: "Unbekannte Warnung",
-        101: "Behälter voll",
-        102: "Behälter offen",
-        103: "Behälter offen 2",
-        104: "Behälter voll 2",
-        105: "Wassertank",
-        106: "Wassertank verschmutzt",
-        107: "Wassertank trocken",
-        108: "Wassertank verschmutzt 2",
-        109: "Schmutzwassertank blockiert",
-        110: "Schmutzwassertankpumpe",
-        111: "Wischmopp",
-        112: "Wischmopp nass",
-        114: "Mop-Pad reinigen",
-        116: "Tankfüllstand reinigen",
-        117: "Station abgekoppelt",
-        118: "Füllstand des verschmutzten Tanks",
-        119: "Füllstand Waschbrett",
-        120: "Kein Mopp in Station",
-        121: "Staubsaugerbeutel voll",
-        122: "Unbekannte Warnung 2",
-        124: "Waschtisch funktioniert nicht",
-        1000: "Rückkehr zur Ladung fehlgeschlagen"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'No error',
+    1: 'Drop',
+    2: 'Cliff',
+    3: 'Bumper',
+    4: 'Gesture',
+    5: 'Bumper repeat',
+    6: 'Drop repeat',
+    7: 'Optical flow',
+    8: 'Box',
+    9: 'Tankbox',
+    10: 'Waterbox empty',
+    11: 'Box full',
+    12: 'Brush',
+    13: 'Side brush',
+    14: 'Fan',
+    15: 'Left wheel motor',
+    16: 'Right wheel motor',
+    17: 'Turn suffocate',
+    18: 'Forward suffocate',
+    19: 'Charger get',
+    20: 'Battery low',
+    21: 'Charge fault',
+    22: 'Battery percentage',
+    23: 'Heart',
+    24: 'Camera occlusion',
+    25: 'Move',
+    26: 'Flow shielding',
+    27: 'Infrared shielding',
+    28: 'Charge no electric',
+    29: 'Battery fault',
+    30: 'Fan speed error',
+    31: 'Leftwhell speed',
+    32: 'Rightwhell speed',
+    33: 'Bmi055 acce',
+    34: 'Bmi055 gyro',
+    35: 'Xv7001',
+    36: 'Left magnet',
+    37: 'Right magnet',
+    38: 'Flow error',
+    39: 'Infrared fault',
+    40: 'Camera fault',
+    41: 'Strong magnet',
+    42: 'Water pump',
+    43: 'Rtc',
+    44: 'Auto key trig',
+    45: 'P3v3',
+    46: 'Camera idle',
+    47: 'Blocked',
+    48: 'Lds error',
+    49: 'Lds bumper',
+    50: 'Water pump 2',
+    51: 'Filter blocked',
+    54: 'Edge',
+    55: 'Carpet',
+    56: 'Laser',
+    57: 'Edge 2',
+    58: 'Ultrasonic',
+    59: 'No go zone',
+    61: 'Route',
+    62: 'Route 2',
+    63: 'Blocked 2',
+    64: 'Blocked 3',
+    65: 'Restricted',
+    66: 'Restricted 2',
+    67: 'Restricted 3',
+    68: 'Remove mop',
+    69: 'Mop removed',
+    70: 'Mop removed 2',
+    71: 'Mop pad stop rotate',
+    72: 'Mop pad stop rotate 2',
+    75: 'Unknown warning',
+    101: 'Bin full',
+    102: 'Bin open',
+    103: 'Bin open 2',
+    104: 'Bin full 2',
+    105: 'Water tank',
+    106: 'Dirty water tank',
+    107: 'Water tank dry',
+    108: 'Dirty water tank 2',
+    109: 'Dirty water tank blocked',
+    110: 'Dirty water tank pump',
+    111: 'Mop pad',
+    112: 'Wet mop pad',
+    114: 'Clean mop pad',
+    116: 'Clean tank level',
+    117: 'Station disconnected',
+    118: 'Dirty tank level',
+    119: 'Washboard level',
+    120: 'No mop in station',
+    121: 'Dust bag full',
+    122: 'Unknown warning 2',
+    124: 'Washboard not working',
+    1000: 'Return to charge failed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Kein Fehler',
+    1: 'Tropfen',
+    2: 'Klippe',
+    3: 'Sto�stange',
+    4: 'Geste',
+    5: 'Sto�stange wiederholen',
+    6: 'Fallwiederholung',
+    7: 'Optischer Fluss',
+    8: 'Box',
+    9: 'Tankbox',
+    10: 'Wasserkasten leer',
+    11: 'Kasten voll',
+    12: 'Bürste',
+    13: 'Seitenbürste',
+    14: 'Gebläse',
+    15: 'Linker Radmotor',
+    16: 'Rechter Radmotor',
+    17: 'Drehung ersticken',
+    18: 'Vorwärts ersticken',
+    19: 'Ladegerät holen',
+    20: 'Batterie schwach',
+    21: 'Fehler beim Aufladen',
+    22: 'Prozentsatz der Batterie',
+    23: 'Herz',
+    24: 'Kamera verdeckt',
+    25: 'Bewegung',
+    26: 'Strömungsabschirmung',
+    27: 'Infrarot-Abschirmung',
+    28: 'Keine elektrische Ladung',
+    29: 'Batteriefehler',
+    30: 'Lüfterdrehzahlfehler',
+    31: 'Geschwindigkeit des linken Rades',
+    32: 'Geschwindigkeit des rechten Rades',
+    33: 'Bmi055 acce',
+    34: 'Bmi055 Kreisel',
+    35: 'Xv7001',
+    36: 'Linker Magnet',
+    37: 'Rechter Magnet',
+    38: 'Durchflussfehler',
+    39: 'Infrarot-Fehler',
+    40: 'Kamerafehler',
+    41: 'Starker Magnet',
+    42: 'Wasserpumpe',
+    43: 'Rtc',
+    44: 'Automatische Tastenauslösung',
+    45: 'P3v3',
+    46: 'Kamera im Leerlauf',
+    47: 'Blockiert',
+    48: 'Lds-Fehler',
+    49: 'Lds-Sto�stange',
+    50: 'Wasserpumpe 2',
+    51: 'Filter blockiert',
+    54: 'Rand',
+    55: 'Teppich',
+    56: 'Laser',
+    57: 'Kante 2',
+    58: 'Ultraschall',
+    59: 'Verbotszone',
+    61: 'Route',
+    62: 'Route 2',
+    63: 'Gesperrt 2',
+    64: 'Gesperrt 3',
+    65: 'Eingeschränkt',
+    66: 'Eingeschränkt 2',
+    67: 'Eingeschränkt 3',
+    68: 'Mopp entfernen',
+    69: 'Mopp entfernt',
+    70: 'Wischmopp entfernt 2',
+    71: 'Mop-Pad stoppt Drehung',
+    72: 'Mop-Pad stoppt Drehung 2',
+    75: 'Unbekannte Warnung',
+    101: 'Behälter voll',
+    102: 'Behälter offen',
+    103: 'Behälter offen 2',
+    104: 'Behälter voll 2',
+    105: 'Wassertank',
+    106: 'Wassertank verschmutzt',
+    107: 'Wassertank trocken',
+    108: 'Wassertank verschmutzt 2',
+    109: 'Schmutzwassertank blockiert',
+    110: 'Schmutzwassertankpumpe',
+    111: 'Wischmopp',
+    112: 'Wischmopp nass',
+    114: 'Mop-Pad reinigen',
+    116: 'Tankfüllstand reinigen',
+    117: 'Station abgekoppelt',
+    118: 'Füllstand des verschmutzten Tanks',
+    119: 'Füllstand Waschbrett',
+    120: 'Kein Mopp in Station',
+    121: 'Staubsaugerbeutel voll',
+    122: 'Unbekannte Warnung 2',
+    124: 'Waschtisch funktioniert nicht',
+    1000: 'Rückkehr zur Ladung fehlgeschlagen'
+  }
 };
 const DreameVacuumState = {
-    "EN": {
-        "-1": "Unknown",
-        1: "Sweeping",
-        2: "Idle",
-        3: "Paused",
-        4: "Error",
-        5: "Returning",
-        6: "Charging",
-        7: "Mopping",
-        8: "Drying",
-        9: "Washing",
-        10: "Returning to wash",
-        11: "Building",
-        12: "Sweeping and mopping",
-        13: "Charging completed",
-        14: "Upgrading",
-        15: "Clean summon",
-        16: "Station reset",
-        17: "Returning install mop",
-        18: "Returning remove mop",
-        19: "Water check",
-        20: "Clean add water",
-        21: "Washing paused",
-        22: "Auto emptying",
-        23: "Remote control",
-        24: "Smart charging",
-        25: "Second cleaning",
-        26: "Human following",
-        27: "Spot cleaning",
-        28: "Returning auto empty",
-        97: "Shortcut",
-        98: "Monitoring",
-        99: "Monitoring paused"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        1: "Staubsaugen",
-        2: "Leerlauf",
-        3: "Pausiert",
-        4: "Fehler",
-        5: "Zurückkehrend",
-        6: "Aufladen",
-        7: "Wischen",
-        8: "Trocknen",
-        9: "Waschen",
-        10: "Zurückkehren zum Waschen",
-        11: "Bauen",
-        12: "Staubsaugen und Wischen",
-        13: "Aufladen abgeschlossen",
-        14: "Aufrüsten",
-        15: "Saubere Aufforderung",
-        16: "Station zurücksetzen",
-        17: "Rückgabe Mopp installieren",
-        18: "Rückgabe Mopp entfernen",
-        19: "Wasser prüfen",
-        20: "Reinigen, Wasser hinzufügen",
-        21: "Waschen pausiert",
-        22: "Automatische Entleerung",
-        23: "Fernsteuerung",
-        24: "Intelligentes Laden",
-        25: "Zweite Reinigung",
-        26: "Menschliches Folgen",
-        27: "Punktuelle Reinigung",
-        28: "Automatisch leer zurückkehren",
-        97: "Abkürzung",
-        98: "Überwachung",
-        99: "Überwachung pausiert"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Sweeping',
+    2: 'Idle',
+    3: 'Paused',
+    4: 'Error',
+    5: 'Returning',
+    6: 'Charging',
+    7: 'Mopping',
+    8: 'Drying',
+    9: 'Washing',
+    10: 'Returning to wash',
+    11: 'Building',
+    12: 'Sweeping and mopping',
+    13: 'Charging completed',
+    14: 'Upgrading',
+    15: 'Clean summon',
+    16: 'Station reset',
+    17: 'Returning install mop',
+    18: 'Returning remove mop',
+    19: 'Water check',
+    20: 'Clean add water',
+    21: 'Washing paused',
+    22: 'Auto emptying',
+    23: 'Remote control',
+    24: 'Smart charging',
+    25: 'Second cleaning',
+    26: 'Human following',
+    27: 'Spot cleaning',
+    28: 'Returning auto empty',
+    97: 'Shortcut',
+    98: 'Monitoring',
+    99: 'Monitoring paused'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Staubsaugen',
+    2: 'Leerlauf',
+    3: 'Pausiert',
+    4: 'Fehler',
+    5: 'Zurückkehrend',
+    6: 'Aufladen',
+    7: 'Wischen',
+    8: 'Trocknen',
+    9: 'Waschen',
+    10: 'Zurückkehren zum Waschen',
+    11: 'Bauen',
+    12: 'Staubsaugen und Wischen',
+    13: 'Aufladen abgeschlossen',
+    14: 'Aufrüsten',
+    15: 'Saubere Aufforderung',
+    16: 'Station zurücksetzen',
+    17: 'Rückgabe Mopp installieren',
+    18: 'Rückgabe Mopp entfernen',
+    19: 'Wasser prüfen',
+    20: 'Reinigen, Wasser hinzufügen',
+    21: 'Waschen pausiert',
+    22: 'Automatische Entleerung',
+    23: 'Fernsteuerung',
+    24: 'Intelligentes Laden',
+    25: 'Zweite Reinigung',
+    26: 'Menschliches Folgen',
+    27: 'Punktuelle Reinigung',
+    28: 'Automatisch leer zurückkehren',
+    97: 'Abkürzung',
+    98: 'Überwachung',
+    99: 'Überwachung pausiert'
+  }
 };
 const DreameTaskStatus = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Completed",
-        1: "Auto cleaning",
-        2: "Zone cleaning",
-        3: "Segment cleaning",
-        4: "Spot cleaning",
-        5: "Fast mapping",
-        6: "Auto cleaning paused",
-        7: "Zone cleaning paused",
-        8: "Segment cleaning paused",
-        9: "Spot cleaning paused",
-        10: "Map cleaning paused",
-        11: "Docking paused",
-        12: "Mopping paused",
-        13: "Segment mopping paused",
-        14: "Zone mopping paused",
-        15: "Auto mopping paused",
-        16: "Auto docking paused",
-        17: "Segment docking paused",
-        18: "Zone docking paused",
-        20: "Cruising path",
-        21: "Cruising path paused",
-        22: "Cruising point",
-        23: "Cruising point paused",
-        24: "Summon clean paused",
-        25: "Returning install mop",
-        26: "Returning remove mop"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Abgeschlossen",
-        1: "Automatische Reinigung",
-        2: "Zonenreinigung",
-        3: "Segment-Reinigung",
-        4: "Punktuelle Reinigung",
-        5: "Schnelles Mapping",
-        6: "Automatische Reinigung pausiert",
-        7: "Zonenreinigung unterbrochen",
-        8: "Segmentreinigung unterbrochen",
-        9: "Punktuelle Reinigung unterbrochen",
-        10: "Kartenreinigung pausiert",
-        11: "Andocken unterbrochen",
-        12: "Wischen pausiert",
-        13: "Segmentwischen pausiert",
-        14: "Zonenwischen pausiert",
-        15: "Automatisches Wischen pausiert",
-        16: "Automatisches Andocken pausiert",
-        17: "Segment Andocken pausiert",
-        18: "Zonendocking pausiert",
-        20: "Kreuzfahrtstrecke",
-        21: "Fahrtroute pausiert",
-        22: "Kreuzungspunkt",
-        23: "Kreuzungspunkt pausiert",
-        24: "Saubere Beschwörung pausiert",
-        25: "Rückgabe Mopp installieren",
-        26: "Rückgabe Mopp entfernen"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Completed',
+    1: 'Auto cleaning',
+    2: 'Zone cleaning',
+    3: 'Segment cleaning',
+    4: 'Spot cleaning',
+    5: 'Fast mapping',
+    6: 'Auto cleaning paused',
+    7: 'Zone cleaning paused',
+    8: 'Segment cleaning paused',
+    9: 'Spot cleaning paused',
+    10: 'Map cleaning paused',
+    11: 'Docking paused',
+    12: 'Mopping paused',
+    13: 'Segment mopping paused',
+    14: 'Zone mopping paused',
+    15: 'Auto mopping paused',
+    16: 'Auto docking paused',
+    17: 'Segment docking paused',
+    18: 'Zone docking paused',
+    20: 'Cruising path',
+    21: 'Cruising path paused',
+    22: 'Cruising point',
+    23: 'Cruising point paused',
+    24: 'Summon clean paused',
+    25: 'Returning install mop',
+    26: 'Returning remove mop'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Abgeschlossen',
+    1: 'Automatische Reinigung',
+    2: 'Zonenreinigung',
+    3: 'Segment-Reinigung',
+    4: 'Punktuelle Reinigung',
+    5: 'Schnelles Mapping',
+    6: 'Automatische Reinigung pausiert',
+    7: 'Zonenreinigung unterbrochen',
+    8: 'Segmentreinigung unterbrochen',
+    9: 'Punktuelle Reinigung unterbrochen',
+    10: 'Kartenreinigung pausiert',
+    11: 'Andocken unterbrochen',
+    12: 'Wischen pausiert',
+    13: 'Segmentwischen pausiert',
+    14: 'Zonenwischen pausiert',
+    15: 'Automatisches Wischen pausiert',
+    16: 'Automatisches Andocken pausiert',
+    17: 'Segment Andocken pausiert',
+    18: 'Zonendocking pausiert',
+    20: 'Kreuzfahrtstrecke',
+    21: 'Fahrtroute pausiert',
+    22: 'Kreuzungspunkt',
+    23: 'Kreuzungspunkt pausiert',
+    24: 'Saubere Beschwörung pausiert',
+    25: 'Rückgabe Mopp installieren',
+    26: 'Rückgabe Mopp entfernen'
+  }
 };
 const DreameStatus = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Idle",
-        1: "Paused",
-        2: "Cleaning",
-        3: "Back home",
-        4: "Part cleaning",
-        5: "Follow wall",
-        6: "Charging",
-        7: "Ota",
-        8: "Fct",
-        9: "Wifi set",
-        10: "Power off",
-        11: "Factory",
-        12: "Error",
-        13: "Remote control",
-        14: "Sleeping",
-        15: "Self test",
-        16: "Factory funcion test",
-        17: "Standby",
-        18: "Segment cleaning",
-        19: "Zone cleaning",
-        20: "Spot cleaning",
-        21: "Fast mapping",
-        22: "Cruising path",
-        23: "Cruising point",
-        24: "Summon clean",
-        25: "Shortcut",
-        26: "Person follow",
-        1501: "Water check"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Leerlauf",
-        1: "Pausiert",
-        2: "Reinigung",
-        3: "Zurück nach Hause",
-        4: "Teilreinigung",
-        5: "Wand folgen",
-        6: "Aufladen",
-        7: "Ota",
-        8: "Fct",
-        9: "Wifi einstellen",
-        10: "Ausschalten",
-        11: "Werk",
-        12: "Fehler",
-        13: "Fernsteuerung",
-        14: "Schlafend",
-        15: "Selbsttest",
-        16: "Werksfunktionstest",
-        17: "Bereitschaft",
-        18: "Segment-Reinigung",
-        19: "Zonenreinigung",
-        20: "Punktuelle Reinigung",
-        21: "Schnelles Mapping",
-        22: "Fahrtroute",
-        23: "Kreuzungspunkt",
-        24: "Bereinigung herbeirufen",
-        25: "Abkürzung",
-        26: "Person folgen",
-        1501: "Wasserprüfung"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Paused',
+    2: 'Cleaning',
+    3: 'Back home',
+    4: 'Part cleaning',
+    5: 'Follow wall',
+    6: 'Charging',
+    7: 'Ota',
+    8: 'Fct',
+    9: 'Wifi set',
+    10: 'Power off',
+    11: 'Factory',
+    12: 'Error',
+    13: 'Remote control',
+    14: 'Sleeping',
+    15: 'Self test',
+    16: 'Factory funcion test',
+    17: 'Standby',
+    18: 'Segment cleaning',
+    19: 'Zone cleaning',
+    20: 'Spot cleaning',
+    21: 'Fast mapping',
+    22: 'Cruising path',
+    23: 'Cruising point',
+    24: 'Summon clean',
+    25: 'Shortcut',
+    26: 'Person follow',
+    1501: 'Water check'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Pausiert',
+    2: 'Reinigung',
+    3: 'Zurück nach Hause',
+    4: 'Teilreinigung',
+    5: 'Wand folgen',
+    6: 'Aufladen',
+    7: 'Ota',
+    8: 'Fct',
+    9: 'Wifi einstellen',
+    10: 'Ausschalten',
+    11: 'Werk',
+    12: 'Fehler',
+    13: 'Fernsteuerung',
+    14: 'Schlafend',
+    15: 'Selbsttest',
+    16: 'Werksfunktionstest',
+    17: 'Bereitschaft',
+    18: 'Segment-Reinigung',
+    19: 'Zonenreinigung',
+    20: 'Punktuelle Reinigung',
+    21: 'Schnelles Mapping',
+    22: 'Fahrtroute',
+    23: 'Kreuzungspunkt',
+    24: 'Bereinigung herbeirufen',
+    25: 'Abkürzung',
+    26: 'Person folgen',
+    1501: 'Wasserprüfung'
+  }
 };
 const DreameSuctionLevel = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Quiet",
-        1: "Standard",
-        2: "Strong",
-        3: "Turbo"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Leise",
-        1: "Standard",
-        2: "Stark",
-        3: "Turbo"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Quiet',
+    1: 'Standard',
+    2: 'Strong',
+    3: 'Turbo'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leise',
+    1: 'Standard',
+    2: 'Stark',
+    3: 'Turbo'
+  }
 };
 
-var DreameSetWaterVolume = {"EN": { "-1": "Unknown"},"DE": {"-1": "Unbekannt"}};
+const DreameSetWaterVolume = {'EN': { '-1': 'Unknown'},'DE': {'-1': 'Unbekannt'}};
 for (let i = 1; i < 33; i++) {
-    ((i < 33) ? DreameSetWaterVolume["EN"][i] = "Ultra " + i : "") && (DreameSetWaterVolume["DE"][i] = "Ultra " + i);
-    ((i < 28) ? DreameSetWaterVolume["EN"][i] = "Height " + i : "") && (DreameSetWaterVolume["DE"][i] = "Hoch " + i);
-    ((i < 17) ? DreameSetWaterVolume["EN"][i] = "Middle " + i : "") && (DreameSetWaterVolume["DE"][i] = "Mittel " + i);
-    ((i < 6) ? DreameSetWaterVolume["EN"][i] = "Low " + i : "") && (DreameSetWaterVolume["DE"][i] = "Niedrig " + i);
+  ((i < 33) ? DreameSetWaterVolume['EN'][i] = 'Ultra ' + i : '') && (DreameSetWaterVolume['DE'][i] = 'Ultra ' + i);
+  ((i < 28) ? DreameSetWaterVolume['EN'][i] = 'Height ' + i : '') && (DreameSetWaterVolume['DE'][i] = 'Hoch ' + i);
+  ((i < 17) ? DreameSetWaterVolume['EN'][i] = 'Middle ' + i : '') && (DreameSetWaterVolume['DE'][i] = 'Mittel ' + i);
+  ((i < 6) ? DreameSetWaterVolume['EN'][i] = 'Low ' + i : '') && (DreameSetWaterVolume['DE'][i] = 'Niedrig ' + i);
 }
 
 const DreameSetRoute = {
-	"EN": {
-		"-1": "Unknown",
-        1: "Standart",
-        2: "Intensive",
-        3: "Deep",
-        546: "Intelligent",
-	    512: "Unknown1",
-	    768: "Unknown2"
-		},
-    "DE": {
-		"-1": "Unbekannt",
-		1: "Standart",
-        2: "Intensiv",
-        3: "Tief",
-        546: "Intelligent",
-	    512: "Unbekannt1",
-	    768: "Unbekannt2"
-	}
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Standart',
+    2: 'Intensive',
+    3: 'Deep',
+    546: 'Intelligent',
+	    512: 'Unknown1',
+	    768: 'Unknown2'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Standart',
+    2: 'Intensiv',
+    3: 'Tief',
+    546: 'Intelligent',
+	    512: 'Unbekannt1',
+	    768: 'Unbekannt2'
+  }
 };
 
 const DreameSetCleanRoom = {
-	"EN": {
-		"-1": "Unknown",
-        1: "Yes",
-        2: "No"
-		},
-    "DE": {
-		"-1": "Unbekannt",
-		1: "Ja",
-        2: "Nein"
-	}
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Yes',
+    2: 'No'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Ja',
+    2: 'Nein'
+  }
 };
 
 const DreameSetRepeat = {
-    "EN": {
-	"-1": "Unknown",
-	1: '1',
+  'EN': {
+    '-1': 'Unknown',
+    1: '1',
     2: '2',
     3: '3'
-	},
-    "DE": {
-	"-1": "Unbekannt",
-	1: '1',
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: '1',
     2: '2',
     3: '3'
-	}
+  }
 };
 const DreameWaterVolume = {
-    "EN": {
-        "-1": "Unknown",
-        1: "Low",
-        2: "Medium",
-        3: "High"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        1: "Niedrig",
-        2: "Mittel",
-        3: "Hoch"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Low',
+    2: 'Medium',
+    3: 'High'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Niedrig',
+    2: 'Mittel',
+    3: 'Hoch'
+  }
 };
 const DreameCarpetSensitivity = {
-	"EN": {
-        "-1": "Unknown",
-        1: "Low",
-        2: "Medium",
-        3: "High"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        1: "Niedrig",
-        2: "Mittel",
-        3: "Hoch"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Low',
+    2: 'Medium',
+    3: 'High'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Niedrig',
+    2: 'Mittel',
+    3: 'Hoch'
+  }
 };
 const DreameAutoDustCollecting = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Inactive",
-        1: "Standard",
-        2: "High frequency",
-        3: "Low frequency"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Inaktiv",
-        1: "Standard",
-        2: "Hohe Frequenz",
-        3: "Niedrige Frequenz"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Inactive',
+    1: 'Standard',
+    2: 'High frequency',
+    3: 'Low frequency'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Standard',
+    2: 'Hohe Frequenz',
+    3: 'Niedrige Frequenz'
+  }
 };
 const DreameAutoEmptyStatus = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Idle",
-        1: "Active",
-        2: "Not Performed"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Leerlauf",
-        1: "Aktiv",
-        2: "Nicht ausgeführt"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Active',
+    2: 'Not Performed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Aktiv',
+    2: 'Nicht ausgeführt'
+  }
 };
 const DreameSelfWashBaseStatus = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Idle",
-        1: "Washing",
-        2: "Drying",
-        3: "Returning",
-        4: "Paused",
-        5: "Clean Add Water",
-        6: "Adding Water"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Leerlauf",
-        1: "Waschen",
-        2: "Trocknen",
-        3: "Rücklauf",
-        4: "Pausiert",
-        5: "Reinigen Wasser hinzufügen",
-        6: "Wasser zugeben"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Washing',
+    2: 'Drying',
+    3: 'Returning',
+    4: 'Paused',
+    5: 'Clean Add Water',
+    6: 'Adding Water'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Waschen',
+    2: 'Trocknen',
+    3: 'Rücklauf',
+    4: 'Pausiert',
+    5: 'Reinigen Wasser hinzufügen',
+    6: 'Wasser zugeben'
+  }
 };
 const DreameMopWashLevel = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Light",
-        1: "Standard",
-        2: "Deep"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Leicht",
-        1: "Standard",
-        2: "Tief"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Light',
+    1: 'Standard',
+    2: 'Deep'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leicht',
+    1: 'Standard',
+    2: 'Tief'
+  }
 };
 const DreameCarpetAvoidance = {
-    "EN": {
-        "-1": "Unknown",
-        1: "Avoid",
-        2: "Lifting the mop",
-        3: "Remove mop",
-        5: "Vacuum and Mop",
-        6: "Ignore"
-    },
-    "DE": {
-        1: "Vermeiden",
-        2: "Mopp anheben",
-        3: "Mopp entfernen",
-        5: "Saugen und wischen",
-        6: "Ignorieren"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Avoid',
+    2: 'Lifting the mop',
+    3: 'Remove mop',
+    5: 'Vacuum and Mop',
+    6: 'Ignore'
+  },
+  'DE': {
+    1: 'Vermeiden',
+    2: 'Mopp anheben',
+    3: 'Mopp entfernen',
+    5: 'Saugen und wischen',
+    6: 'Ignorieren'
+  }
 };
 const DreameCleaningMode = {
-    "EN": {
-        "-1": "Unknown",
-        5122: "Sweeping",
-        5121: "Mopping",
-        5120: "Sweeping and mopping",
-        5123: "Mopping after sweeping",
-        3840: "Customize room cleaning"
-    },
-    "DE": {
-		"-1": "Unbekannt",
-        5122: "Staubsaugen",
-        5121: "Wischen",
-        5120: "Saugen und Wischen",
-        5123: "Wischen nach dem Saugen",
-        3840: "Raumreinigung anpassen"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    5122: 'Sweeping',
+    5121: 'Mopping',
+    5120: 'Sweeping and mopping',
+    5123: 'Mopping after sweeping',
+    3840: 'Customize room cleaning'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    5122: 'Staubsaugen',
+    5121: 'Wischen',
+    5120: 'Saugen und Wischen',
+    5123: 'Wischen nach dem Saugen',
+    3840: 'Raumreinigung anpassen'
+  }
 };
 const DreameChargingStatus = {
-    "EN": {
-        "-1": "Unknown",
-        1: "Charging",
-        2: "Not charging",
-        3: "Charging completed",
-        5: "Return to charge"
-    },
-    "DE": {
-		"-1": "Unbekannt",
-        1: "Aufladen",
-        2: "Nicht geladen",
-        3: "Aufladung abgeschlossen",
-        5: "Rückkehr zum Laden"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Charging',
+    2: 'Not charging',
+    3: 'Charging completed',
+    5: 'Return to charge'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Aufladen',
+    2: 'Nicht geladen',
+    3: 'Aufladung abgeschlossen',
+    5: 'Rückkehr zum Laden'
+  }
 };
 const DreameWaterTank = {
-    "EN": {
-        "-1": "Unknown",
-        0: "Not installed",
-        1: "Installed",
-        10: "Mop installed",
-        99: "Mop in station"
-    },
-    "DE": {
-		"-1": "Unbekannt",
-        0: "Nicht installiert",
-        1: "Installiert",
-        10: "Mopp installiert",
-        99: "Mopp in Station"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Not installed',
+    1: 'Installed',
+    10: 'Mop installed',
+    99: 'Mop in station'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Nicht installiert',
+    1: 'Installiert',
+    10: 'Mopp installiert',
+    99: 'Mopp in Station'
+  }
 };
 
 const DreameDirtyWaterTank = {
-    "EN": {
-        "-1": "Unknown",
-		0: "Installed",
-        1: "Not installed",
-    },
-    "DE": {
-		"-1": "Unbekannt",
-		0: "Installiert",
-        1: "Nicht installiert",
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Not installed',
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Nicht installiert',
+  }
 };
 
 const DreamePureWaterTank = {
-    "EN": {
-        "-1": "Unknown",
-		0: "Tank not installed",
-        2: "No water left",
-		3: "No warning",
-    },
-    "DE": {
-		"-1": "Unbekannt",
-		0: "Tank nicht installiert",
-        2: "Kein Wasser mehr",
-		3: "Keine Warnung",
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Tank not installed',
+    2: 'No water left',
+    3: 'No warning',
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Tank nicht installiert',
+    2: 'Kein Wasser mehr',
+    3: 'Keine Warnung',
+  }
 };
 
 const DreameLowWaterWarning = {
-    "EN": {
-        "-1": "Unknown",
-        0: "No warning",
-        1: "No water left dismiss",
-        2: "No water left",
-        3: "No water left after clean",
-        4: "No water for clean",
-        5: "Low water",
-        6: "Tank not installed"
-    },
-    "DE": {
-        "-1": "Unbekannt",
-        0: "Keine Warnung",
-        1: "Kein Wasser übrig, verwerfen",
-        2: "Kein Wasser mehr",
-        3: "Nach der Reinigung ist kein Wasser mehr übrig",
-        4: "Kein Wasser zum Reinigen",
-        5: "Niedrigwasser",
-        6: "Tank nicht installiert"
-    }
+  'EN': {
+    '-1': 'Unknown',
+    0: 'No warning',
+    1: 'No water left dismiss',
+    2: 'No water left',
+    3: 'No water left after clean',
+    4: 'No water for clean',
+    5: 'Low water',
+    6: 'Tank not installed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Keine Warnung',
+    1: 'Kein Wasser übrig, verwerfen',
+    2: 'Kein Wasser mehr',
+    3: 'Nach der Reinigung ist kein Wasser mehr übrig',
+    4: 'Kein Wasser zum Reinigen',
+    5: 'Niedrigwasser',
+    6: 'Tank nicht installiert'
+  }
 };
 const DreameStateCustomProperties = {
-	"Unknown": "Current room cleaning name",
-	"-1": "Current room cleaning number"
+  'Unknown': 'Current room cleaning name',
+  '-1': 'Current room cleaning number'
 };
 const DreameStateProperties = {
-    "S2P1": "State",
-    "S2P2": "Error",
-    "S3P1": "Battery level",
-    "S3P2": "Charging status",
-    "S4P1": "Status",
-    "S4P2": "Cleaning time",
-    "S4P3": "Cleaned area",
-    "S4P4": "Suction level",
-    "S4P5": "Water volume",
-    "S4P6": "Water tank",
-    "S4P7": "Task status",
-    "S4P8": "Cleaning start time",
-    "S4P9": "Clean log file name",
-    "S4P10": "Cleaning properties",
-    "S4P11": "Resume cleaning",
-    "S4P12": "Carpet boost",
-    "S4P13": "Clean log status",
-    "S4P14": "Serial number",
-    "S4P15": "Remote control",
-    "S4P16": "Mop cleaning remainder",
-    "S4P17": "Cleaning paused",
-    "S4P18": "Faults",
-    "S4P19": "Nation matched",
-    "S4P20": "Relocation status",
-    "S4P21": "Obstacle avoidance",
-    "S4P22": "Ai detection",
-    "S4P23": "Cleaning mode",
-    "S4P24": "Upload map",
-    "S4P25": "Self wash base status",
-    "S4P26": "Customized cleaning",
-    "S4P27": "Child lock",
-    "S4P28": "Carpet sensitivity",
-    "S4P29": "Tight mopping",
-    "S4P30": "Cleaning cancel",
-    "S4P31": "Y clean",
-    "S4P32": "Water electrolysis",
-    "S4P33": "Carpet recognition",
-    "S4P34": "Self clean",
-    "S4P35": "Warn status",
-    "S4P36": "Carpet avoidance",
-    "S4P37": "Auto add detergent",
-    "S4P38": "Capability",
-    "S4P39": "Save water tips",
-    "S4P40": "Drying time",
-    "S4P41": "Low water warning",
-    "S4P45": "Auto mount mop",
-    "S4P46": "Mop wash level",
-    "S4P47": "Scheduled clean",
-    "S4P48": "Quick command",
-    "S4P49": "Intelligent recognition",
-    "S4P50": "Auto switch settings",
-    "S4P51": "Auto water refilling",
-    "S4P52": "Mop in station",
-    "S4P53": "Mop pad installed",
-    "S4P63": "Cleaning completed",
-    "S4P64": "Current charging",
-    "S4P99": "Combined data",
-    "S5P1": "Dnd",
-    "S5P2": "Dnd start",
-    "S5P3": "Dnd end",
-    "S5P4": "Dnd task",
-    "S5P58": "Mop retracted extended",
-    "S6P1": "Map data",
-    "S6P2": "Frame info",
-    "S6P3": "Object name",
-    "S6P4": "Map extend data",
-    "S6P5": "Robot time",
-    "S6P6": "Result code",
-    "S6P7": "Multi floor map",
-    "S6P8": "Map list",
-    "S6P9": "Recovery map list",
-    "S6P10": "Map recovery",
-    "S6P11": "Map recovery status",
-    "S6P13": "Old map data",
-    "S6P14": "Backup map status",
-    "S6P15": "Wifi map",
-    "S7P1": "Volume",
-    "S7P2": "Voice packet id",
-    "S7P3": "Voice change status",
-    "S7P4": "Voice change",
-    "S8P1": "Timezone",
-    "S8P2": "Schedule",
-    "S8P3": "Schedule id",
-    "S8P4": "Schedule cancel reason",
-    "S8P5": "Cruise schedule",
-    "S9P1": "Main brush time left",
-    "S9P2": "Main brush left",
-    "S10P1": "Side brush time left",
-    "S10P2": "Side brush left",
-    "S11P1": "Filter left",
-    "S11P2": "Filter time left",
-    "S12P1": "First cleaning date",
-    "S12P2": "Total cleaning time",
-    "S12P3": "Cleaning count",
-    "S12P4": "Total cleaned area",
-    "S13P1": "Map saving",
-    "S15P1": "Auto dust collecting",
-    "S15P2": "Auto empty frequency",
-    "S15P3": "Dust collection",
-    "S15P5": "Auto empty status",
-    "S16P1": "Sensor dirty left",
-    "S16P2": "Sensor dirty time left",
-    "S18P1": "Mop pad left",
-    "S18P2": "Mop pad time left",
-    "S19P1": "Silver ion time left",
-    "S19P2": "Silver ion left",
-    "S20P1": "Detergent left",
-    "S20P2": "Detergent time left",
-    "S27P1": "Pure water tank",
-    "S27P2": "Dirty water tank",
-    "S28P2": "Clean carpet first",
-	"S99P98": "Cleaning towards the floor",
-    "S10001P1": "Stream status",
-    "S10001P2": "Stream audio",
-    "S10001P4": "Stream record",
-    "S10001P5": "Take photo",
-    "S10001P6": "Stream keep alive",
-    "S10001P7": "Stream fault",
-    "S10001P9": "Camera brightness",
-    "S10001P10": "Camera light",
-    "S10001P101": "Stream cruise point",
-    "S10001P99": "Stream property",
-    "S10001P103": "Stream task",
-    "S10001P1003": "Stream upload",
-    "S10001P1100": "Stream code",
-    "S10001P1101": "Stream set code",
-    "S10001P1102": "Stream verify code",
-    "S10001P1103": "Stream reset code",
-    "S10001P2003": "Stream space"
+  'S2P1': 'State',
+  'S2P2': 'Error',
+  'S3P1': 'Battery level',
+  'S3P2': 'Charging status',
+  'S4P1': 'Status',
+  'S4P2': 'Cleaning time',
+  'S4P3': 'Cleaned area',
+  'S4P4': 'Suction level',
+  'S4P5': 'Water volume',
+  'S4P6': 'Water tank',
+  'S4P7': 'Task status',
+  'S4P8': 'Cleaning start time',
+  'S4P9': 'Clean log file name',
+  'S4P10': 'Cleaning properties',
+  'S4P11': 'Resume cleaning',
+  'S4P12': 'Carpet boost',
+  'S4P13': 'Clean log status',
+  'S4P14': 'Serial number',
+  'S4P15': 'Remote control',
+  'S4P16': 'Mop cleaning remainder',
+  'S4P17': 'Cleaning paused',
+  'S4P18': 'Faults',
+  'S4P19': 'Nation matched',
+  'S4P20': 'Relocation status',
+  'S4P21': 'Obstacle avoidance',
+  'S4P22': 'Ai detection',
+  'S4P23': 'Cleaning mode',
+  'S4P24': 'Upload map',
+  'S4P25': 'Self wash base status',
+  'S4P26': 'Customized cleaning',
+  'S4P27': 'Child lock',
+  'S4P28': 'Carpet sensitivity',
+  'S4P29': 'Tight mopping',
+  'S4P30': 'Cleaning cancel',
+  'S4P31': 'Y clean',
+  'S4P32': 'Water electrolysis',
+  'S4P33': 'Carpet recognition',
+  'S4P34': 'Self clean',
+  'S4P35': 'Warn status',
+  'S4P36': 'Carpet avoidance',
+  'S4P37': 'Auto add detergent',
+  'S4P38': 'Capability',
+  'S4P39': 'Save water tips',
+  'S4P40': 'Drying time',
+  'S4P41': 'Low water warning',
+  'S4P45': 'Auto mount mop',
+  'S4P46': 'Mop wash level',
+  'S4P47': 'Scheduled clean',
+  'S4P48': 'Quick command',
+  'S4P49': 'Intelligent recognition',
+  'S4P50': 'Auto switch settings',
+  'S4P51': 'Auto water refilling',
+  'S4P52': 'Mop in station',
+  'S4P53': 'Mop pad installed',
+  'S4P63': 'Cleaning completed',
+  'S4P64': 'Current charging',
+  'S4P99': 'Combined data',
+  'S5P1': 'Dnd',
+  'S5P2': 'Dnd start',
+  'S5P3': 'Dnd end',
+  'S5P4': 'Dnd task',
+  'S5P58': 'Mop retracted extended',
+  'S6P1': 'Map data',
+  'S6P2': 'Frame info',
+  'S6P3': 'Object name',
+  'S6P4': 'Map extend data',
+  'S6P5': 'Robot time',
+  'S6P6': 'Result code',
+  'S6P7': 'Multi floor map',
+  'S6P8': 'Map list',
+  'S6P9': 'Recovery map list',
+  'S6P10': 'Map recovery',
+  'S6P11': 'Map recovery status',
+  'S6P13': 'Old map data',
+  'S6P14': 'Backup map status',
+  'S6P15': 'Wifi map',
+  'S7P1': 'Volume',
+  'S7P2': 'Voice packet id',
+  'S7P3': 'Voice change status',
+  'S7P4': 'Voice change',
+  'S8P1': 'Timezone',
+  'S8P2': 'Schedule',
+  'S8P3': 'Schedule id',
+  'S8P4': 'Schedule cancel reason',
+  'S8P5': 'Cruise schedule',
+  'S9P1': 'Main brush time left',
+  'S9P2': 'Main brush left',
+  'S10P1': 'Side brush time left',
+  'S10P2': 'Side brush left',
+  'S11P1': 'Filter left',
+  'S11P2': 'Filter time left',
+  'S12P1': 'First cleaning date',
+  'S12P2': 'Total cleaning time',
+  'S12P3': 'Cleaning count',
+  'S12P4': 'Total cleaned area',
+  'S13P1': 'Map saving',
+  'S15P1': 'Auto dust collecting',
+  'S15P2': 'Auto empty frequency',
+  'S15P3': 'Dust collection',
+  'S15P5': 'Auto empty status',
+  'S16P1': 'Sensor dirty left',
+  'S16P2': 'Sensor dirty time left',
+  'S18P1': 'Mop pad left',
+  'S18P2': 'Mop pad time left',
+  'S19P1': 'Silver ion time left',
+  'S19P2': 'Silver ion left',
+  'S20P1': 'Detergent left',
+  'S20P2': 'Detergent time left',
+  'S27P1': 'Pure water tank',
+  'S27P2': 'Dirty water tank',
+  'S28P2': 'Clean carpet first',
+  'S99P98': 'Cleaning towards the floor',
+  'S10001P1': 'Stream status',
+  'S10001P2': 'Stream audio',
+  'S10001P4': 'Stream record',
+  'S10001P5': 'Take photo',
+  'S10001P6': 'Stream keep alive',
+  'S10001P7': 'Stream fault',
+  'S10001P9': 'Camera brightness',
+  'S10001P10': 'Camera light',
+  'S10001P101': 'Stream cruise point',
+  'S10001P99': 'Stream property',
+  'S10001P103': 'Stream task',
+  'S10001P1003': 'Stream upload',
+  'S10001P1100': 'Stream code',
+  'S10001P1101': 'Stream set code',
+  'S10001P1102': 'Stream verify code',
+  'S10001P1103': 'Stream reset code',
+  'S10001P2003': 'Stream space'
 };
 const DreameActionProperties = {
-    "S2A1": "Start",
-    "S2A2": "Pause",
-    "S3A1": "Charge",
-	"S3P3C1": "Off-peack Charging",
-    "S4A1": "Start custom",
-	"S4A1C1": "Start zone cleaning",
-	"S4A1C2": "Start points cleaning",
-	"S4A1C3": "Fast mapping",
-    "S4A2C1": "Stop",
-    "S4A3": "Clear warning",
-    "S4A4": "Start washing",
-	"S4P4E1": "Suction level",
-	"S4P5E1": "Water volume",
-    //"S4A6": "Get photo info",
-    "S4A8": "Shortcuts",
-	"S4P11E1": "Resume Cleane Mode",
-	"S4P23E1": "Cleaning mode",
-	"S4P27E1": "Child lock",
-	"S4P37E1": "Auto add detergent",
-	"S4P45E1": "Auto mount mop",
-	"S4P49E1": "Map Switching methode",
-	"S4P50C1": "Auto switch settings",
-	"S4P50E2": "Clean Genius",
-	"S4P50E3": "Auto Rewashing",
-	"S4P50E4": "Auto recleaning",
-	"S4P50E5": "Carpet Boost",
-	"S4P50E6": "Intensive Carpet cleaning",
-	"S4P50E7": "AI driven MopExtend",
-	"S4P50E8": "Mop Extension for Gap cleaning",
-	"S4P50E9": "Intensive Cleaning for Furniture Legs",
-	"S4P50E10": "Fill Light",
-	"S4P50E11": "Collision-Avoidance Mode",
-	"S4P50E12": "Clean Route",
-	"S4P50E13": "Live Video Prompts",
-    "S6A1": "Request map",
-    "S6A2": "Update map data",
-	"S6A2C1": "Change map",
-	"S6A2C2": "Rename map",
-	"S6A2C3": "Delete map",
-	"S6A2C4": "Rotate map",
-	"S6A2C5": "Clean Order",
-    "S6A3": "Backup map",
-    "S6A4": "Wifi map",
-    "S7A1": "Locate",
-	"S7P1E1": "Volume",
-    "S7A2": "Test sound",
-    "S8A1": "Delete schedule",
-    "S8A2": "Delete cruise schedule",
-    "S9A1": "Reset main brush",
-    "S10A1": "Reset side brush",
-    "S11A1": "Reset filter",
-    "S16A1": "Reset sensor",
-    "S15A1": "Start auto empty",
-    "S17A1": "Reset secondary filter",
-    "S18A1": "Reset mop pad",
-    "S19A1": "Reset silver ion",
-    "S20A1": "Reset detergent",
-    //"S10001A1": "Stream video",
-    //"S10001A2": "Stream audio",
-    //"S10001A3": "Stream property",
-    //"S10001A4": "Stream code"
+  'S2A1': 'Start',
+  'S2A2': 'Pause',
+  'S3A1': 'Charge',
+  'S3P3C1': 'Off-peack Charging',
+  'S4A1': 'Start custom',
+  'S4A1C1': 'Start zone cleaning',
+  'S4A1C2': 'Start points cleaning',
+  'S4A1C3': 'Fast mapping',
+  'S4A2C1': 'Stop',
+  'S4A3': 'Clear warning',
+  'S4A4': 'Start washing',
+  'S4P4E1': 'Suction level',
+  'S4P5E1': 'Water volume',
+  //"S4A6": "Get photo info",
+  'S4A8': 'Shortcuts',
+  'S4P11E1': 'Resume Cleane Mode',
+  'S4P23E1': 'Cleaning mode',
+  'S4P27E1': 'Child lock',
+  'S4P37E1': 'Auto add detergent',
+  'S4P45E1': 'Auto mount mop',
+  'S4P49E1': 'Map Switching methode',
+  'S4P50C1': 'Auto switch settings',
+  'S4P50E2': 'Clean Genius',
+  'S4P50E3': 'Auto Rewashing',
+  'S4P50E4': 'Auto recleaning',
+  'S4P50E5': 'Carpet Boost',
+  'S4P50E6': 'Intensive Carpet cleaning',
+  'S4P50E7': 'AI driven MopExtend',
+  'S4P50E8': 'Mop Extension for Gap cleaning',
+  'S4P50E9': 'Intensive Cleaning for Furniture Legs',
+  'S4P50E10': 'Fill Light',
+  'S4P50E11': 'Collision-Avoidance Mode',
+  'S4P50E12': 'Clean Route',
+  'S4P50E13': 'Live Video Prompts',
+  'S6A1': 'Request map',
+  'S6A2': 'Update map data',
+  'S6A2C1': 'Change map',
+  'S6A2C2': 'Rename map',
+  'S6A2C3': 'Delete map',
+  'S6A2C4': 'Rotate map',
+  'S6A2C5': 'Clean Order',
+  'S6A3': 'Backup map',
+  'S6A4': 'Wifi map',
+  'S7A1': 'Locate',
+  'S7P1E1': 'Volume',
+  'S7A2': 'Test sound',
+  'S8A1': 'Delete schedule',
+  'S8A2': 'Delete cruise schedule',
+  'S9A1': 'Reset main brush',
+  'S10A1': 'Reset side brush',
+  'S11A1': 'Reset filter',
+  'S16A1': 'Reset sensor',
+  'S15A1': 'Start auto empty',
+  'S17A1': 'Reset secondary filter',
+  'S18A1': 'Reset mop pad',
+  'S19A1': 'Reset silver ion',
+  'S20A1': 'Reset detergent',
+  //"S10001A1": "Stream video",
+  //"S10001A2": "Stream audio",
+  //"S10001A3": "Stream property",
+  //"S10001A4": "Stream code"
 };
 
 const DreameActionParams = {
-    "S2A1": "false", // Start
-    "S2A2": "false", // Pause
-    "S3A1": "false", // Charge
-	"S3P3C1": [{"siid":3,"piid":3,"value":"{\"enable\":false,\"startTime\":\"22:00\",\"endTime\":\"08:00\"}"}],// Off-peack Charging
-    "S4A1": [{"piid": 1,"value": 18},{"piid": 10,"value": "{\"selects\": [[1,1,3,2,1]]}"}], //Start custom
-	"S4A1C1": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"areas\": [[-525,475,1225,3025,3,0,2]]}"}], //Start zone cleaning X1,Y1,X2,Y2,Repeat,SuctionLevel,WaterVolume => X -525,1225 Y 475,3025 W 1750 H 2550
-	"S4A1C2": [{"piid": 1,"value": 19},{"piid": 10,"value": "{\"points\": [[-525,475,3,0,2]]}"}], //Start points cleaning X,Y,Repeat,SuctionLevel,WaterVolume => X -525 Y 1225
-	"S4A1C3": [{"value": 21}], // Fast mapping
-    "S4A2C1": "false", // Stop
-    "S4A3": "false", // Clear warning
-    "S4A4": "false", // Start washing
-	"S4P4E1": [{"siid":4,"piid":4,"value": 2}], //Suction level   0: "Quiet" 1: "Standard" 2: "Strong" 3: "Turbo"
-	"S4P5E1": [{"siid":4,"piid":5,"value": 2}], //Water volume  1: "Low" 2: "Medium" 3: "High"
-    //"S4A6": "false", // Get photo info
-    "S4A8": "false", // Shortcuts
-	"S4P11E1": [{"siid":4,"piid":11,"value": 1}], //Resume Cleane Mode 0: off 1: on
-	"S4P23E1": [{"siid":4,"piid":23,"value":5123}], //Cleaning mode 5120: vac & mop 5121: mop 5122: vacuum 5123: mop after Vac [{"siid":4,"piid":26,"value":1}] Customize room cleaning 1 On 0: off
-	"S4P27E1": [{"siid":4,"piid":27,"value": 1}], //Child lock 0: off 1: on
-	"S4P37E1":  [{"siid":4,"piid":37,"value": 1}], //Auto add detergent  0: off 1: on
-	"S4P45E1": [{"siid":4,"piid":45,"value": 1}], //Auto mount mop 0: off 1: on
-	"S4P49E1": [{"siid":4,"piid":49,"value":1}], // Map Switching methode: 0: Manual 1: intelligent
-	"S4P50C1": [{"siid":4,"piid":50,"value": "{\"k\":\"AutoDry\",\"v\":1},{\"k\":\"SmartAutoWash\",\"v\":2},{\"k\":\"CarpetOnlyClean\",\"v\":1},{\"k\":\"MopEffectSwitch\",\"v\":1},{\"k\":\"FluctuationTestResult\",\"v\":0},{\"k\":\"CleanRoute\",\"v\":1},{\"k\":\"SuperWash\",\"v\":0},{\"k\":\"MopScalable\",\"v\":2},{\"k\":\"SuctionMax\",\"v\":0},{\"k\":\"LessColl\",\"v\":1},{\"k\":\"CarpetFineClean\",\"v\":1},{\"k\":\"FillinLight\",\"v\":1},{\"k\":\"MonitorHumanFollow\",\"v\":0},{\"k\":\"MopScalableVersion\",\"v\":0},{\"k\":\"SmartDrying\",\"v\":0},{\"k\":\"LacuneMopScalable\",\"v\":1},{\"k\":\"HotWash\",\"v\":1},{\"k\":\"CleanType\",\"v\":0},{\"k\":\"DetergentNote\",\"v\":1},{\"k\":\"MeticulousTwist\",\"v\":-7},{\"k\":\"MopEffectState\",\"v\":3},{\"k\":\"MaterialDirectionClean\",\"v\":0},{\"k\":\"PetPartClean\",\"v\":0},{\"k\":\"RobotCarpetPressEnable\",\"v\":1},{\"k\":\"MopScalable2\",\"v\":1},{\"k\":\"MonitorPromptLevel\",\"v\":1},{\"k\":\"UVLight\",\"v\":0},{\"k\":\"MopFullyScalable\",\"v\":0},{\"k\":\"StainIdentify\",\"v\":1},{\"k\":\"SmartAutoMop\",\"v\":2},{\"k\":\"SmartCharge\",\"v\":1},{\"k\":\"FluctuationConfirmResult\",\"v\":0},{\"k\":\"SmartHost\",\"v\":0}"}],// Auto switch settings
-	"S4P50E2": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartHost\",\"v\":1}"}], //"Clean Genius",
-	"S4P50E3": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartAutoWash\",\"v\":1}"}], //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
-	"S4P50E4": [{"siid":4,"piid":50,"value": "{\"k\":\"SmartAutoMop\",\"v\":1}"}], //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
-	"S4P50E5": [{"siid":4,"piid":50,"value": "{\"k\":\"RobotCarpetPressEnable\",\"v\":1}"}], //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
-	"S4P50E6": [{"siid":4,"piid":50,"value": "{\"k\":\"CarpetFineClean\",\"v\":1}"}], //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
-	"S4P50E7": [{"siid":4,"piid":50,"value": "{\"k\":\"MopScalable\",\"v\":1}"}], //MopScalable 1: Intelligence 7: Standard 2: High frequency
-	"S4P50E8": [{"siid":4,"piid":50,"value": "{\"k\":\"LacuneMopScalable\",\"v\":1}"}], //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
-	"S4P50E9": [{"siid":4,"piid":50,"value": "{\"k\":\"MopScalable2\",\"v\":1}"}], //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
-	"S4P50E10": [{"siid":4,"piid":50,"value": "{\"k\":\"FillinLight\",\"v\":1}"}], //FillinLight 0: off 1: on
-	"S4P50E11": [{"siid":4,"piid":50,"value": "{\"k\":\"LessColl\",\"v\":1}"}], //Collision-Avoidance Mode / LessColl 0: off 1: on
-	"S4P50E12": [{"siid":4,"piid":50,"value": "{\"k\":\"CleanRoute\",\"v\":1}"}], //CleanRoute 0: off 1: on
-	"S4P50E13": [{"siid":4,"piid":50,"value": "{\"k\":\"MonitorPromptLevel\",\"v\":1}"}], //Live Video Prompts 0: Weak 1: Strong
-	"S6A1": [{"piid": 2,"value": "{\"req_type\":1,\"frame_type\":\"I\",\"force_type\":1}"}], // Request map
-    "S6A2": [{"piid": 4,"value":"{\"customeClean\":[[1,2,27,2,2,2]]}"}], // Update map data | Room Settings | 1: Segment, 2: Suction Level, 27 Water volume, 2: Cleaning Times, 2: Cleaning Mode, 2: ??
-	"S6A2C1": [{"piid": 4,"value": "{\"sm\":{},\"mapid\":map_id}"}], // Update map data | Change map:
-	"S6A2C2": [{"piid": 4,"value": "{\"nrism\":{\"map_id\":{\"name\":\"New_name\"}}}"}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
-	"S6A2C3": [{"piid": 4,"value": "{\"cm\":{},\"mapid\":map_id}"}], // Update map data | Delete map
-	"S6A2C4": [{"piid": 4,"value": "{\"smra\":{\"map_id\":{\"ra\":90}}}"}], // Update map data | Rotate map
-	"S6A2C5": [{"piid": 4,"value":"{\"cleanOrder\":[[1,2,3]]}"}], // Update map data | cleanOrder
-    "S6A3": "false", // Backup map
-    "S6A4": "false", // Wifi map
-    "S7A1": "false", // Locate
-	"S7P1E1": [{"siid":7,"piid":1,"value": 60}], //Volume 1 to 100
-    "S7A2": "false", // Test sound
-    "S8A1": "false", // Delete schedule
-    "S8A2": "false", // Delete cruise schedule
-    "S9A1": "false", // Reset main brush
-    "S10A1": "false", // Reset side brush
-    "S11A1": "false", // Reset filter
-    "S16A1": "false", // Reset sensor
-    "S15A1": "false", // Start auto empty
-    "S17A1": "false", // Reset secondary filter
-    "S18A1": "false", // Reset mop pad
-	"S18A1C1": [{"piid": 1,"value": 19},{"piid": 21,"value": "-525,475,1225,3025"}], //Start zone cleaning \"areas\": [[-525,475,1225,3025,3,0,2]]
-    "S19A1": "false", // Reset silver ion
-    "S20A1": "false", // Reset detergent
-    //"S10001A1": "false", // Stream video
-    //"S10001A2": "false", // Stream audio
-    //"S10001A3": "false", // Stream property
-    //"S10001A4": "false", // Stream code
+  'S2A1': 'false', // Start
+  'S2A2': 'false', // Pause
+  'S3A1': 'false', // Charge
+  'S3P3C1': [{'siid':3,'piid':3,'value':'{"enable":false,"startTime":"22:00","endTime":"08:00"}'}],// Off-peack Charging
+  'S4A1': [{'piid': 1,'value': 18},{'piid': 10,'value': '{"selects": [[1,1,3,2,1]]}'}], //Start custom
+  'S4A1C1': [{'piid': 1,'value': 19},{'piid': 10,'value': '{"areas": [[-525,475,1225,3025,3,0,2]]}'}], //Start zone cleaning X1,Y1,X2,Y2,Repeat,SuctionLevel,WaterVolume => X -525,1225 Y 475,3025 W 1750 H 2550
+  'S4A1C2': [{'piid': 1,'value': 19},{'piid': 10,'value': '{"points": [[-525,475,3,0,2]]}'}], //Start points cleaning X,Y,Repeat,SuctionLevel,WaterVolume => X -525 Y 1225
+  'S4A1C3': [{'value': 21}], // Fast mapping
+  'S4A2C1': 'false', // Stop
+  'S4A3': 'false', // Clear warning
+  'S4A4': 'false', // Start washing
+  'S4P4E1': [{'siid':4,'piid':4,'value': 2}], //Suction level   0: "Quiet" 1: "Standard" 2: "Strong" 3: "Turbo"
+  'S4P5E1': [{'siid':4,'piid':5,'value': 2}], //Water volume  1: "Low" 2: "Medium" 3: "High"
+  //"S4A6": "false", // Get photo info
+  'S4A8': 'false', // Shortcuts
+  'S4P11E1': [{'siid':4,'piid':11,'value': 1}], //Resume Cleane Mode 0: off 1: on
+  'S4P23E1': [{'siid':4,'piid':23,'value':5123}], //Cleaning mode 5120: vac & mop 5121: mop 5122: vacuum 5123: mop after Vac [{"siid":4,"piid":26,"value":1}] Customize room cleaning 1 On 0: off
+  'S4P27E1': [{'siid':4,'piid':27,'value': 1}], //Child lock 0: off 1: on
+  'S4P37E1':  [{'siid':4,'piid':37,'value': 1}], //Auto add detergent  0: off 1: on
+  'S4P45E1': [{'siid':4,'piid':45,'value': 1}], //Auto mount mop 0: off 1: on
+  'S4P49E1': [{'siid':4,'piid':49,'value':1}], // Map Switching methode: 0: Manual 1: intelligent
+  'S4P50C1': [{'siid':4,'piid':50,'value': '{"k":"AutoDry","v":1},{"k":"SmartAutoWash","v":2},{"k":"CarpetOnlyClean","v":1},{"k":"MopEffectSwitch","v":1},{"k":"FluctuationTestResult","v":0},{"k":"CleanRoute","v":1},{"k":"SuperWash","v":0},{"k":"MopScalable","v":2},{"k":"SuctionMax","v":0},{"k":"LessColl","v":1},{"k":"CarpetFineClean","v":1},{"k":"FillinLight","v":1},{"k":"MonitorHumanFollow","v":0},{"k":"MopScalableVersion","v":0},{"k":"SmartDrying","v":0},{"k":"LacuneMopScalable","v":1},{"k":"HotWash","v":1},{"k":"CleanType","v":0},{"k":"DetergentNote","v":1},{"k":"MeticulousTwist","v":-7},{"k":"MopEffectState","v":3},{"k":"MaterialDirectionClean","v":0},{"k":"PetPartClean","v":0},{"k":"RobotCarpetPressEnable","v":1},{"k":"MopScalable2","v":1},{"k":"MonitorPromptLevel","v":1},{"k":"UVLight","v":0},{"k":"MopFullyScalable","v":0},{"k":"StainIdentify","v":1},{"k":"SmartAutoMop","v":2},{"k":"SmartCharge","v":1},{"k":"FluctuationConfirmResult","v":0},{"k":"SmartHost","v":0}'}],// Auto switch settings
+  'S4P50E2': [{'siid':4,'piid':50,'value': '{"k":"SmartHost","v":1}'}], //"Clean Genius",
+  'S4P50E3': [{'siid':4,'piid':50,'value': '{"k":"SmartAutoWash","v":1}'}], //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+  'S4P50E4': [{'siid':4,'piid':50,'value': '{"k":"SmartAutoMop","v":1}'}], //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+  'S4P50E5': [{'siid':4,'piid':50,'value': '{"k":"RobotCarpetPressEnable","v":1}'}], //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
+  'S4P50E6': [{'siid':4,'piid':50,'value': '{"k":"CarpetFineClean","v":1}'}], //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
+  'S4P50E7': [{'siid':4,'piid':50,'value': '{"k":"MopScalable","v":1}'}], //MopScalable 1: Intelligence 7: Standard 2: High frequency
+  'S4P50E8': [{'siid':4,'piid':50,'value': '{"k":"LacuneMopScalable","v":1}'}], //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
+  'S4P50E9': [{'siid':4,'piid':50,'value': '{"k":"MopScalable2","v":1}'}], //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
+  'S4P50E10': [{'siid':4,'piid':50,'value': '{"k":"FillinLight","v":1}'}], //FillinLight 0: off 1: on
+  'S4P50E11': [{'siid':4,'piid':50,'value': '{"k":"LessColl","v":1}'}], //Collision-Avoidance Mode / LessColl 0: off 1: on
+  'S4P50E12': [{'siid':4,'piid':50,'value': '{"k":"CleanRoute","v":1}'}], //CleanRoute 0: off 1: on
+  'S4P50E13': [{'siid':4,'piid':50,'value': '{"k":"MonitorPromptLevel","v":1}'}], //Live Video Prompts 0: Weak 1: Strong
+  'S6A1': [{'piid': 2,'value': '{"req_type":1,"frame_type":"I","force_type":1}'}], // Request map
+  'S6A2': [{'piid': 4,'value':'{"customeClean":[[1,2,27,2,2,2]]}'}], // Update map data | Room Settings | 1: Segment, 2: Suction Level, 27 Water volume, 2: Cleaning Times, 2: Cleaning Mode, 2: ??
+  'S6A2C1': [{'piid': 4,'value': '{"sm":{},"mapid":map_id}'}], // Update map data | Change map:
+  'S6A2C2': [{'piid': 4,'value': '{"nrism":{"map_id":{"name":"New_name"}}}'}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
+  'S6A2C3': [{'piid': 4,'value': '{"cm":{},"mapid":map_id}'}], // Update map data | Delete map
+  'S6A2C4': [{'piid': 4,'value': '{"smra":{"map_id":{"ra":90}}}'}], // Update map data | Rotate map
+  'S6A2C5': [{'piid': 4,'value':'{"cleanOrder":[[1,2,3]]}'}], // Update map data | cleanOrder
+  'S6A3': 'false', // Backup map
+  'S6A4': 'false', // Wifi map
+  'S7A1': 'false', // Locate
+  'S7P1E1': [{'siid':7,'piid':1,'value': 60}], //Volume 1 to 100
+  'S7A2': 'false', // Test sound
+  'S8A1': 'false', // Delete schedule
+  'S8A2': 'false', // Delete cruise schedule
+  'S9A1': 'false', // Reset main brush
+  'S10A1': 'false', // Reset side brush
+  'S11A1': 'false', // Reset filter
+  'S16A1': 'false', // Reset sensor
+  'S15A1': 'false', // Start auto empty
+  'S17A1': 'false', // Reset secondary filter
+  'S18A1': 'false', // Reset mop pad
+  'S18A1C1': [{'piid': 1,'value': 19},{'piid': 21,'value': '-525,475,1225,3025'}], //Start zone cleaning \"areas\": [[-525,475,1225,3025,3,0,2]]
+  'S19A1': 'false', // Reset silver ion
+  'S20A1': 'false', // Reset detergent
+  //"S10001A1": "false", // Stream video
+  //"S10001A2": "false", // Stream audio
+  //"S10001A3": "false", // Stream property
+  //"S10001A4": "false", // Stream code
 };
 
 const DreameActionExteParams = {
-	"S4P4E1": {"EN": {0: "Quiet", 1: "Standard", 2: "Strong", 3: "Turbo" }, "DE": {0: "Leise", 1: "Standard", 2: "Stark", 3: "Turbo"}}, //Suction level   0: "Quiet" 1: "Standard" 2: "Strong" 3: "Turbo"
-	"S4P5E1": {"EN": {1: "Low", 2: "Medium", 3: "High"}, "DE": {1: "Niedrig", 2: "Mittel", 3: "Hoch"}}, //Water volume  1: "Low" 2: "Medium" 3: "High"
-	"S4P11E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}},//Resume Cleane Mode 0: off 1: on
-	"S4P23E1": {"EN": {1: "Customize room cleaning", 5120: "Sweeping and mopping", 5121: "Mopping", 5122: "Sweeping", 5123: "Mopping after sweeping"},
-	    "DE": {1: "Raumreinigung anpassen", 5120: "Saugen und Wischen", 5121: "Wischen", 5122: "Staubsaugen", 5123: "Wischen nach dem Saugen"}}, //Cleaning mode 5120: vac & mop 5121: mop 5122: vacuum 5123: mop after Vac [{"siid":4,"piid":26,"value":1}] Customize room cleaning 1 On 0: off
-	"S4P27E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Child lock 0: off 1: on
-	"S4P37E1":  {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Auto add detergent  0: off 1: on
-	"S4P45E1": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Auto mount mop 0: off 1: on
-	"S4P49E1": {"EN": {0: "Manually", 1: "intelligent"}, "DE": {0: "Manuell", 1: "intelligent"}}, // Map Switching methode: 0: Manually 1: intelligent
-	"S4P50E2": {"EN": {0: "Off", 1: "Routine Cleaning", 2: "Deep Cleaning"}, "DE": {0: "Aus", 1: "Routinereinigungsmodus", 2: "Tiefenreinigungsmodus"}}, //"Clean Genius",
-	"S4P50E3": {"EN": {0: "Off", 1: "active in deep cleaning mode", 2: "active in deep and routine cleaning mode"}, "DE": {0: "Aus", 1: "aktiv im Tiefenreinigungsmodus",
-		2: "aktiv im Tiefen- und Routinereinigungsmodus"}}, //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
-	"S4P50E4": {"EN": {0: "Off", 1: "active in deep cleaning mode", 2: "active in deep and routine cleaning mode"}, "DE": {0: "Aus", 1: "aktiv im Tiefenreinigungsmodus",
-		2: "aktiv im Tiefen- und Routinereinigungsmodus"}}, //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
-	"S4P50E5": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
-	"S4P50E6": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
-	"S4P50E7": {"EN": {0: "Intelligence", 7: "Standard", 2: "High frequency"}, "DE": {0: "Intelligenz", 7: "Standard", 2: "Hochfrequenz"}}, //MopScalable 1: Intelligence 7: Standard 2: High frequency
-	"S4P50E8": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
-	"S4P50E9": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
-	"S4P50E10": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //FillinLight 0: off 1: on
-	"S4P50E11": {"EN": {0: "Off", 1: "On"}, "DE": {0: "Aus", 1: "An"}}, //Collision-Avoidance Mode / LessColl 0: off 1: on
-	"S4P50E12": {"EN": {0: "Off", 1: "Standard", 2: "Intensive", 3: "Deep", 4: "Quick"}, "DE": {0: "Aus", 1: "Standard", 2: "Intensiv", 3: "Tief", 4: "Schnell"}}, //CleanRoute 01: Standard 2: Intensive 3: Deep, 4: Quick
-	"S4P50E13": {"EN": {0: "The camera is blinking", 1: "Voice prompts"}, "DE": {0: "Die Kameraanzeige blinkt", 1: "Sprachansagen"}}, //Live Video Prompts 0: Weak 1: Strong
-	"S7P1E1": {"EN": {0: "Min", 100: "Max"}, "DE": {0: "Min", 100: "Max"}}, //Volume 1 to 100
-}
+  'S4P4E1': {'EN': {0: 'Quiet', 1: 'Standard', 2: 'Strong', 3: 'Turbo' }, 'DE': {0: 'Leise', 1: 'Standard', 2: 'Stark', 3: 'Turbo'}}, //Suction level   0: "Quiet" 1: "Standard" 2: "Strong" 3: "Turbo"
+  'S4P5E1': {'EN': {1: 'Low', 2: 'Medium', 3: 'High'}, 'DE': {1: 'Niedrig', 2: 'Mittel', 3: 'Hoch'}}, //Water volume  1: "Low" 2: "Medium" 3: "High"
+  'S4P11E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}},//Resume Cleane Mode 0: off 1: on
+  'S4P23E1': {'EN': {1: 'Customize room cleaning', 5120: 'Sweeping and mopping', 5121: 'Mopping', 5122: 'Sweeping', 5123: 'Mopping after sweeping'},
+	    'DE': {1: 'Raumreinigung anpassen', 5120: 'Saugen und Wischen', 5121: 'Wischen', 5122: 'Staubsaugen', 5123: 'Wischen nach dem Saugen'}}, //Cleaning mode 5120: vac & mop 5121: mop 5122: vacuum 5123: mop after Vac [{"siid":4,"piid":26,"value":1}] Customize room cleaning 1 On 0: off
+  'S4P27E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Child lock 0: off 1: on
+  'S4P37E1':  {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Auto add detergent  0: off 1: on
+  'S4P45E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Auto mount mop 0: off 1: on
+  'S4P49E1': {'EN': {0: 'Manually', 1: 'intelligent'}, 'DE': {0: 'Manuell', 1: 'intelligent'}}, // Map Switching methode: 0: Manually 1: intelligent
+  'S4P50E2': {'EN': {0: 'Off', 1: 'Routine Cleaning', 2: 'Deep Cleaning'}, 'DE': {0: 'Aus', 1: 'Routinereinigungsmodus', 2: 'Tiefenreinigungsmodus'}}, //"Clean Genius",
+  'S4P50E3': {'EN': {0: 'Off', 1: 'active in deep cleaning mode', 2: 'active in deep and routine cleaning mode'}, 'DE': {0: 'Aus', 1: 'aktiv im Tiefenreinigungsmodus',
+    2: 'aktiv im Tiefen- und Routinereinigungsmodus'}}, //SmartAutoWash 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+  'S4P50E4': {'EN': {0: 'Off', 1: 'active in deep cleaning mode', 2: 'active in deep and routine cleaning mode'}, 'DE': {0: 'Aus', 1: 'aktiv im Tiefenreinigungsmodus',
+    2: 'aktiv im Tiefen- und Routinereinigungsmodus'}}, //SmartAutoMop 0: off 1: works in Deep Mode 2: Works in Routine & Deep Mode
+  'S4P50E5': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Carpet Boost / RobotCarpetPressEnable 0: Off 1: On
+  'S4P50E6': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Intensive Carpet cleaning / CarpetFineClean 0: Off 1: On
+  'S4P50E7': {'EN': {0: 'Intelligence', 7: 'Standard', 2: 'High frequency'}, 'DE': {0: 'Intelligenz', 7: 'Standard', 2: 'Hochfrequenz'}}, //MopScalable 1: Intelligence 7: Standard 2: High frequency
+  'S4P50E8': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Mop Extension for Gap cleaning / LacuneMopScalable 0: off 1: on
+  'S4P50E9': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Intensive Cleaning for Furniture Legs / MopScalable2 0: off 1: on
+  'S4P50E10': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //FillinLight 0: off 1: on
+  'S4P50E11': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Collision-Avoidance Mode / LessColl 0: off 1: on
+  'S4P50E12': {'EN': {0: 'Off', 1: 'Standard', 2: 'Intensive', 3: 'Deep', 4: 'Quick'}, 'DE': {0: 'Aus', 1: 'Standard', 2: 'Intensiv', 3: 'Tief', 4: 'Schnell'}}, //CleanRoute 01: Standard 2: Intensive 3: Deep, 4: Quick
+  'S4P50E13': {'EN': {0: 'The camera is blinking', 1: 'Voice prompts'}, 'DE': {0: 'Die Kameraanzeige blinkt', 1: 'Sprachansagen'}}, //Live Video Prompts 0: Weak 1: Strong
+  'S7P1E1': {'EN': {0: 'Min', 100: 'Max'}, 'DE': {0: 'Min', 100: 'Max'}}, //Volume 1 to 100
+};
 
-var LogData; // = false;
-var AlexaIsPresent = false;
-var waitingvalue = 500; //Variable to store the time difference when waiting for the next command
+let LogData; // = false;
+let AlexaIsPresent = false;
+const waitingvalue = 500; //Variable to store the time difference when waiting for the next command
 let lastCommandTime = 0;  // Variable to store the timestamp of the last processed command
 let currentTime = Date.now();
 let timeDiff = currentTime - lastCommandTime;  // Calculate the time difference
-var isAbortCommandReceived = false; // Flag to track if the abort command has been received
-var isMonitorCleaningState = false; // Monitor the cleaning status
-var Alexarooms = [];
-var Alexanumbers = {
-            "one": 1,
-            "two": 2,
-            "three": 3,
-            "ein": 1,
-            "zwei": 2,
-            "drei": 3
-        };
+let isAbortCommandReceived = false; // Flag to track if the abort command has been received
+let isMonitorCleaningState = false; // Monitor the cleaning status
+const Alexarooms = [];
+const Alexanumbers = {
+  'one': 1,
+  'two': 2,
+  'three': 3,
+  'ein': 1,
+  'zwei': 2,
+  'drei': 3
+};
 const suctionLevels = {
-    "EN": ["light", "medium", "strong", "maximum"],
-    "DE": ["leicht", "mittel", "stark", "maximal"]
+  'EN': ['light', 'medium', 'strong', 'maximum'],
+  'DE': ['leicht', 'mittel', 'stark', 'maximal']
 };
 
 const suctionSynonyms = {
-    "EN": {
-        "light": "light",
-        "quiet": "light",
-        "silent": "light",
-        "low": "light",
-        "soft": "light",
-        "eco": "light",
-        "gentle": "light",
-        "whisper": "light",
+  'EN': {
+    'light': 'light',
+    'quiet': 'light',
+    'silent': 'light',
+    'low': 'light',
+    'soft': 'light',
+    'eco': 'light',
+    'gentle': 'light',
+    'whisper': 'light',
 
-        "medium": "medium",
-        "normal": "medium",
-        "standard": "medium",
-        "regular": "medium",
-        "default": "medium",
+    'medium': 'medium',
+    'normal': 'medium',
+    'standard': 'medium',
+    'regular': 'medium',
+    'default': 'medium',
 
-        "strong": "strong",
-        "high": "strong",
-        "powerful": "strong",
-        "intense": "strong",
-        "deep": "strong",
+    'strong': 'strong',
+    'high': 'strong',
+    'powerful': 'strong',
+    'intense': 'strong',
+    'deep': 'strong',
 
-        "maximum": "maximum",
-        "turbo": "maximum",
-        "boost": "maximum",
-        "max": "maximum",
-        "full": "maximum",
-        "ultra": "maximum",
-        "highest": "maximum"
-    },
-    "DE": {
-        "leicht": "leicht",
-        "leise": "leicht",
-        "ruhig": "leicht",
-        "niedrig": "leicht",
-        "sanft": "leicht",
-        "eco": "leicht",
-        "schonend": "leicht",
-        "fl�sterleise": "leicht",
+    'maximum': 'maximum',
+    'turbo': 'maximum',
+    'boost': 'maximum',
+    'max': 'maximum',
+    'full': 'maximum',
+    'ultra': 'maximum',
+    'highest': 'maximum'
+  },
+  'DE': {
+    'leicht': 'leicht',
+    'leise': 'leicht',
+    'ruhig': 'leicht',
+    'niedrig': 'leicht',
+    'sanft': 'leicht',
+    'eco': 'leicht',
+    'schonend': 'leicht',
+    'fl�sterleise': 'leicht',
 
-        "mittel": "mittel",
-        "normal": "mittel",
-        "standard": "mittel",
-        "regul�r": "mittel",
-        "default": "mittel",
+    'mittel': 'mittel',
+    'normal': 'mittel',
+    'standard': 'mittel',
+    'regul�r': 'mittel',
+    'default': 'mittel',
 
-        "stark": "stark",
-        "hoch": "stark",
-        "kraftvoll": "stark",
-        "intensiv": "stark",
-        "tief": "stark",
+    'stark': 'stark',
+    'hoch': 'stark',
+    'kraftvoll': 'stark',
+    'intensiv': 'stark',
+    'tief': 'stark',
 
-        "maximal": "maximal",
-        "turbo": "maximal",
-        "boost": "maximal",
-        "max": "maximal",
-        "voll": "maximal",
-        "ultra": "maximal",
-        "h�chste": "maximal"
-    }
+    'maximal': 'maximal',
+    'turbo': 'maximal',
+    'boost': 'maximal',
+    'max': 'maximal',
+    'voll': 'maximal',
+    'ultra': 'maximal',
+    'h�chste': 'maximal'
+  }
 };
 
 const moppingLevels = {
-    "EN": ["dry", "halfwet", "wet"],
-    "DE": ["trocken", "halbnass", "nass"]
+  'EN': ['dry', 'halfwet', 'wet'],
+  'DE': ['trocken', 'halbnass', 'nass']
 };
 
 const moppingSynonyms = {
-    "EN": {
-        "dry": "dry",
-        "low": "dry",
-        "minimal": "dry",
-        "barely": "dry",
-        "light": "dry",
-        "soft": "dry",
+  'EN': {
+    'dry': 'dry',
+    'low': 'dry',
+    'minimal': 'dry',
+    'barely': 'dry',
+    'light': 'dry',
+    'soft': 'dry',
 
-        "halfwet": "halfwet",
-        "medium": "halfwet",
-        "damp": "halfwet",
-        "moist": "halfwet",
-        "slightly wet": "halfwet",
-        "mid": "halfwet",
+    'halfwet': 'halfwet',
+    'medium': 'halfwet',
+    'damp': 'halfwet',
+    'moist': 'halfwet',
+    'slightly wet': 'halfwet',
+    'mid': 'halfwet',
 
-        "wet": "wet",
-        "high": "wet",
-        "max": "wet",
-        "soaked": "wet",
-        "very wet": "wet",
-        "deep clean": "wet",
-        "intense": "wet"
-    },
-    "DE": {
-        "trocken": "trocken",
-        "niedrig": "trocken",
-        "minimal": "trocken",
-        "kaum": "trocken",
-        "leicht": "trocken",
-        "sanft": "trocken",
+    'wet': 'wet',
+    'high': 'wet',
+    'max': 'wet',
+    'soaked': 'wet',
+    'very wet': 'wet',
+    'deep clean': 'wet',
+    'intense': 'wet'
+  },
+  'DE': {
+    'trocken': 'trocken',
+    'niedrig': 'trocken',
+    'minimal': 'trocken',
+    'kaum': 'trocken',
+    'leicht': 'trocken',
+    'sanft': 'trocken',
 
-        "halbnass": "halbnass",
-        "mittel": "halbnass",
-        "feucht": "halbnass",
-        "leicht feucht": "halbnass",
-        "m��ig nass": "halbnass",
+    'halbnass': 'halbnass',
+    'mittel': 'halbnass',
+    'feucht': 'halbnass',
+    'leicht feucht': 'halbnass',
+    'm��ig nass': 'halbnass',
 
-        "nass": "nass",
-        "hoch": "nass",
-        "max": "nass",
-        "durchn�sst": "nass",
-        "sehr nass": "nass",
-        "tiefenreinigung": "nass",
-        "intensiv": "nass"
-    }
+    'nass': 'nass',
+    'hoch': 'nass',
+    'max': 'nass',
+    'durchn�sst': 'nass',
+    'sehr nass': 'nass',
+    'tiefenreinigung': 'nass',
+    'intensiv': 'nass'
+  }
 };
 const AlexaRoomsName = {
-    "EN": [
-        "Room",
-        "Living Room",
-        "Primary Bedroom",
-        "Secondary Bedroom",
-        "Children's Room",
-        "Study",
-        "Kitchen",
-        "Dining Hall",
-        "Bathroom",
-        "Balcony",
-        "Terrace",
-        "Corridor",
-        "Utility Room",
-        "Closet",
-        "Meeting Room",
-        "Office",
-        "Fitness Area",
-        "Recreation Area"
-    ],
-    "DE": [
-        "Raum",
-        "Wohnzimmer",
-        "Hauptschlafzimmer",
-        "Schlafzimmer",
-        "G�stezimmer",
-        "Kinderzimmer",
-        "Arbeitszimmer",
-        "K�che",
-        "Esszimmer",
-        "Badezimmer",
-        "Balkon",
-        "Terrasse",
-        "Flur",
-        "Hauswirtschaftsraum",
-        "Abstellraum",
-        "Besprechungsraum",
-        "B�ro",
-        "Fitnessraum",
-        "Freizeitraum"
-    ]
+  'EN': [
+    'Room',
+    'Living Room',
+    'Primary Bedroom',
+    'Secondary Bedroom',
+    "Children's Room",
+    'Study',
+    'Kitchen',
+    'Dining Hall',
+    'Bathroom',
+    'Balcony',
+    'Terrace',
+    'Corridor',
+    'Utility Room',
+    'Closet',
+    'Meeting Room',
+    'Office',
+    'Fitness Area',
+    'Recreation Area'
+  ],
+  'DE': [
+    'Raum',
+    'Wohnzimmer',
+    'Hauptschlafzimmer',
+    'Schlafzimmer',
+    'G�stezimmer',
+    'Kinderzimmer',
+    'Arbeitszimmer',
+    'K�che',
+    'Esszimmer',
+    'Badezimmer',
+    'Balkon',
+    'Terrasse',
+    'Flur',
+    'Hauswirtschaftsraum',
+    'Abstellraum',
+    'Besprechungsraum',
+    'B�ro',
+    'Fitnessraum',
+    'Freizeitraum'
+  ]
 };
 const AlexaRoomsNameSynonyms = {
-    "EN": {
-        "room": "Room",
-        "chamber": "Room",
+  'EN': {
+    'room': 'Room',
+    'chamber': 'Room',
 
-        "living": "Living Room",
-        "livingroom": "Living Room",
-        "lounge": "Living Room",
-        "salon": "Living Room",
+    'living': 'Living Room',
+    'livingroom': 'Living Room',
+    'lounge': 'Living Room',
+    'salon': 'Living Room',
 
-        "primary bedroom": "Primary Bedroom",
-        "main bedroom": "Primary Bedroom",
-        "master bedroom": "Primary Bedroom",
+    'primary bedroom': 'Primary Bedroom',
+    'main bedroom': 'Primary Bedroom',
+    'master bedroom': 'Primary Bedroom',
 
-        "secondary bedroom": "Secondary Bedroom",
-        "guest room": "Secondary Bedroom",
-        "extra bedroom": "Secondary Bedroom",
-        "spare bedroom": "Secondary Bedroom",
+    'secondary bedroom': 'Secondary Bedroom',
+    'guest room': 'Secondary Bedroom',
+    'extra bedroom': 'Secondary Bedroom',
+    'spare bedroom': 'Secondary Bedroom',
 
-        "children's room": "Children's Room",
-        "kids room": "Children's Room",
-        "nursery": "Children's Room",
-        "baby room": "Children's Room",
-        "playroom": "Children's Room",
+    "children's room": "Children's Room",
+    'kids room': "Children's Room",
+    'nursery': "Children's Room",
+    'baby room': "Children's Room",
+    'playroom': "Children's Room",
 
-        "study": "Study",
-        "workspace": "Study",
-        "library": "Study",
+    'study': 'Study',
+    'workspace': 'Study',
+    'library': 'Study',
 
-        "kitchen": "Kitchen",
-        "cooking area": "Kitchen",
-        "pantry": "Kitchen",
+    'kitchen': 'Kitchen',
+    'cooking area': 'Kitchen',
+    'pantry': 'Kitchen',
 
-        "dining": "Dining Hall",
-        "dining room": "Dining Hall",
-        "meal area": "Dining Hall",
+    'dining': 'Dining Hall',
+    'dining room': 'Dining Hall',
+    'meal area': 'Dining Hall',
 
-        "bath": "Bathroom",
-        "washroom": "Bathroom",
-        "restroom": "Bathroom",
-        "toilet": "Bathroom",
+    'bath': 'Bathroom',
+    'washroom': 'Bathroom',
+    'restroom': 'Bathroom',
+    'toilet': 'Bathroom',
 
-        "balcony": "Balcony",
-        "terrace": "Terrace",
-        "veranda": "Terrace",
-        "patio": "Terrace",
+    'balcony': 'Balcony',
+    'terrace': 'Terrace',
+    'veranda': 'Terrace',
+    'patio': 'Terrace',
 
-        "corridor": "Corridor",
-        "hallway": "Corridor",
-        "passage": "Corridor",
+    'corridor': 'Corridor',
+    'hallway': 'Corridor',
+    'passage': 'Corridor',
 
-        "utility": "Utility Room",
-        "storage": "Utility Room",
-        "laundry": "Utility Room",
+    'utility': 'Utility Room',
+    'storage': 'Utility Room',
+    'laundry': 'Utility Room',
 
-        "closet": "Closet",
-        "wardrobe": "Closet",
+    'closet': 'Closet',
+    'wardrobe': 'Closet',
 
-        "meeting": "Meeting Room",
-        "conference": "Meeting Room",
-        "boardroom": "Meeting Room",
+    'meeting': 'Meeting Room',
+    'conference': 'Meeting Room',
+    'boardroom': 'Meeting Room',
 
-        "office": "Office",
-        "workroom": "Office",
+    'office': 'Office',
+    'workroom': 'Office',
 
-        "fitness": "Fitness Area",
-        "gym": "Fitness Area",
-        "workout room": "Fitness Area",
+    'fitness': 'Fitness Area',
+    'gym': 'Fitness Area',
+    'workout room': 'Fitness Area',
 
-        "recreation": "Recreation Area",
-        "playroom": "Recreation Area",
-        "leisure room": "Recreation Area"
-    },
-    "DE": {
-        "raum": "Raum",
-        "zimmer": "Raum",
+    'recreation': 'Recreation Area',
 
-        "wohnzimmer": "Wohnzimmer",
-        "stube": "Wohnzimmer",
-        "salon": "Wohnzimmer",
+    'leisure room': 'Recreation Area'
+  },
+  'DE': {
+    'raum': 'Raum',
+    'zimmer': 'Raum',
 
-        "hauptschlafzimmer": "Hauptschlafzimmer",
-        "elternschlafzimmer": "Hauptschlafzimmer",
-        "masterzimmer": "Hauptschlafzimmer",
+    'wohnzimmer': 'Wohnzimmer',
+    'stube': 'Wohnzimmer',
+    'salon': 'Wohnzimmer',
 
-        "schlafzimmer": "Schlafzimmer",
-        "schlafraum": "Schlafzimmer",
+    'hauptschlafzimmer': 'Hauptschlafzimmer',
+    'elternschlafzimmer': 'Hauptschlafzimmer',
+    'masterzimmer': 'Hauptschlafzimmer',
 
-        "g�stezimmer": "G�stezimmer",
-        "besucherzimmer": "G�stezimmer",
-        "zus�tzliches schlafzimmer": "G�stezimmer",
+    'schlafzimmer': 'Schlafzimmer',
+    'schlafraum': 'Schlafzimmer',
 
-        "kinderzimmer": "Kinderzimmer",
-        "babyzimmer": "Kinderzimmer",
-        "spielzimmer": "Kinderzimmer",
-        "jugendzimmer": "Kinderzimmer",
+    'g�stezimmer': 'G�stezimmer',
+    'besucherzimmer': 'G�stezimmer',
+    'zus�tzliches schlafzimmer': 'G�stezimmer',
 
-        "arbeitszimmer": "Arbeitszimmer",
-        "b�ro": "Arbeitszimmer",
-        "studierzimmer": "Arbeitszimmer",
-        "homeoffice": "Arbeitszimmer",
+    'kinderzimmer': 'Kinderzimmer',
+    'babyzimmer': 'Kinderzimmer',
+    'spielzimmer': 'Kinderzimmer',
+    'jugendzimmer': 'Kinderzimmer',
 
-        "k�che": "K�che",
-        "kochnische": "K�che",
+    'arbeitszimmer': 'Arbeitszimmer',
+    'b�ro': 'Arbeitszimmer',
+    'studierzimmer': 'Arbeitszimmer',
+    'homeoffice': 'Arbeitszimmer',
 
-        "esszimmer": "Esszimmer",
-        "speisezimmer": "Esszimmer",
-        "speisesaal": "Esszimmer",
+    'k�che': 'K�che',
+    'kochnische': 'K�che',
 
-        "badezimmer": "Badezimmer",
-        "bad": "Badezimmer",
-        "waschraum": "Badezimmer",
-        "toilette": "Badezimmer",
-        "wc": "Badezimmer",
+    'esszimmer': 'Esszimmer',
+    'speisezimmer': 'Esszimmer',
+    'speisesaal': 'Esszimmer',
 
-        "balkon": "Balkon",
-        "terrasse": "Terrasse",
-        "veranda": "Terrasse",
-        "patio": "Terrasse",
+    'badezimmer': 'Badezimmer',
+    'bad': 'Badezimmer',
+    'waschraum': 'Badezimmer',
+    'toilette': 'Badezimmer',
+    'wc': 'Badezimmer',
 
-        "flur": "Korridor",
-		"gang": "Korridor",
-		"diele": "Korridor",
-		"korridor": "Korridor",
+    'balkon': 'Balkon',
+    'terrasse': 'Terrasse',
+    'veranda': 'Terrasse',
+    'patio': 'Terrasse',
 
-        "hauswirtschaftsraum": "Hauswirtschaftsraum",
-        "wirtschaftsraum": "Hauswirtschaftsraum",
-        "abstellkammer": "Hauswirtschaftsraum",
+    'flur': 'Korridor',
+    'gang': 'Korridor',
+    'diele': 'Korridor',
+    'korridor': 'Korridor',
 
-        "abstellraum": "Abstellraum",
-        "kammer": "Abstellraum",
-        "lagerschrank": "Abstellraum",
+    'hauswirtschaftsraum': 'Hauswirtschaftsraum',
+    'wirtschaftsraum': 'Hauswirtschaftsraum',
+    'abstellkammer': 'Hauswirtschaftsraum',
 
-        "besprechungsraum": "Besprechungsraum",
-        "konferenzraum": "Besprechungsraum",
-        "tagungsraum": "Besprechungsraum",
+    'abstellraum': 'Abstellraum',
+    'kammer': 'Abstellraum',
+    'lagerschrank': 'Abstellraum',
+
+    'besprechungsraum': 'Besprechungsraum',
+    'konferenzraum': 'Besprechungsraum',
+    'tagungsraum': 'Besprechungsraum',
 
 
-        "arbeitsraum": "B�ro",
+    'arbeitsraum': 'B�ro',
 
-        "fitnessraum": "Fitnessraum",
-        "gym": "Fitnessraum",
-        "trainingsraum": "Fitnessraum",
+    'fitnessraum': 'Fitnessraum',
+    'gym': 'Fitnessraum',
+    'trainingsraum': 'Fitnessraum',
 
-        "freizeitraum": "Freizeitraum",
-        "lounge": "Freizeitraum"
-    }
+    'freizeitraum': 'Freizeitraum',
+    'lounge': 'Freizeitraum'
+  }
 };
 const AlexacleanModes = {
-    "EN": {
-        1: "Customize room cleaning",
-        5120: "Sweeping and mopping",
-        5121: "Mopping",
-        5122: "Sweeping",
-        5123: "Mopping after sweeping"
-    },
-    "DE": {
-        1: "Raumreinigung anpassen",
-        5120: "Saugen und Wischen",
-        5121: "Wischen",
-        5122: "Staubsaugen",
-        5123: "Wischen nach dem Saugen"
-    }
+  'EN': {
+    1: 'Customize room cleaning',
+    5120: 'Sweeping and mopping',
+    5121: 'Mopping',
+    5122: 'Sweeping',
+    5123: 'Mopping after sweeping'
+  },
+  'DE': {
+    1: 'Raumreinigung anpassen',
+    5120: 'Saugen und Wischen',
+    5121: 'Wischen',
+    5122: 'Staubsaugen',
+    5123: 'Wischen nach dem Saugen'
+  }
 };
 
 const AlexacancelKeywords = {
-    "EN": [
-        "cancel cleaning", "stop cleaning", "robot off", "please cancel cleaning",
-        "end cleaning", "halt cleaning", "abort cleaning", "terminate cleaning",
-        "cease cleaning", "stop the robot", "shut down robot", "turn off robot",
-        "stop vacuum", "cancel vacuuming", "halt vacuuming", "end vacuuming",
-        "shut off vacuum", "deactivate robot", "stop floor cleaning", "turn off vacuum",
-        "disengage cleaning", "disable cleaning", "halt Dreame", "Dreame stop"
-    ],
-    "DE": [
-        "reinigung abbrechen", "reinigung stoppen", "stop reinigung", "roboter aus",
-        "reinigung bitte abbrechen", "reinigung beenden", "reinigung unterbrechen",
-        "reinigung anhalten", "saugvorgang stoppen", "staubsauger aus",
-        "roboter abschalten", "staubsaugen beenden", "putzen stoppen",
-        "staubsaugen stoppen", "staubsaugen deaktivieren", "bodenreinigung stoppen",
-        "staubsauger ausschalten", "sauger aus", "roboter deaktivieren",
-        "dreame stoppen", "dreame aus", "dreame reinigen beenden"
-    ]
+  'EN': [
+    'cancel cleaning', 'stop cleaning', 'robot off', 'please cancel cleaning',
+    'end cleaning', 'halt cleaning', 'abort cleaning', 'terminate cleaning',
+    'cease cleaning', 'stop the robot', 'shut down robot', 'turn off robot',
+    'stop vacuum', 'cancel vacuuming', 'halt vacuuming', 'end vacuuming',
+    'shut off vacuum', 'deactivate robot', 'stop floor cleaning', 'turn off vacuum',
+    'disengage cleaning', 'disable cleaning', 'halt Dreame', 'Dreame stop'
+  ],
+  'DE': [
+    'reinigung abbrechen', 'reinigung stoppen', 'stop reinigung', 'roboter aus',
+    'reinigung bitte abbrechen', 'reinigung beenden', 'reinigung unterbrechen',
+    'reinigung anhalten', 'saugvorgang stoppen', 'staubsauger aus',
+    'roboter abschalten', 'staubsaugen beenden', 'putzen stoppen',
+    'staubsaugen stoppen', 'staubsaugen deaktivieren', 'bodenreinigung stoppen',
+    'staubsauger ausschalten', 'sauger aus', 'roboter deaktivieren',
+    'dreame stoppen', 'dreame aus', 'dreame reinigen beenden'
+  ]
 };
 
 const AlexamissingMessages = {
-	"EN": {
-        "mopping": "Mopping Level",
-        "suction": "Suction Level",
-		"and": " and "
-    },
-    "DE": {
-        "mopping": "Wasserlevel",
-        "suction": "Sauglevel",
-		"and": " und "
-    }
+  'EN': {
+    'mopping': 'Mopping Level',
+    'suction': 'Suction Level',
+    'and': ' and '
+  },
+  'DE': {
+    'mopping': 'Wasserlevel',
+    'suction': 'Sauglevel',
+    'and': ' und '
+  }
 };
 
 const AlexaInfo = {
-    "EN": {
-        0: 'Alexa is active, and the robot accepts voice commands. You can simply say: "Alexa, vacuum the living room twice on high," or "Alexa, mop the living room once," or "Alexa, vacuum and mop the living room three times turbo and damp," or "Alexa, vacuum then mop the living room light and wet." The robot will then clean the living room as requested.',
-        1: "The Alexa adapter was not found, and the robot does not accept voice commands. To resolve this, please install the Alexa adapter.",
-        2: "Cleaning is active, please give your command with 'Cancel cleaning'.",
-        3: "Cleaning stopped due to abort command.",
-        4: 'Multiple distinct cleaning modes detected, please specify the cleaning mode for each room clearly.',
-        5: (room) => `Please specify the cleaning mode for ${room}. You forgot to define the clean mode, suction level, or water level.`,
-        6: ' sweeping',
-        7: ' mopping',
-        8: 'sweeping and mopping',
-        9: 'mopping after sweeping',
-        10: 'times',
-        11: "All rooms were cleaned.",
-        12: (Roomattempt, Roommode) => `Try ${Roomattempt}: Set CleaningMode to ${Roommode}`,
-        13: (Roomnumber, Roomname, Roommode) => `Start cleaning the room ${Roomnumber} (${Roomname}) with mode ${Roommode}`,
-        14: (Roomnumber, Roomname) => `Cleaning of room ${Roomnumber} (${Roomname}) was aborted due to an error.`,
-        15: (Roommode) => `CleaningMode: ${Roommode} successfully set.`,
-        16: (Roomattempt) => `Setting CleaningMode failed (attempt ${Roomattempt}). Try again...`,
-        17: (Roommode, RoomMRetries, RoomNewmode) => `Error: CleaningMode could not be set to ${Roommode} after ${RoomMRetries} attempts. Set CleaningMode to the last valid value: ${RoomNewmode}`,
-        18: 'Error retrieving error status:',
-        19: (Roomerror) => `Error detected while cleaning room ${Roomerror}. Waiting for fix...`,
-        20: (RoomTimeOut) => `An error has occurred in room ${RoomTimeOut} for over 5 minutes. Cleaning will be aborted.`,
-        21: (RoomTimeReset) => `Room ${RoomTimeReset} error fixed. Cleaning continues.`,
-        22: (RoomFinished) => `Cleaning in room ${RoomFinished} completed.`,
-        23: (RoomResume) => `Cleaning in room ${RoomResume} has resumed.`,
-        24: (RoomTOPause) => `The pause in room ${RoomTOPause} has been going on for over 5 minutes. Cleaning is aborted.`,
-        25: (Roomname, Roommissing) => `For ${Roomname}, the following is missing: ${Roommissing}. Please specify the missing level.`,
-        26: (RoomMessages) => `For the following rooms, information is missing: ${RoomMessages}. Please specify the missing values.`,
-        27: "A new cleaning process cannot be started because a cleaning process is being monitored. Please give your command with 'Cancel cleaning'"
+  'EN': {
+    0: 'Alexa is active, and the robot accepts voice commands. You can simply say: "Alexa, vacuum the living room twice on high," or "Alexa, mop the living room once," or "Alexa, vacuum and mop the living room three times turbo and damp," or "Alexa, vacuum then mop the living room light and wet." The robot will then clean the living room as requested.',
+    1: 'The Alexa adapter was not found, and the robot does not accept voice commands. To resolve this, please install the Alexa adapter.',
+    2: "Cleaning is active, please give your command with 'Cancel cleaning'.",
+    3: 'Cleaning stopped due to abort command.',
+    4: 'Multiple distinct cleaning modes detected, please specify the cleaning mode for each room clearly.',
+    5: (room) => `Please specify the cleaning mode for ${room}. You forgot to define the clean mode, suction level, or water level.`,
+    6: ' sweeping',
+    7: ' mopping',
+    8: 'sweeping and mopping',
+    9: 'mopping after sweeping',
+    10: 'times',
+    11: 'All rooms were cleaned.',
+    12: (Roomattempt, Roommode) => `Try ${Roomattempt}: Set CleaningMode to ${Roommode}`,
+    13: (Roomnumber, Roomname, Roommode) => `Start cleaning the room ${Roomnumber} (${Roomname}) with mode ${Roommode}`,
+    14: (Roomnumber, Roomname) => `Cleaning of room ${Roomnumber} (${Roomname}) was aborted due to an error.`,
+    15: (Roommode) => `CleaningMode: ${Roommode} successfully set.`,
+    16: (Roomattempt) => `Setting CleaningMode failed (attempt ${Roomattempt}). Try again...`,
+    17: (Roommode, RoomMRetries, RoomNewmode) => `Error: CleaningMode could not be set to ${Roommode} after ${RoomMRetries} attempts. Set CleaningMode to the last valid value: ${RoomNewmode}`,
+    18: 'Error retrieving error status:',
+    19: (Roomerror) => `Error detected while cleaning room ${Roomerror}. Waiting for fix...`,
+    20: (RoomTimeOut) => `An error has occurred in room ${RoomTimeOut} for over 5 minutes. Cleaning will be aborted.`,
+    21: (RoomTimeReset) => `Room ${RoomTimeReset} error fixed. Cleaning continues.`,
+    22: (RoomFinished) => `Cleaning in room ${RoomFinished} completed.`,
+    23: (RoomResume) => `Cleaning in room ${RoomResume} has resumed.`,
+    24: (RoomTOPause) => `The pause in room ${RoomTOPause} has been going on for over 5 minutes. Cleaning is aborted.`,
+    25: (Roomname, Roommissing) => `For ${Roomname}, the following is missing: ${Roommissing}. Please specify the missing level.`,
+    26: (RoomMessages) => `For the following rooms, information is missing: ${RoomMessages}. Please specify the missing values.`,
+    27: "A new cleaning process cannot be started because a cleaning process is being monitored. Please give your command with 'Cancel cleaning'"
 
-    },
-    "DE": {
-        0: 'Alexa ist aktiv, und der Roboter akzeptiert Sprachbefehle. Du kannst einfach sagen: "Alexa, Wohnzimmer 2 mal stark saugen" oder "Alexa, Wohnzimmer 1 mal nass wischen" oder "Alexa, Wohnzimmer 3 mal saugen und wischen turbo und feucht" oder "Alexa, Wohnzimmer wischen nach saugen leicht und nass." Der Roboter wird dann wie gewünscht das Wohnzimmer reinigen.',
-        1: "Der Alexa-Adapter wurde nicht gefunden, und der Roboter akzeptiert keine Sprachbefehle. Um dies zu ändern, installiere bitte den Alexa-Adapter.",
-        2: "Reinigung ist aktiv, bitte gebe deinen Befehl mit 'Reinigung abbrechen'.",
-        3: "Reinigung gestoppt, da Abbruchbefehl empfangen wurde.",
-        4: 'Mehrere unterschiedliche Reinigungsmodi erkannt, bitte gib für jeden Raum den Reinigungsmodus klar an.',
-        5: (room) => `Bitte gib den Reinigungsmodus für ${room} an. Du hast den Reinigungsmodus, das Sauglevel oder den Wasserlevel vergessen zu definieren.`,
-        6: ' saugen',
-        7: ' wischen',
-        8: 'saugen und wischen',
-        9: 'wischen nach saugen',
-        10: 'mal',
-        11: 'Alle Räume wurden gereinigt.',
-        12: (Roomattempt, Roommode) => `Versuch ${Roomattempt}: Setze CleaningMode auf ${Roommode}`,
-        13: (Roomnumber, Roomname, Roommode) => `Starte die Reinigung von Raum ${Roomnumber} (${Roomname}) mit Modus ${Roommode}`,
-        14: (Roomnumber, Roomname) => `Die Reinigung von Raum ${Roomnumber} (${Roomname}) wurde aufgrund eines Fehlers abgebrochen.`,
-        15: (Roommode) => `CleaningMode: ${Roommode} erfolgreich gesetzt.`,
-        16: (Roomattempt) => `CleaningMode setzen fehlgeschlagen (Versuch ${Roomattempt}). Erneuter Versuch...`,
-        17: (Roommode, RoomMRetries, RoomNewmode) => `Fehler: CleaningMode konnte nach ${RoomMRetries} Versuchen nicht auf ${Roommode} gesetzt werden. Setze CleaningMode stattdessen auf den letzten gültigen Wert: ${RoomNewmode}`,
-        18: 'Fehler beim Abrufen des Fehlerstatus:',
-        19: (Roomerror) => `Fehler erkannt beim Reinigen von Raum ${Roomerror}. Warte auf Fehlerbehebung...`,
-        20: (RoomTimeOut) => `Fehler in Raum ${RoomTimeOut} besteht seit über 5 Minuten. Reinigung wird abgebrochen.`,
-        21: (RoomTimeReset) => `Fehler in Raum ${RoomTimeReset} behoben. Reinigung läuft weiter.`,
-        22: (RoomFinished) => `Reinigung in Raum ${RoomFinished} abgeschlossen.`,
-        23: (RoomResume) => `Die Reinigung im Raum ${RoomResume} wurde fortgesetzt.`,
-        24: (RoomTOPause) => `Pause in Raum ${RoomTOPause} besteht seit über 5 Minuten. Reinigung wird abgebrochen.`,
-        25: (Roomname, Roommissing) => `Für ${Roomname} fehlt: ${Roommissing}. Bitte gib das fehlende Level an.`,
-        26: (RoomMessages) => `Für folgende Räume fehlen Angaben: ${RoomMessages}. Bitte definiere die fehlenden Werte.`,
-        27: "Ein neuer Reinigungsvorgang kann nicht gestartet werden, da ein Reinigungsvorgang überwacht wird, bitte gebe deinen Befehl mit 'Reinigung abbrechen'"
-    }
+  },
+  'DE': {
+    0: 'Alexa ist aktiv, und der Roboter akzeptiert Sprachbefehle. Du kannst einfach sagen: "Alexa, Wohnzimmer 2 mal stark saugen" oder "Alexa, Wohnzimmer 1 mal nass wischen" oder "Alexa, Wohnzimmer 3 mal saugen und wischen turbo und feucht" oder "Alexa, Wohnzimmer wischen nach saugen leicht und nass." Der Roboter wird dann wie gewünscht das Wohnzimmer reinigen.',
+    1: 'Der Alexa-Adapter wurde nicht gefunden, und der Roboter akzeptiert keine Sprachbefehle. Um dies zu ändern, installiere bitte den Alexa-Adapter.',
+    2: "Reinigung ist aktiv, bitte gebe deinen Befehl mit 'Reinigung abbrechen'.",
+    3: 'Reinigung gestoppt, da Abbruchbefehl empfangen wurde.',
+    4: 'Mehrere unterschiedliche Reinigungsmodi erkannt, bitte gib für jeden Raum den Reinigungsmodus klar an.',
+    5: (room) => `Bitte gib den Reinigungsmodus für ${room} an. Du hast den Reinigungsmodus, das Sauglevel oder den Wasserlevel vergessen zu definieren.`,
+    6: ' saugen',
+    7: ' wischen',
+    8: 'saugen und wischen',
+    9: 'wischen nach saugen',
+    10: 'mal',
+    11: 'Alle Räume wurden gereinigt.',
+    12: (Roomattempt, Roommode) => `Versuch ${Roomattempt}: Setze CleaningMode auf ${Roommode}`,
+    13: (Roomnumber, Roomname, Roommode) => `Starte die Reinigung von Raum ${Roomnumber} (${Roomname}) mit Modus ${Roommode}`,
+    14: (Roomnumber, Roomname) => `Die Reinigung von Raum ${Roomnumber} (${Roomname}) wurde aufgrund eines Fehlers abgebrochen.`,
+    15: (Roommode) => `CleaningMode: ${Roommode} erfolgreich gesetzt.`,
+    16: (Roomattempt) => `CleaningMode setzen fehlgeschlagen (Versuch ${Roomattempt}). Erneuter Versuch...`,
+    17: (Roommode, RoomMRetries, RoomNewmode) => `Fehler: CleaningMode konnte nach ${RoomMRetries} Versuchen nicht auf ${Roommode} gesetzt werden. Setze CleaningMode stattdessen auf den letzten gültigen Wert: ${RoomNewmode}`,
+    18: 'Fehler beim Abrufen des Fehlerstatus:',
+    19: (Roomerror) => `Fehler erkannt beim Reinigen von Raum ${Roomerror}. Warte auf Fehlerbehebung...`,
+    20: (RoomTimeOut) => `Fehler in Raum ${RoomTimeOut} besteht seit über 5 Minuten. Reinigung wird abgebrochen.`,
+    21: (RoomTimeReset) => `Fehler in Raum ${RoomTimeReset} behoben. Reinigung läuft weiter.`,
+    22: (RoomFinished) => `Reinigung in Raum ${RoomFinished} abgeschlossen.`,
+    23: (RoomResume) => `Die Reinigung im Raum ${RoomResume} wurde fortgesetzt.`,
+    24: (RoomTOPause) => `Pause in Raum ${RoomTOPause} besteht seit über 5 Minuten. Reinigung wird abgebrochen.`,
+    25: (Roomname, Roommissing) => `Für ${Roomname} fehlt: ${Roommissing}. Bitte gib das fehlende Level an.`,
+    26: (RoomMessages) => `Für folgende Räume fehlen Angaben: ${RoomMessages}. Bitte definiere die fehlenden Werte.`,
+    27: "Ein neuer Reinigungsvorgang kann nicht gestartet werden, da ein Reinigungsvorgang überwacht wird, bitte gebe deinen Befehl mit 'Reinigung abbrechen'"
+  }
 };
 
-var URLTK = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLWF1dGgvb2F1dGgvdG9rZW4=";
-var DH_URLTK = new Buffer.from(URLTK, 'base64');
-var URLLST = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9saXN0VjI=";
-var DH_URLLST = new Buffer.from(URLLST, 'base64');
-var URLINF = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9pbmZv";
-var DH_URLINF = new Buffer.from(URLINF, 'base64');
-var URLOTCINF = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHN0YXR1cy9kZXZPVENJbmZv";
-var DH_URLOTCINF = new Buffer.from(URLOTCINF, 'base64');
-var URLPROP = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHN0YXR1cy9wcm9wcw==";
-var DH_URLPROP = new Buffer.from(URLPROP, 'base64');
-var URLDOWNURL = "aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdGZpbGUvZ2V0RG93bmxvYWRVcmw=";
-var DH_URLDOWNURL = new Buffer.from(URLDOWNURL, 'base64');
-var URLUSA = "RHJlYW1lX1NtYXJ0aG9tZS8xLjUuNTkgKGlQaG9uZTsgaU9TIDE2LjA7IFNjYWxlLzMuMDAp";
-var DH_URLUSA = new Buffer.from(URLUSA, 'base64');
-var URLDRLC = "MWM4MGIzNzg3YjIyNjY3NzZiY2RjNDgxZjM3ZDhmYTQyYmExMGEzMGFmODFhNmRmLTE=";
-var DH_URLDRLC = new Buffer.from(URLDRLC, 'base64');
-var URLAUTH = "QmFzaWMgWkhKbFlXMWxYMkZ3Y0hZeE9rRlFYbVIyUUhwQVUxRlpWbmhPT0RnPQ==";
-var DH_URLAUTH = new Buffer.from(URLAUTH, 'base64');
-var DHURLSENDA = "L2RyZWFtZS1pb3QtY29tLQ==";
-var DH_DHURLSENDA = new Buffer.from(DHURLSENDA, 'base64');
-var DHURLSENDB = "L2RldmljZS9zZW5kQ29tbWFuZA==";
-var DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
-var DHURLSENDDOM = "LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==";
-var DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
-var DH_Auth = "",
-    DH_AuthRef = "",
-    DH_Expires = "",
-    DH_Tenant = "000000",
-    DH_Country = "DE",
-    DH_Uid = "",
-    DH_Lang = "de",
-    DH_Region = "eu",
-    DH_Islogged = false,
-    DH_Did = "",
-    DH_Model = "",
-    DH_Mac = "",
-    DH_BDomain = "",
-	DH_Domain = "",
-    DH_filename = "",
-    DH_Map = {},
-	DH_MapID = "",
-	DH_MapIDs = [],
-	DH_CurMap = 0,
-	DH_Host = "";
-var canvas = createCanvas();
-var context = canvas.getContext("2d");
+const URLTK = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLWF1dGgvb2F1dGgvdG9rZW4=';
+let DH_URLTK = new Buffer.from(URLTK, 'base64');
+const URLLST = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9saXN0VjI=';
+let DH_URLLST = new Buffer.from(URLLST, 'base64');
+const URLINF = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9pbmZv';
+let DH_URLINF = new Buffer.from(URLINF, 'base64');
+const URLOTCINF = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHN0YXR1cy9kZXZPVENJbmZv';
+let DH_URLOTCINF = new Buffer.from(URLOTCINF, 'base64');
+const URLPROP = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHN0YXR1cy9wcm9wcw==';
+let DH_URLPROP = new Buffer.from(URLPROP, 'base64');
+const URLDOWNURL = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdGZpbGUvZ2V0RG93bmxvYWRVcmw=';
+let DH_URLDOWNURL = new Buffer.from(URLDOWNURL, 'base64');
+const URLUSA = 'RHJlYW1lX1NtYXJ0aG9tZS8xLjUuNTkgKGlQaG9uZTsgaU9TIDE2LjA7IFNjYWxlLzMuMDAp';
+let DH_URLUSA = new Buffer.from(URLUSA, 'base64');
+const URLDRLC = 'MWM4MGIzNzg3YjIyNjY3NzZiY2RjNDgxZjM3ZDhmYTQyYmExMGEzMGFmODFhNmRmLTE=';
+let DH_URLDRLC = new Buffer.from(URLDRLC, 'base64');
+const URLAUTH = 'QmFzaWMgWkhKbFlXMWxYMkZ3Y0hZeE9rRlFYbVIyUUhwQVUxRlpWbmhPT0RnPQ==';
+let DH_URLAUTH = new Buffer.from(URLAUTH, 'base64');
+const DHURLSENDA = 'L2RyZWFtZS1pb3QtY29tLQ==';
+let DH_DHURLSENDA = new Buffer.from(DHURLSENDA, 'base64');
+const DHURLSENDB = 'L2RldmljZS9zZW5kQ29tbWFuZA==';
+let DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
+const DHURLSENDDOM = 'LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==';
+let DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
+const DH_Map = {}, DH_MapIDs = [];
+let In_path = '';
+let DH_Auth = '',
+  DH_AuthRef = '',
+  DH_Expires = '',
+  DH_Tenant = '000000',
+  DH_Country = 'DE',
+  DH_Uid = '',
+  DH_Lang = 'de',
+  DH_Region = 'eu',
+  DH_Islogged = false,
+  DH_Did = '',
+  DH_Model = '',
+  DH_Mac = '',
+  DH_BDomain = '',
+  DH_Domain = '',
+  DH_filename = '',
+  DH_MapID = '',
+  DH_CurMap = 0,
+  DH_Host = '';
+const canvas = createCanvas();
+const context = canvas.getContext('2d');
 canvas.height = 1024;
 canvas.width = 1024;
-var DH_UpdateMapInterval = null;
-var DH_UpdateTheMap = true;
+let DH_UpdateMapInterval = null;
+let DH_UpdateTheMap = true;
 
 //================> Global Get Robot position (Segment)
-var CheckArrayRooms = [];
+const CheckArrayRooms = [];
 
 class Dreamehome extends utils.Adapter {
-    /**
+  /**
      * @param {Partial<utils.AdapterOptions>} [options={}]
      */
-    constructor(options) {
-        super({
-            ...options,
-            name: 'dreamehome',
-        });
-        this.on('ready', this.onReady.bind(this));
-        this.on('stateChange', this.onStateChange.bind(this));
-        this.on('unload', this.onUnload.bind(this));
-        this.json2iob = new Json2iob(this);
-        this.DH_requestClient = axios.create({
-            withCredentials: true,
-            timeout: 3 * 60 * 1000,
-        });
+  constructor(options) {
+    super({
+      ...options,
+      name: 'dreamehome',
+    });
+    this.on('ready', this.onReady.bind(this));
+    this.on('stateChange', this.onStateChange.bind(this));
+    this.on('unload', this.onUnload.bind(this));
+    this.json2iob = new Json2iob(this);
+    this.DH_requestClient = axios.create({
+      withCredentials: true,
+      timeout: 3 * 60 * 1000,
+    });
 
-		//setInterval(async () => {await this.DH_CheckTaskStatus();}, 1000);
-    }
-    /**
+    //setInterval(async () => {await this.DH_CheckTaskStatus();}, 1000);
+  }
+  /**
      * Is called when databases are connected and adapter received configuration.
      */
 
+  async onReady() {
+    this.setState('info.connection', false, true);
+
+    if (!this.config.username || !this.config.password) {
+      this.log.error('Please set username and password in the instance settings');
+      return;
+    }
+
+    DH_UpdateMapInterval = setInterval(function(){DH_UpdateTheMap = true;}, 1000);
+
+    this.subscribeStates('*.control.*');
+    this.log.info('Login and request Dreame data from cloud');
+    await this.setObjectNotExists('settings.showlog', {
+      type: 'state',
+      common: {
+        name: 'Show Dreame Log',
+        type: 'boolean',
+        role: 'switch',
+        write: true,
+        read: true,
+        def: false
+      },
+      native: {},
+    });
+    try {
+      const LogDataObjectOb = await this.getStateAsync('settings.showlog');
+      LogData = LogDataObjectOb.val;
+      this.log.info('Log status is set to ' + LogData);
+    } catch (error) {
+      this.log.error(error);
+      if (LogData == null) {
+        LogData = false;
+      }
+    }
+    this.subscribeStates('settings.showlog');
+    await this.DH_CloudLogin();
+    if (DH_Auth) {
+      In_path = DH_Did + '.vis.';
+      await this.setObjectNotExists(In_path + 'vishtml0', {
+        type: 'state',
+        common: {
+          name: 'HTML for VIS Map 1',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'vishtml1', {
+        type: 'state',
+        common: {
+          name: 'HTML for VIS Map 2',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'Perspective1', {
+        type: 'state',
+        common: {
+          name: 'Perspective1 for VIS Map 1',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '0,0,0.75,0,1,0,0,90'
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'Perspective2', {
+        type: 'state',
+        common: {
+          name: 'Perspective2 for VIS Map 2',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '0,0,0.75,0,1,0,0,90'
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'PosHistory0', {
+        type: 'state',
+        common: {
+          name: 'Dreame Position History for Map 1',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '{}'
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'CharHistory0', {
+        type: 'state',
+        common: {
+          name: 'Dreame Charger History for Map 1',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '{}'
+        },
+        native: {},
+      });
+
+      await this.setObjectNotExists(In_path + 'PosHistory1', {
+        type: 'state',
+        common: {
+          name: 'Dreame Position History for Map 2',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '{}'
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'CharHistory1', {
+        type: 'state',
+        common: {
+          name: 'Dreame Charger History for Map 2',
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: '{}'
+        },
+        native: {},
+      });
 
 
-    async onReady() {
-        this.setState('info.connection', false, true);
 
-        if (!this.config.username || !this.config.password) {
-            this.log.error('Please set username and password in the instance settings');
-            return;
-        }
-
-		DH_UpdateMapInterval = setInterval(function(){DH_UpdateTheMap = true;}, 1000);
-
-		this.subscribeStates('*.control.*');
-        this.log.info('Login and request Dreame data from cloud');
-        await this.setObjectNotExists('settings.showlog', {
-            type: 'state',
-            common: {
-                name: 'Show Dreame Log',
-                type: 'boolean',
-                role: 'switch',
-                write: true,
-                read: true,
-                def: false
-            },
-            native: {},
-        });
-        try {
-            var LogDataObjectOb = await this.getStateAsync('settings.showlog');
-            LogData = LogDataObjectOb.val;
-            this.log.info("Log status is set to " + LogData);
-        } catch (error) {
-            this.log.error(error);
-            if (LogData == null) {
-                LogData = false;
-            }
-        }
-        this.subscribeStates('settings.showlog');
-        await this.DH_CloudLogin();
-        if (DH_Auth) {
-            var In_path = DH_Did + ".vis.";
-            await this.setObjectNotExists(In_path + 'vishtml0', {
-                type: 'state',
-                common: {
-                    name: 'HTML for VIS Map 1',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: ""
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'vishtml1', {
-                type: 'state',
-                common: {
-                    name: 'HTML for VIS Map 2',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: ""
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'Perspective1', {
-                type: 'state',
-                common: {
-                    name: 'Perspective1 for VIS Map 1',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "0,0,0.75,0,1,0,0,90"
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'Perspective2', {
-                type: 'state',
-                common: {
-                    name: 'Perspective2 for VIS Map 2',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "0,0,0.75,0,1,0,0,90"
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'PosHistory0', {
-                type: 'state',
-                common: {
-                    name: 'Dreame Position History for Map 1',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "{}"
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'CharHistory0', {
-                type: 'state',
-                common: {
-                    name: 'Dreame Charger History for Map 1',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "{}"
-                },
-                native: {},
-            });
-
-			await this.setObjectNotExists(In_path + 'PosHistory1', {
-                type: 'state',
-                common: {
-                    name: 'Dreame Position History for Map 2',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "{}"
-                },
-                native: {},
-            });
-			await this.setObjectNotExists(In_path + 'CharHistory1', {
-                type: 'state',
-                common: {
-                    name: 'Dreame Charger History for Map 2',
-                    type: 'mixed',
-                    role: 'state',
-                    write: false,
-                    read: true,
-                    def: "{}"
-                },
-                native: {},
-            });
-
-			try {
-				var RobTaskStatusOb = await this.getStateAsync(DH_Did + ".state.TaskStatus");
-				var RobTaskStatus = RobTaskStatusOb.val;
+      try {
+        const RobTaskStatusOb = await this.getStateAsync(DH_Did + '.state.TaskStatus');
+        const RobTaskStatus = RobTaskStatusOb.val;
 			    switch (RobTaskStatus) {
-                    case DreameTaskStatus[UserLang][0]: /*'Completed':*/
+          case DreameTaskStatus[UserLang][0]: /*'Completed':*/
 				        DH_OldTaskStatus = 0;
 				        break;
-                    case DreameTaskStatus[UserLang][1]: /*'Auto cleaning':*/
+          case DreameTaskStatus[UserLang][1]: /*'Auto cleaning':*/
 				        DH_OldTaskStatus = 1;
 				        break;
-                    case DreameTaskStatus[UserLang][2]: /*'Zone cleaning':*/
+          case DreameTaskStatus[UserLang][2]: /*'Zone cleaning':*/
 				        DH_OldTaskStatus = 2;
 				        break;
-                    case DreameTaskStatus[UserLang][3]: /*'Segment cleaning':*/
-						DH_OldTaskStatus = 3;
+          case DreameTaskStatus[UserLang][3]: /*'Segment cleaning':*/
+            DH_OldTaskStatus = 3;
 				        break;
-                    case DreameTaskStatus[UserLang][4]: /*'Spot cleaning':*/
+          case DreameTaskStatus[UserLang][4]: /*'Spot cleaning':*/
 				        DH_OldTaskStatus = 4;
 				        break;
-                    case DreameTaskStatus[UserLang][5]: /*'Fast mapping':*/
+          case DreameTaskStatus[UserLang][5]: /*'Fast mapping':*/
 				        DH_OldTaskStatus = 5;
 				        break;
 			    }
 		    } catch (error) {
-                this.log.error(error);
-            }
-			//DH_OldTaskStatus = 0;
+        this.log.error(error);
+      }
+      //DH_OldTaskStatus = 0;
 
-			try {
-				var DH_CurMapOb = await this.getStateAsync(DH_Did + '.map.MapNumber');
-				DH_CurMap = DH_CurMapOb.val;
-				this.log.info(DreameInformation[UserLang][0] + DH_CurMap);
-			} catch (error) {
-				this.log.warn(DreameInformation[UserLang][1] + error);
-				DH_CurMap = 0;
-			}
+      try {
+        const DH_CurMapOb = await this.getStateAsync(DH_Did + '.map.MapNumber');
+        DH_CurMap = DH_CurMapOb.val;
+        this.log.info(DreameInformation[UserLang][0] + DH_CurMap);
+      } catch (error) {
+        this.log.warn(DreameInformation[UserLang][1] + error);
+        DH_CurMap = 0;
+      }
 
-			var In_path = DH_Did + ".";
-            await this.setObjectNotExists(In_path + 'map.NewMap', {
-                type: 'state',
-                common: {
-                    name: 'gnew Map',
-                    type: 'boolean',
-                    role: 'switch',
-                    write: true,
-                    read: true,
-                    def: false
-                },
-                native: {},
-            });
-            await this.setObjectNotExists(In_path + 'map.Update', {
-                type: 'state',
-                common: {
-                    name: 'Update cleanset Path',
-                    type: 'boolean',
-                    role: 'switch',
-                    write: true,
-                    read: true,
-                    def: true
-                },
-                native: {},
-            });
-            try {
-                var CheckUObjectOb = await this.getStateAsync(In_path + 'map.Update');
-                CheckUObject = CheckUObjectOb.val;
-            } catch (error) {
-                this.log.error(error);
-                if (CheckUObject == null) {
-                    CheckUObject = true;
-                }
-            }
-            await this.setObjectNotExists(In_path + 'map.Start-Clean', {
-                type: 'state',
-                common: {
-                    name: 'start cleaning for the selected rooms',
-                    type: 'boolean',
-                    role: 'switch',
-                    write: true,
-                    read: true,
-                    def: false
-                },
-                native: {},
-            });
-            try {
-                var CheckSCObjectOb = await this.getStateAsync(In_path + 'map.Start-Clean');
-                CheckSCObject = CheckSCObjectOb.val;
-            } catch (error) {
-                this.log.error(error);
-                if (CheckSCObject == null) {
-                    CheckSCObject = false;
-                }
-            }
-            await this.setObjectNotExists(In_path + 'map.Restart', {
-                type: 'state',
-                common: {
-                    name: 'stop ongoing cleaning and start new cleaning',
-                    type: 'boolean',
-                    role: 'switch',
-                    write: true,
-                    read: true,
-                    def: true
-                },
-                native: {},
-            });
-            try {
-                var CheckRCObjectOb = await this.getStateAsync(In_path + 'map.Restart');
-                CheckRCObject = CheckRCObjectOb.val;
-            } catch (error) {
-                this.log.error(error);
-                if (CheckRCObject == null) {
-                    CheckRCObject = false;
-                }
-            }
+	  In_path = DH_Did + '.';
 
-            await this.DH_connectMqtt();
-            this.refreshTokenInterval = setInterval(async () => {
-                    await this.DH_refreshToken();
-                },
-                (DH_Expires - 100 || 3500) * 1000, );
-            this.subscribeStates('*.map.*');
-			await this.DH_GetSetRooms();
-			await this.DH_GetSetRoomCleanSettings();
+      await this.setObjectNotExists(In_path + 'map.UserCustomMap', {
+        type: 'state',
+        common: {
+          name: 'Dreame Custom Map Configuration',
+          type: 'string',
+          role: 'json',
+          write: true,  // Allow user modifications
+          read: true,
+          def: JSON.stringify({
+            '_comment': 'This is a user-defined map configuration for the Dreame robot.',
+            'CustomMap': 0,  // Enable custom mapping (1 = enabled, 0 = disabled)
+            'storeys': [{
+              '_comment': 'List of floors (storeys) in the house.',
+              'rooms': [{
+                '_comment': 'Each room contains an ID and wall structure.',
+                'room_id': 1,
+                'walls': [
+                  { 'beg_pt_x': 0, 'beg_pt_y': 0, 'end_pt_x': 10, 'end_pt_y': 0 },
+                  { 'beg_pt_x': 10, 'beg_pt_y': 0, 'end_pt_x': 10, 'end_pt_y': 10 },
+                  { 'beg_pt_x': 10, 'beg_pt_y': 10, 'end_pt_x': 0, 'end_pt_y': 10 },
+                  { 'beg_pt_x': 0, 'beg_pt_y': 10, 'end_pt_x': 0, 'end_pt_y': 0 }
+                ]
+              }]
+            }],
+            'seg_inf': {
+              '_comment': 'Room segment information with ID and type.',
+              '1': { 'type': 0, 'name': 'Living Room' }
+            },
+            'robot': {
+              '_comment': 'Current robot position on the map.',
+              'x': 5,
+              'y': 5,
+              'angle': 0
+            }
+          }, null, 2)  // Pretty-print JSON
+        },
+        native: {}
+      });
+
+      await this.setObjectNotExists(In_path + 'map.NewMap', {
+        type: 'state',
+        common: {
+          name: 'gnew Map',
+          type: 'boolean',
+          role: 'switch',
+          write: true,
+          read: true,
+          def: false
+        },
+        native: {},
+      });
+      await this.setObjectNotExists(In_path + 'map.Update', {
+        type: 'state',
+        common: {
+          name: 'Update cleanset Path',
+          type: 'boolean',
+          role: 'switch',
+          write: true,
+          read: true,
+          def: true
+        },
+        native: {},
+      });
+      try {
+        const CheckUObjectOb = await this.getStateAsync(In_path + 'map.Update');
+        CheckUObject = CheckUObjectOb.val;
+      } catch (error) {
+        this.log.error(error);
+        if (CheckUObject == null) {
+          CheckUObject = true;
         }
-		try {
-			var Alexaobj = await this.getForeignStateAsync('alexa2.0.History.summary');
-			if (Alexaobj) {
-				var AlexaVal = Alexaobj.val;
+      }
+      await this.setObjectNotExists(In_path + 'map.Start-Clean', {
+        type: 'state',
+        common: {
+          name: 'start cleaning for the selected rooms',
+          type: 'boolean',
+          role: 'switch',
+          write: true,
+          read: true,
+          def: false
+        },
+        native: {},
+      });
+      try {
+        const CheckSCObjectOb = await this.getStateAsync(In_path + 'map.Start-Clean');
+        CheckSCObject = CheckSCObjectOb.val;
+      } catch (error) {
+        this.log.error(error);
+        if (CheckSCObject == null) {
+          CheckSCObject = false;
+        }
+      }
+      await this.setObjectNotExists(In_path + 'map.Restart', {
+        type: 'state',
+        common: {
+          name: 'stop ongoing cleaning and start new cleaning',
+          type: 'boolean',
+          role: 'switch',
+          write: true,
+          read: true,
+          def: true
+        },
+        native: {},
+      });
+      try {
+        const CheckRCObjectOb = await this.getStateAsync(In_path + 'map.Restart');
+        CheckRCObject = CheckRCObjectOb.val;
+      } catch (error) {
+        this.log.error(error);
+        if (CheckRCObject == null) {
+          CheckRCObject = false;
+        }
+      }
+
+      await this.DH_connectMqtt();
+      this.refreshTokenInterval = setInterval(async () => {
+        await this.DH_refreshToken();
+      },
+      (DH_Expires - 100 || 3500) * 1000, );
+      this.subscribeStates('*.map.*');
+      await this.DH_GetSetRooms();
+      await this.DH_GetSetRoomCleanSettings();
+    }
+    try {
+      const Alexaobj = await this.getForeignStateAsync('alexa2.0.History.summary');
+      if (Alexaobj) {
+        const AlexaVal = Alexaobj.val;
 		        this.subscribeForeignStates('alexa2.0.History.summary');
-				this.log.info(AlexaInfo[UserLang][0]);
-				AlexaIsPresent = true;
-			}
-		} catch (error) {
-            this.log.error(error);
-            if (LogData == null) {
-                AlexaIsPresent = false;
-				this.log.info(AlexaInfo[UserLang][1]);
-            }
-        }
+        this.log.info(AlexaInfo[UserLang][0]);
+        AlexaIsPresent = true;
+      }
+    } catch (error) {
+      this.log.error(error);
+      if (LogData == null) {
+        AlexaIsPresent = false;
+        this.log.info(AlexaInfo[UserLang][1]);
+      }
     }
+  }
 
-    async DH_CloudLogin() {
-        await this.DH_requestClient({
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: DH_URLTK,
-            headers: {
-                "Accept": "*/*",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept-Language": "en-US;q=0.8",
-                "Accept-Encoding": "gzip, deflate",
-                "User-Agent": DH_URLUSA,
-                "Dreame-Rlc": DH_URLDRLC,
-                "Authorization": DH_URLAUTH,
-                "Tenant-Id": DH_Tenant,
-            },
-            data: {
-                grant_type: 'password',
-                scope: 'all',
-                platform: 'IOS',
-                type: 'account',
-                username: this.config.username,
-                password: crypto.createHash('md5').update(this.config.password + 'RAylYC%fmSKp7%Tq').digest('hex'),
-            },
-        }).then(async (response) => {
-            const responseData = response.data;
-            if (LogData) {
-                this.log.info('Login response: ' + JSON.stringify(response.data));
-            }
-            var RetObject = JSON.parse(JSON.stringify(responseData));
+  async DH_CloudLogin() {
+    await this.DH_requestClient({
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: DH_URLTK,
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept-Language': 'en-US;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'User-Agent': DH_URLUSA,
+        'Dreame-Rlc': DH_URLDRLC,
+        'Authorization': DH_URLAUTH,
+        'Tenant-Id': DH_Tenant,
+      },
+      data: {
+        grant_type: 'password',
+        scope: 'all',
+        platform: 'IOS',
+        type: 'account',
+        username: this.config.username,
+        password: crypto.createHash('md5').update(this.config.password + 'RAylYC%fmSKp7%Tq').digest('hex'),
+      },
+    }).then(async (response) => {
+      const responseData = response.data;
+      if (LogData) {
+        this.log.info('Login response: ' + JSON.stringify(response.data));
+      }
+      const RetObject = JSON.parse(JSON.stringify(responseData));
 
-            await this.DH_PropObject(RetObject, "login.", "Login: ");
-            this.setState('info.connection', true, true);
-            DH_Auth = responseData["access_token"];
-            DH_AuthRef = responseData["refresh_token"];
-            DH_Expires = responseData["expires_in"];
-            DH_Tenant = responseData["tenant_id"];
-            DH_Country = responseData["country"];
-            DH_Uid = responseData["uid"];
-			DH_Domain = responseData["domain"];
-            DH_Lang = responseData["lang"];
-            DH_Region = responseData["region"];
-			if (DH_Domain == undefined) {
-				DH_Domain = "https://" + DH_Region + DH_DHURLSENDDOM;
-			}
-            DH_Islogged = true;
-			if (DH_Lang.toUpperCase() == "DE") { UserLang = DH_Lang.toUpperCase(); } /*Translate function*/
-            var SETURLData = {};
-            var GetCloudRequestList = await this.DH_URLRequest(DH_URLLST, SETURLData);
-            if (GetCloudRequestList) {
-                var GetListData = JSON.parse(JSON.stringify(GetCloudRequestList.data.page.records));
-                if (LogData) {
-                    this.log.info("Split " + DH_URLLST + " response: " + JSON.stringify(GetListData));
-                }
-                DH_Did = GetListData[0].did;
-                DH_Model = GetListData[0].model;
-                DH_Mac = GetListData[0].mac;
-                DH_BDomain = GetListData[0].bindDomain;
-				DH_Host = DH_BDomain.split(".")[0];
+      await this.DH_PropObject(RetObject, 'login.', 'Login: ');
+      this.setState('info.connection', true, true);
+      DH_Auth = responseData['access_token'];
+      DH_AuthRef = responseData['refresh_token'];
+      DH_Expires = responseData['expires_in'];
+      DH_Tenant = responseData['tenant_id'];
+      DH_Country = responseData['country'];
+      DH_Uid = responseData['uid'];
+      DH_Domain = responseData['domain'];
+      DH_Lang = responseData['lang'];
+      DH_Region = responseData['region'];
+      if (DH_Domain == undefined) {
+        DH_Domain = 'https://' + DH_Region + DH_DHURLSENDDOM;
+      }
+      DH_Islogged = true;
+      if (DH_Lang.toUpperCase() == 'DE') { UserLang = DH_Lang.toUpperCase(); } /*Translate function*/
+      let SETURLData = {};
+      const GetCloudRequestList = await this.DH_URLRequest(DH_URLLST, SETURLData);
+      if (GetCloudRequestList) {
+        const GetListData = JSON.parse(JSON.stringify(GetCloudRequestList.data.page.records));
+        if (LogData) {
+          this.log.info('Split ' + DH_URLLST + ' response: ' + JSON.stringify(GetListData));
+        }
+        DH_Did = GetListData[0].did;
+        DH_Model = GetListData[0].model;
+        DH_Mac = GetListData[0].mac;
+        DH_BDomain = GetListData[0].bindDomain;
+        DH_Host = DH_BDomain.split('.')[0];
 
-                await this.DH_PropObject(GetListData[0], DH_Did + ".general.", "Get listV2: ");
+        await this.DH_PropObject(GetListData[0], DH_Did + '.general.', 'Get listV2: ');
 
-                SETURLData = {
-                    did: DH_Did,
-                    keys: "6.8",
-                };
-                var GetCloudRequestObjName = await this.DH_URLRequest(DH_URLPROP, SETURLData);
-                var GetObjNameData = JSON.parse(JSON.stringify(GetCloudRequestObjName.data))[0].value;
-                DH_filename = JSON.parse(GetObjNameData).obj_name;
-                this.log.info("Fetching obj_name: " + DH_filename);
-            }
+        SETURLData = {
+          did: DH_Did,
+          keys: '6.8',
+        };
+        const GetCloudRequestObjName = await this.DH_URLRequest(DH_URLPROP, SETURLData);
+        const GetObjNameData = JSON.parse(JSON.stringify(GetCloudRequestObjName.data))[0].value;
+        DH_filename = JSON.parse(GetObjNameData).obj_name;
+        this.log.info('Fetching obj_name: ' + DH_filename);
+      }
 
-			for (var [CPkey, CPvalue] of Object.entries(DreameStateCustomProperties)) {
-				let Cpath = DH_Did + ".state." + CPvalue.replace(/\w\S*/g, function(CPName) {
-                            return CPName.charAt(0).toUpperCase() + CPName.substr(1).toLowerCase();
-                        }).replace(/\s/g, '');
+      for (const [CPkeyRaw, CPvalue] of Object.entries(DreameStateCustomProperties)) {
+        const CPkey = CPkeyRaw === '-1' ? -1 : CPkeyRaw;
+        const Cpath = `${DH_Did}.state.${CPvalue.replace(/\w\S*/g, CPName =>
+          CPName.charAt(0).toUpperCase() + CPName.substr(1).toLowerCase()
+        ).replace(/\s/g, '')}`;
 
-				if (CPkey == "-1") {
-					CPkey = -1;
-				}
-				await this.DH_getType(CPkey, Cpath);
-				await this.DH_setState(Cpath, CPkey, true);
-			}
+        await this.DH_getType(CPkey, Cpath);
+        await this.DH_setState(Cpath, CPkey, true);
+      }
 
-			for (var [SPkey, SPvalue] of Object.entries(DreameStateProperties)) {
-            // this.log.info('=====> ' + SPkey + " => " + ToFindVar);
-	            var GetSIID = (SPkey.split("S")[1] ||"").split("P")[0];
-				var GetPIID = SPkey.replace("S" + GetSIID + "P", "");
-	            var GetSIIDPIID = GetSIID + "." + GetPIID;
-                SETURLData = {
-                    did: DH_Did,
-					keys: GetSIIDPIID
-                };
 
-                try {
-			        var GetCloudRequestDeviceData = await this.DH_URLRequest(DH_URLPROP, SETURLData);
-				    var RetPointValue = JSON.parse(JSON.stringify(GetCloudRequestDeviceData.data))[0].value;
+      for (const [SPkey, SPvalue] of Object.entries(DreameStateProperties)) {
+        // this.log.info('=====> ' + SPkey + " => " + ToFindVar);
+	            const GetSIID = (SPkey.split('S')[1] ||'').split('P')[0];
+        const GetPIID = SPkey.replace('S' + GetSIID + 'P', '');
+	            const GetSIIDPIID = GetSIID + '.' + GetPIID;
+        SETURLData = {
+          did: DH_Did,
+          keys: GetSIIDPIID
+        };
 
-				    if (RetPointValue) {
+        try {
+          const GetCloudRequestDeviceData = await this.DH_URLRequest(DH_URLPROP, SETURLData);
+          let RetPointValue = JSON.parse(JSON.stringify(GetCloudRequestDeviceData.data))[0].value;
+          if (RetPointValue) {
 					    //this.log.info("============Get " + SPvalue + " response: " + JSON.stringify(GetCloudRequestDeviceData));
-                        let path = DH_Did + ".state." + SPvalue.replace(/\w\S*/g, function(SPName) {
-                            return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                        }).replace(/\s/g, '');
-						 this.log.info("Get and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
-                        if (path) {
-                            if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                                RetPointValue = JSON.stringify(RetPointValue);
-                            }
-							if (SPkey == "S2P1") {
-								await this.DH_getType(RetPointValue, path.replace(".state.", ".vis."), SPkey);
-								await this.DH_setState(path.replace(".state.", ".vis."), RetPointValue, true);
-							}
-							if (SPkey == "S4P7") {
-								await this.DH_getType(RetPointValue, path.replace(".state.", ".vis."), SPkey);
-								await this.DH_setState(path.replace(".state.", ".vis."), RetPointValue, true);
-							}
-							RetPointValue = await this.DH_SetPropSPID(SPkey, RetPointValue)
-                            await this.DH_getType(RetPointValue, path, SPkey);
-                            await this.DH_setState(path, RetPointValue, true);
-                        }
-				    }
-				} catch (err) {
-                        this.log.warn('Getting "' + SPvalue + '" State from cloud failed: ' + err);
-				}
-            }
-
-            //Get Net Settings
-            SETURLData = {
-                did: DH_Did
-            };
-            var GetCloudRequestOTCInfo = await this.DH_URLRequest(DH_URLOTCINF, SETURLData);
-            await this.DH_PropObject(GetCloudRequestOTCInfo.data, DH_Did + ".general.", "Get OTCInfo: ");
-            //return responseData;
-        }).catch((error) => {
-            this.log.warn('Unable to login to device over cloud: DH_CloudLogin | Login error response: ' + JSON.stringify(error));
-            error.response && this.log.error('Login error response: ' + JSON.stringify(error.response.data));
-            this.setState('info.connection', false, true);
-        });
-        await this.DH_RequestNewMap();
-		//await this.DH_GetControl();
-        await this.DH_RequestControlState();
-    }
-
-    async DH_PropObject(InData, InPath, InLog) {
-        for (var [key, value] of Object.entries(InData)) {
-            var path = InPath + key;
+            const path = DH_Did + '.state.' + SPvalue.replace(/\w\S*/g, function(SPName) {
+              return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+            }).replace(/\s/g, '');
+						 this.log.info('Get and update ' + SPvalue + ' value to: ' + JSON.stringify(RetPointValue));
             if (path) {
-                if (value != null) {
-                    if (typeof value === 'object') {
-                        await this.DH_PropObject(value, path + ".", InLog);
-                    }
-                    if (Object.prototype.toString.call(value) !== '[object Object]') {
-                        if (LogData) {
-                            this.log.info(InLog + " Set " + path + " to " + value);
-                        }
-                        if (Object.prototype.toString.call(value).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                            value = JSON.stringify(value);
-                        }
-                        await this.DH_getType(value, path);
-                        await this.DH_setState(path, value, true);
-
-                    }
-                }
+              if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+                RetPointValue = JSON.stringify(RetPointValue);
+              }
+              if (SPkey == 'S2P1') {
+                await this.DH_getType(RetPointValue, path.replace('.state.', '.vis.'), SPkey);
+                await this.DH_setState(path.replace('.state.', '.vis.'), RetPointValue, true);
+              }
+              if (SPkey == 'S4P7') {
+                await this.DH_getType(RetPointValue, path.replace('.state.', '.vis.'), SPkey);
+                await this.DH_setState(path.replace('.state.', '.vis.'), RetPointValue, true);
+              }
+              RetPointValue = await this.DH_SetPropSPID(SPkey, RetPointValue);
+              await this.DH_getType(RetPointValue, path, SPkey);
+              await this.DH_setState(path, RetPointValue, true);
             }
+		  }
+        } catch (err) {
+          this.log.warn('Getting "' + SPvalue + '" State from cloud failed: ' + err);
         }
-    }
-    async DH_URLRequest(DHurl, SetData) {
-        return await this.DH_requestClient({
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: DHurl,
-            headers: {
-                "Accept": "*/*",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept-Language": "en-US;q=0.8",
-                "Accept-Encoding": "gzip, deflate",
-                "User-Agent": DH_URLUSA,
-                "Authorization": DH_URLAUTH,
-                "Tenant-Id": DH_Tenant,
-                "Content-Type": "application/json",
-                "Dreame-Auth": DH_Auth,
-            },
-            data: SetData,
-        }).then(async (response) => {
-            if (LogData) {
-                this.log.info(DHurl + " response: " + JSON.stringify(response.data));
-            }
-            return response.data;
-        }).catch((error) => {
-            this.log.warn(JSON.stringify(error));
-        });
-    }
+      }
 
-	async DH_RequestNewMap() {
+      //Get Net Settings
+      SETURLData = {
+        did: DH_Did
+      };
+      const GetCloudRequestOTCInfo = await this.DH_URLRequest(DH_URLOTCINF, SETURLData);
+      await this.DH_PropObject(GetCloudRequestOTCInfo.data, DH_Did + '.general.', 'Get OTCInfo: ');
+      //return responseData;
+    }).catch((error) => {
+      this.log.warn('Unable to login to device over cloud: DH_CloudLogin | Login error response: ' + JSON.stringify(error));
+      error.response && this.log.error('Login error response: ' + JSON.stringify(error.response.data));
+      this.setState('info.connection', false, true);
+    });
+    await this.DH_RequestNewMap();
+    //await this.DH_GetControl();
+    await this.DH_RequestControlState();
+  }
 
-		/*try { //Test decrypted Map..
+  async DH_PropObject(InData, InPath, InLog) {
+    for (const [key, value] of Object.entries(InData)) {
+      const path = `${InPath}${key}`;
+
+      if (value !== null) {
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          await this.DH_PropObject(value, `${path}.`, InLog);
+        } else {
+          if (InLog) {
+            this.log.info(`${InLog} Set ${path} to ${JSON.stringify(value)}`);
+          }
+          await this.DH_getType(value, path);
+          await this.DH_setState(path, Array.isArray(value) ? JSON.stringify(value) : value, true);
+        }
+      }
+    }
+  }
+
+  async DH_URLRequest(DHurl, SetData) {
+    return await this.DH_requestClient({
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: DHurl,
+      headers: {
+        'Accept': '*/*',
+        //'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept-Language': 'en-US;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'User-Agent': DH_URLUSA,
+        'Authorization': DH_URLAUTH,
+        'Tenant-Id': DH_Tenant,
+        'Content-Type': 'application/json',
+        'Dreame-Auth': DH_Auth,
+      },
+      data: SetData,
+    }).then(async (response) => {
+      if (LogData) {
+        this.log.info(DHurl + ' response: ' + JSON.stringify(response.data));
+      }
+      return response.data;
+    }).catch((error) => {
+      this.log.warn(JSON.stringify(error));
+    });
+  }
+
+  async DH_RequestNewMap() {
+
+    /*try { //Test decrypted Map..
             var TSETURLData = {
                 did: DH_Did,
                 model: DH_Model,
@@ -2129,608 +2162,697 @@ class Dreamehome extends utils.Adapter {
             this.log.warn(`Unable to decrypt file at ${DH_URLDOWNURL}: ${error}`);
         }*/
 
+    try {
+      const SETURLData = {
+        did: DH_Did,
+        model: DH_Model,
+        filename: DH_filename,
+        region: DH_Region
+      };
+      const GetCloudRequestMap = await this.DH_URLRequest(DH_URLDOWNURL, SETURLData);
+      if (GetCloudRequestMap) {
+        const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
+        await this.setObjectNotExists(DH_Did + '.map.CloudData', {
+          type: 'state',
+          common: {
+            name: 'Map object. Only available when cloud connection is present',
+            type: 'json',
+            role: 'array',
+            write: false,
+            read: true,
+            def: ''
+          },
+          native: {},
+        });
+
+        //await this.setState(In_path + 'map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
+        await this.setState(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
+        //const DH_DecodeMap = JSON.stringify(RetFileData["mapstr"][0]["map"]).toString();
+
+        await this.setObjectNotExists(DH_Did + '.map.MapNumber', {
+          type: 'state',
+          common: {
+            name: 'Map Number. Only available when cloud connection is present',
+            type: 'number',
+            role: 'level',
+            states: {
+              0: "Map N' 1",
+              1: "Map N' 2"
+            },
+            write: true,
+            read: true,
+            def: 0
+          },
+          native: {},
+        });
+
         try {
-            var SETURLData = {
-                did: DH_Did,
-                model: DH_Model,
-                filename: DH_filename,
-                region: DH_Region
-            };
-            var GetCloudRequestMap = await this.DH_URLRequest(DH_URLDOWNURL, SETURLData);
-            if (GetCloudRequestMap) {
-                var RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
-                await this.setObjectNotExists(DH_Did + '.map.CloudData', {
-                    type: 'state',
-                    common: {
-                        name: 'Map object. Only available when cloud connection is present',
-                        type: 'json',
-                        role: 'array',
-                        write: false,
-                        read: true,
-                        def: ''
-                    },
-                    native: {},
-                });
+          const DH_CurMapOb = await this.getStateAsync(DH_Did + '.map.MapNumber');
+          DH_CurMap = DH_CurMapOb.val;
+          this.log.info(DreameInformation[UserLang][0] + DH_CurMap);
+        } catch (error) {
+          this.log.warn(DreameInformation[UserLang][1] + error);
+          DH_CurMap = 0;
+        }
 
-                //await this.setState(In_path + 'map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
-                await this.setState(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
-                //const DH_DecodeMap = JSON.stringify(RetFileData["mapstr"][0]["map"]).toString();
-
-                await this.setObjectNotExists(DH_Did + '.map.MapNumber', {
-                    type: 'state',
-                    common: {
-                        name: 'Map Number. Only available when cloud connection is present',
-                        type: 'number',
-                        role: 'level',
-                        states: {
-                            0: "Map N' 1",
-							1: "Map N' 2"
-                        },
-                        write: true,
-                        read: true,
-                        def: 0
-                    },
-                    native: {},
-                });
-
-
-                try {
-                    var DH_CurMapOb = await this.getStateAsync(DH_Did + '.map.MapNumber');
-                    DH_CurMap = DH_CurMapOb.val;
-                    this.log.info(DreameInformation[UserLang][0] + DH_CurMap);
-                } catch (error) {
-                    this.log.warn(DreameInformation[UserLang][1] + error);
-                    DH_CurMap = 0;
-                }
-
-                var DH_DecodeMap = "",
-                    AddMapLevel = {}; //FoundedMap = false,
-                for (var [MAkey, MAvalue] of Object.entries(RetFileData)) {
-                    if (MAkey == "mapstr") { // && (FoundedMap == false)) {
-                        for (var [MBkey, MBvalue] of Object.entries(MAvalue)) {
-                            if (parseInt(MBkey) == DH_CurMap) {
-                                DH_DecodeMap = JSON.stringify(RetFileData[MAkey][MBkey]["map"]).toString();
-                                //FoundedMap = true;
-                                //break;
-                            }
-                           // AddMapLevel[MBkey] = ": Map N' " + (parseInt(MBkey) + 1);
-                        }
-                    }
-                    if (MAkey == "curr_id") {
-                        DH_MapIDs.push(MAvalue);
-                        DH_MapID = MAvalue;
-                    }
-                }
-				/*AddMapLevel = JSON.parse(JSON.stringify(AddMapLevel));
+        let DH_DecodeMap = '';
+        //let AddMapLevel = {}; //FoundedMap = false,
+        for (const [MAkey, MAvalue] of Object.entries(RetFileData)) {
+          if (MAkey == 'mapstr') { // && (FoundedMap == false)) {
+            for (const [MBkey, MBvalue] of Object.entries(MAvalue)) {
+              if (parseInt(MBkey) == DH_CurMap) {
+                DH_DecodeMap = JSON.stringify(RetFileData[MAkey][MBkey]['map']).toString();
+                //FoundedMap = true;
+                //break;
+              }
+              // AddMapLevel[MBkey] = ": Map N' " + (parseInt(MBkey) + 1);
+            }
+          }
+          if (MAkey == 'curr_id') {
+            DH_MapIDs.push(MAvalue);
+            DH_MapID = MAvalue;
+          }
+        }
+        /*AddMapLevel = JSON.parse(JSON.stringify(AddMapLevel));
                 await this.setState(DH_Did + '.map.MapNumber', {
                     states: AddMapLevel
                 });*/
 
-                await this.setObjectNotExists(DH_Did + '.map.MapID', {
-                    type: 'state',
-                    common: {
-                        name: 'Map ID. Only available when cloud connection is present',
-                        type: 'number',
-                        role: 'value',
-                        write: false,
-                        read: true,
-                        def: DH_MapID
-                    },
-                    native: {},
-                });
+        await this.setObjectNotExists(DH_Did + '.map.MapID', {
+          type: 'state',
+          common: {
+            name: 'Map ID. Only available when cloud connection is present',
+            type: 'number',
+            role: 'value',
+            write: false,
+            read: true,
+            def: DH_MapID
+          },
+          native: {},
+        });
 				 await this.setState(DH_Did + '.map.MapID', DH_MapID, true);
-                if (LogData) {
+        if (LogData) {
 				    this.log.info('Decode Map response: ' + JSON.stringify(DH_DecodeMap));
-				}
-
-
-                if (DH_DecodeMap !== '') {
-                    var DH_input_Raw = DH_DecodeMap.replace(/-/g, '+').replace(/_/g, '/');
-                    var DH_decode = zlib.inflateSync(Buffer.from(DH_input_Raw, 'base64')).toString()
-                    var DH_jsondecode = DH_decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-                    var DH_jsonread = (_ => {
-                        try {
-                            return JSON.parse(DH_jsondecode);
-                        } catch (err) {
-                            this.log.info('Error:' + err);
-                            return undefined;
-                        }
-                    })();
-					if (LogData) {
-                        this.log.info('Decode Map response: ' + JSON.stringify(DH_jsonread));
-                    }
-                    if (!DH_jsonread) {
-						this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
-                    } else {
-						DH_Map[DH_CurMap] = DH_jsonread;
-						await this.setObjectNotExists(DH_Did + '.mqtt.robot', {
-                            type: 'state',
-							common: {
-                                name: 'Dreame Robot Position',
-								type: 'json',
-                                role: 'array',
-                                write: false,
-                                read: true,
-                                def: JSON.stringify(DH_Map[DH_CurMap]["robot"])
-                            },
-                            native: {},
-                        });
-						await this.setObjectNotExists(DH_Did + '.mqtt.charger', {
-                            type: 'state',
-							common: {
-                                name: 'Dreame Charger Position',
-								type: 'json',
-                                role: 'array',
-                                write: false,
-                                read: true,
-                                def: JSON.stringify(DH_Map[DH_CurMap]["charger"])
-                            },
-                            native: {},
-                        });
-					}
-
-                    //await this.setState(DH_Did + '.map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
-                    DH_input_Raw = null;
-                    DH_jsonread = null;
-                    DH_jsondecode = null;
-                    DH_decode = null;
-                    DH_DecodeMap = null;
-
-					this.log.info(DreameInformation[UserLang][5]);
-                }
-            }
-        } catch (error) {
-            this.log.warn(`Unable to get file at ${DH_URLDOWNURL}: ${error}`);
         }
-    }
 
-    async DH_getFile(url) {
-        const session = require('axios').create();
-        let DH_Retries = 0;
-        let DH_RetryCount = 2;
-        let DH_FetchState = false;
-        const now = Math.round(Date.now() / 1000);
-        do {
+
+        if (DH_DecodeMap !== '') {
+          let DH_input_Raw = DH_DecodeMap.replace(/-/g, '+').replace(/_/g, '/');
+          let DH_decode = zlib.inflateSync(Buffer.from(DH_input_Raw, 'base64')).toString();
+          let DH_jsondecode = DH_decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
+          let DH_jsonread = (_ => {
             try {
-                const response5 = await session.get(url, {
-                    timeout: 3000
-                });
-                if (response5 && response5.status === 200) {
-                    //this.log.info('5.1 get Map Data response: ' + JSON.stringify(response5.data));
-                    return response5.data;
-                    DH_FetchState = true;
-                    break;
-                }
-            } catch (error) {
-                this.log.warn(`Unable to get file at ${url}: ${error}`);
+              return JSON.parse(DH_jsondecode);
+            } catch (err) {
+              this.log.info('Error:' + err);
+              return undefined;
             }
-            DH_Retries++;
-        } while ((DH_Retries < DH_RetryCount) || (DH_FetchState == false));
-        return null;
-    }
-	async DH_GetSetRooms() {
-        if (DH_Map) {
-			var Mrooms = [];
-            Mrooms = DH_Map[DH_CurMap]["walls_info"].storeys[0].rooms;
-            for (var iRoom in Mrooms) {
-                var walls = Mrooms[iRoom]["walls"];
-                var CheckArrayRoomsX = [],
-                    CheckArrayRoomsY = [];
-                //this.log.info(JSON.stringify(walls));
-                for (var iWall in walls) {
-                    CheckArrayRoomsX.push(walls[iWall]["beg_pt_x"]);
-                    CheckArrayRoomsX.push(walls[iWall]["end_pt_x"]);
-                    CheckArrayRoomsY.push(walls[iWall]["beg_pt_y"]);
-                    CheckArrayRoomsY.push(walls[iWall]["end_pt_y"]);
+          })();
+          if (LogData) {
+            this.log.info('Decode Map response: ' + JSON.stringify(DH_jsonread));
+          }
+          if (!DH_jsonread) {
+            this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
+          } else {
+            DH_Map[DH_CurMap] = DH_jsonread;
+            await this.setObjectNotExists(DH_Did + '.mqtt.robot', {
+              type: 'state',
+              common: {
+                name: 'Dreame Robot Position',
+                type: 'json',
+                role: 'array',
+                write: false,
+                read: true,
+                def: JSON.stringify(DH_Map[DH_CurMap]['robot'])
+              },
+              native: {},
+            });
+            await this.setObjectNotExists(DH_Did + '.mqtt.charger', {
+              type: 'state',
+              common: {
+                name: 'Dreame Charger Position',
+                type: 'json',
+                role: 'array',
+                write: false,
+                read: true,
+                def: JSON.stringify(DH_Map[DH_CurMap]['charger'])
+              },
+              native: {},
+            });
+          }
 
-                }
-                var SortiRoom = {};
-                SortiRoom.Id = Mrooms[iRoom]["room_id"];
-                var SegmentType = DH_Map[DH_CurMap]["seg_inf"][Mrooms[iRoom]["room_id"]].type;
-                if (SegmentType == 0) {
-                    SortiRoom.Name = await this.DH_Base64DecodeUnicode(DH_Map[DH_CurMap]["seg_inf"][Mrooms[iRoom]["room_id"]].name);
-                } else {
-                    SortiRoom.Name = (SegmentToName[UserLang][SegmentType] !== undefined) ? SegmentToName[UserLang][SegmentType] : "UnrecognizedRoom" + SortiRoom.Id;
-                }
-                SortiRoom.X = CheckArrayRoomsX;
-                SortiRoom.Y = CheckArrayRoomsY;
-                CheckArrayRooms.push(SortiRoom);
-                await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".SuctionLevel", DreameSuctionLevel[UserLang], SortiRoom.Name + " Suction Level");
-                await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".WaterVolume", DreameSetWaterVolume[UserLang], SortiRoom.Name + " Water Volume");
-				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".Repeat", DreameSetRepeat[UserLang], SortiRoom.Name + " Repeat");
-				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningMode", DreameCleaningMode[UserLang], SortiRoom.Name + " Cleaning Mode");
-				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".CleaningRoute", DreameSetRoute[UserLang], SortiRoom.Name + " Cleaning Route");
-				await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + SortiRoom.Name + ".Cleaning", DreameSetCleanRoom[UserLang], SortiRoom.Name + " Cleaning");
-				Alexarooms.push({"RN" :SortiRoom.Id, "RM": SortiRoom.Name});
+          //await this.setState(DH_Did + '.map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
+          DH_input_Raw = null;
+          DH_jsonread = null;
+          DH_jsondecode = null;
+          DH_decode = null;
+          DH_DecodeMap = null;
 
-            }
-			Mrooms = null;
-			var Mcarpets = [];
-			Mcarpets = DH_Map[DH_CurMap]["carpet_info"];
-            for (var icarpets in Mcarpets) {
-				for (var iCHroomID in CheckArrayRooms) {
-				    if (CheckArrayRooms[iCHroomID].Id == parseInt(Mcarpets[icarpets][4])) {
-						let CarpetCord = {Cord: [Mcarpets[icarpets][0], Mcarpets[icarpets][1], Mcarpets[icarpets][2], Mcarpets[icarpets][3]]};
-						await this.DH_setCarpetPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleanCarpet" + parseInt(icarpets),
-						CheckArrayRooms[iCHroomID].Name + " Carpet" + Mcarpets[icarpets][4], CarpetCord);
-						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetRepetition" + parseInt(icarpets),
-						DreameSetRepeat[UserLang], SortiRoom.Name + " Carpet Repeat");
-						await this.DH_setRoomPath(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetSuctionLevel" + parseInt(icarpets),
-						DreameSuctionLevel[UserLang], SortiRoom.Name + " Carpet Suction Level");
-						this.log.info("Found Carpet N' " + icarpets + " in room " + CheckArrayRooms[iCHroomID].Name);
-						break;
-				    }
-				}
-			}
-			Mcarpets = null;
-			try {
-			    await this.DH_GetRobotPosition(DH_Map[DH_CurMap]["robot"], CheckArrayRooms);
-			} catch (SRPerror) {
-                this.log.warn("Unable to Set Current room cleaning name | In Value: " + DH_Map[DH_CurMap]["robot"] + " | Error: " + SRPerror );
-            }
+          this.log.info(DreameInformation[UserLang][5]);
         }
+      }
+    } catch (error) {
+      this.log.warn(`Unable to get file at ${DH_URLDOWNURL}: ${error}`);
     }
-	async DH_setRoomPath(SegSPath, SegSState, SegSName) {
-		await this.extendObject(SegSPath,{
-			type: 'state',
-			common: {
-				name: SegSName,
-				type: 'number',
-				role: 'level',
-				states: SegSState,
-				write: true,
-				read: true,
-				def: -1
-			},
-			native:
+  }
+
+  async DH_getFile(url) {
+    if (LogData) {this.log.info(`[INFO] DH_getFile called with URL: ${url}`);}
+
+    // Validate the URL
+    if (!url || typeof url !== 'string') {
+      this.log.error(`[ERROR] Invalid URL provided: ${url}`);
+      return null;
+    }
+
+    const DH_RetryCount = 2;
+    let DH_Retries = 0;
+
+    while (DH_Retries < DH_RetryCount) {
+      if (LogData) {this.log.info(`[INFO] Attempt ${DH_Retries + 1}/${DH_RetryCount} - Fetching file from: ${url}`);}
+
+      try {
+        const response = await this.DH_requestClient.get(url, { timeout: 3000 });
+
+        if (LogData) {this.log.info(`[INFO] Response status: ${response.status}`);}
+
+        if (response?.status === 200) {
+          const responseData = JSON.stringify(response.data);
+          this.log.info(`[SUCCESS] Received data: ${responseData.substring(0, 100)}...`);
+          return response.data;
+        } else {
+          this.log.warn(`[WARNING] Unexpected response status (${response.status}) while fetching file.`);
+        }
+      } catch (error) {
+        this.log.warn(`[WARNING] Error fetching file (${url}): ${error.message}`);
+      }
+
+      DH_Retries++;
+    }
+
+    this.log.error(`[ERROR] All ${DH_RetryCount} attempts failed. Could not retrieve the file.`);
+    return null; // Return null if all retries fail
+  }
+
+  async DH_GetSetRooms() {
+    // First, check DH_Map
+    if (DH_Map) {
+      const Mrooms = DH_Map[DH_CurMap]?.['walls_info']?.storeys?.[0]?.rooms;
+      if (Mrooms) {
+        this.processRooms(Mrooms, DH_Map[DH_CurMap]);  // customMapData �bergeben
+        return; // Exit function if DH_Map contains valid data
+      } else {
+        this.log.warn('No rooms found in DH_Map.');
+      }
+    }
+
+    // If DH_Map is empty or unavailable, try Robot.Map.UserCustomMap
+    const GetUserCustomMap = await this.getStateAsync(DH_Did + `.map.UserCustomMap`);
+    if (GetUserCustomMap && GetUserCustomMap.val) {
+      const customMapData = JSON.parse(GetUserCustomMap.val);
+
+      if (customMapData.CustomMap === 1) {  // Use data only if CustomMap is set to 1
+        const Mrooms = customMapData.storeys?.[0]?.rooms;
+        if (Mrooms) {
+          this.processRooms(Mrooms, customMapData);  // Process rooms from UserCustomMap
+          return; // Exit function if UserCustomMap is valid
+        } else {
+          this.log.warn('No rooms found in UserCustomMap.');
+        }
+      } else {
+        this.log.warn('CustomMap is not set to 1.');
+      }
+    } else {
+      this.log.warn('Robot.Map.UserCustomMap is empty or unavailable.');
+    }
+  }
+
+  async processRooms(Mrooms, customMapData) {
+    if (!customMapData) {
+      this.log.warn('customMapData is undefined. Cannot process rooms.');
+      return;
+    }
+
+    // Clear arrays before populating them
+    CheckArrayRooms.length = 0;
+    Alexarooms.length = 0;
+
+    // Iterate through rooms
+    for (const iRoom of Mrooms) {
+      const { walls } = iRoom;
+      const CheckArrayRoomsX = [];
+      const CheckArrayRoomsY = [];
+
+      // Collect wall points into arrays
+      for (const iWall of walls) {
+        CheckArrayRoomsX.push(iWall['beg_pt_x'], iWall['end_pt_x']);
+        CheckArrayRoomsY.push(iWall['beg_pt_y'], iWall['end_pt_y']);
+      }
+
+      const SortiRoom = {
+        Id: iRoom['room_id'],
+        X: CheckArrayRoomsX,
+        Y: CheckArrayRoomsY
+      };
+
+      // Extract segment type from seg_inf
+      const SegmentType = customMapData.seg_inf?.[iRoom['room_id']]?.type;
+      SortiRoom.Name = SegmentType === 0
+        ? await this.DH_Base64DecodeUnicode(customMapData.seg_inf[iRoom['room_id']].name)
+        : SegmentToName[UserLang]?.[SegmentType] || `Room_${SortiRoom.Id}`;
+
+      // Add room to CheckArrayRooms
+      CheckArrayRooms.push(SortiRoom);
+
+      // Set room parameters
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.SuctionLevel`, DreameSuctionLevel[UserLang], `${SortiRoom.Name} Suction Level`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.WaterVolume`, DreameSetWaterVolume[UserLang], `${SortiRoom.Name} Water Volume`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.Repeat`, DreameSetRepeat[UserLang], `${SortiRoom.Name} Repeat`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningMode`, DreameCleaningMode[UserLang], `${SortiRoom.Name} Cleaning Mode`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningRoute`, DreameSetRoute[UserLang], `${SortiRoom.Name} Cleaning Route`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.Cleaning`, DreameSetCleanRoom[UserLang], `${SortiRoom.Name} Cleaning`);
+
+      // Add room to Alexa rooms list
+      Alexarooms.push({ 'RN': SortiRoom.Id, 'RM': SortiRoom.Name });
+    }
+
+    // Check if customMapData and carpet_info are available
+    if (!customMapData || !customMapData.carpet_info) {
+      this.log.warn('customMapData or customMapData.carpet_info is not available.');
+      return;
+    }
+
+    if (LogData) { this.log.warn('Test customMapData: ' + JSON.stringify(customMapData)); }
+
+    // Access the carpet data
+    const carpetInfo = customMapData.carpet_info;
+    if (typeof carpetInfo === 'object') {  // Ensure it is an object
+      for (const carpetKey in carpetInfo) {  // Iterate through carpets
+        const carpetData = carpetInfo[carpetKey];
+
+        // Check if carpet data has the expected structure
+        if (Array.isArray(carpetData) && carpetData.length >= 4) {
+          const [beg_x, beg_y, end_x, end_y, roomIds, extraInfo] = carpetData;
+
+          // Example: Use the room identifiers (roomIds) and process the carpet accordingly
+          for (const roomId of roomIds) {
+            // Process carpet data based on room ID
+            for (const room of CheckArrayRooms) {
+              if (room.Id === roomId) {
+                const CarpetCord = { Cord: [beg_x, beg_y, end_x, end_y] };
+                await this.DH_setCarpetPath(
+                  DH_Did + `.map.${DH_CurMap}.${room.Name}.CleanCarpet${carpetKey}`,
+                  `${room.Name} Carpet${carpetKey}`,
+                  CarpetCord
+                );
+                await this.DH_setRoomPath(
+                  DH_Did + `.map.${DH_CurMap}.${room.Name}.CarpetRepetition${carpetKey}`,
+                  DreameSetRepeat[UserLang],
+                  `${room.Name} Carpet Repeat`
+                );
+                await this.DH_setRoomPath(
+                  DH_Did + `.map.${DH_CurMap}.${room.Name}.CarpetSuctionLevel${carpetKey}`,
+                  DreameSuctionLevel[UserLang],
+                  `${room.Name} Carpet Suction Level`
+                );
+                this.log.info(`Found Carpet ${carpetKey} in room ${room.Name}`);
+                break;
+              }
+            }
+          }
+        } else {
+          this.log.warn(`Invalid carpet data for carpet ${carpetKey}: ${JSON.stringify(carpetData)}`);
+        }
+      }
+    } else {
+      this.log.warn('customMapData.carpet_info is not defined as an object.');
+    }
+  }
+
+
+
+
+  async DH_setRoomPath(SegSPath, SegSState, SegSName) {
+    await this.extendObject(SegSPath,{
+      type: 'state',
+      common: {
+        name: SegSName,
+        type: 'number',
+        role: 'level',
+        states: SegSState,
+        write: true,
+        read: true,
+        def: -1
+      },
+      native:
 			{},
-		});
-	}
-	async DH_setCarpetPath(CarpSPath, CarpSName, CarpSnative) {
-		await this.extendObject(CarpSPath,{
-			type: 'state',
-			common: {
-				name: CarpSName,
-				type: 'boolean',
-				role: 'switch',
-				write: true,
-				read: true,
-				def: false,
-			},
-			native: CarpSnative
-		});
-	}
-	async DH_RequestControlState() {
-		for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
-            try {
-                let path = DH_Did + ".control." + SPvalue.replace(/\w\S*/g, function(SPName) {
-                    return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                }).replace(/\s/g, '');
+    });
+  }
+  async DH_setCarpetPath(CarpSPath, CarpSName, CarpSnative) {
+    await this.extendObject(CarpSPath,{
+      type: 'state',
+      common: {
+        name: CarpSName,
+        type: 'boolean',
+        role: 'switch',
+        write: true,
+        read: true,
+        def: false,
+      },
+      native: CarpSnative
+    });
+  }
+  async DH_RequestControlState() {
+    for (const [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
+      try {
+        const path = DH_Did + '.control.' + SPvalue.replace(/\w\S*/g, function(SPName) {
+          return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+        }).replace(/\s/g, '');
 
-                var RetPointValue = DreameActionParams[SPkey];
-                if (path) {
-					var GetobjExist = await this.getObjectAsync(path);
-					if ((!GetobjExist) || (SPkey.indexOf("E") !== -1)) {
-						if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                            RetPointValue = JSON.stringify(RetPointValue);
-						} else {
-							RetPointValue = JSON.parse(RetPointValue);
-						}
+        let RetPointValue = DreameActionParams[SPkey];
+        if (path) {
+          const GetobjExist = await this.getObjectAsync(path);
+          if ((!GetobjExist) || (SPkey.indexOf('E') !== -1)) {
+            if (Object.prototype.toString.call(RetPointValue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+              RetPointValue = JSON.stringify(RetPointValue);
+            } else {
+              RetPointValue = JSON.parse(RetPointValue);
+            }
 
-						if ((SPkey.indexOf("P") !== -1) && (SPkey.indexOf("E") !== -1)) {
-							RetPointValue = DreameActionExteParams[SPkey][UserLang];
-						}
-						await this.DH_getType(RetPointValue, path, SPkey, DreameActionParams[SPkey][0]["value"]);
+            if ((SPkey.indexOf('P') !== -1) && (SPkey.indexOf('E') !== -1)) {
+              RetPointValue = DreameActionExteParams[SPkey][UserLang];
+            }
+            await this.DH_getType(RetPointValue, path, SPkey, DreameActionParams[SPkey][0]['value']);
 
-						if ((SPkey.indexOf("P") !== -1) && (SPkey.indexOf("E") !== -1)) {
-							let Readpath = DH_Did + ".state." + (DreameStateProperties[SPkey.split("E")[0]]).replace(/\w\S*/g, function(SPName) {
-                                return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                                }).replace(/\s/g, '');
+            if ((SPkey.indexOf('P') !== -1) && (SPkey.indexOf('E') !== -1)) {
+              const Readpath = DH_Did + '.state.' + (DreameStateProperties[SPkey.split('E')[0]]).replace(/\w\S*/g, function(SPName) {
+                return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+              }).replace(/\s/g, '');
 
-								try {
-									var ReadRetPointValue = await this.getStateAsync(Readpath);
-                                    if (SPkey == "S4P23E1") {
-										for (var CLMK in DreameCleaningMode[UserLang]) {
-                                            if (DreameCleaningMode[UserLang][CLMK] == ReadRetPointValue.val) {
-                                                RetPointValue = CLMK;
-											}
-										}
-									    var VariableSIIDReadpath = DH_Did + ".state." + (DreameStateProperties["S4P26"]).replace(/\w\S*/g, function(SPName) {
+              try {
+                const ReadRetPointValue = await this.getStateAsync(Readpath);
+                if (SPkey == 'S4P23E1') {
+                  for (const CLMK in DreameCleaningMode[UserLang]) {
+                    if (DreameCleaningMode[UserLang][CLMK] == ReadRetPointValue.val) {
+                      RetPointValue = CLMK;
+                    }
+                  }
+									    const VariableSIIDReadpath = DH_Did + '.state.' + (DreameStateProperties['S4P26']).replace(/\w\S*/g, function(SPName) {
 									 	return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                                        }).replace(/\s/g, '');
-										try {
-											var ReadRVariableSIID = await this.getStateAsync(VariableSIIDReadpath);
+                  }).replace(/\s/g, '');
+                  try {
+                    const ReadRVariableSIID = await this.getStateAsync(VariableSIIDReadpath);
 										    if (ReadRVariableSIID.val == 1) {
-												RetPointValue = ReadRVariableSIID.val;
+                      RetPointValue = ReadRVariableSIID.val;
 										    }
-										} catch (error1) {
+                  } catch (error1) {
 									        if (LogData) {
 									            this.log.warn('Failed to split Cleaning Mode | State failed: ' + error1);
 									        }
-                                        }
-									} else if ((SPkey == "S4P4E1") || (SPkey == "S4P5E1")) {
-										for (var key in DreameActionExteParams[SPkey][UserLang]) {
-                                            if(DreameActionExteParams[SPkey][UserLang][key] == ReadRetPointValue.val){
-                                                RetPointValue =  key;
-											}
-                                        }
-									} else {
-                                        RetPointValue = Object.keys(DreameActionExteParams[SPkey][UserLang])[ReadRetPointValue.val];
-										let ExtendToSearch = JSON.stringify(JSON.parse(DreameActionParams[SPkey][0]["value"])["k"]);
-									    if (ExtendToSearch !== "undefined") {
-										    let jsonExtendData = JSON.parse(ReadRetPointValue.val);
-										    for (var Ex in jsonExtendData) {
-                                                if (JSON.stringify(jsonExtendData[Ex]["k"]) == ExtendToSearch) {
-												    RetPointValue = jsonExtendData[Ex]["v"];
+                  }
+                } else if ((SPkey == 'S4P4E1') || (SPkey == 'S4P5E1')) {
+                  for (const key in DreameActionExteParams[SPkey][UserLang]) {
+                    if(DreameActionExteParams[SPkey][UserLang][key] == ReadRetPointValue.val){
+                      RetPointValue =  key;
+                    }
+                  }
+                } else {
+                  RetPointValue = Object.keys(DreameActionExteParams[SPkey][UserLang])[ReadRetPointValue.val];
+                  const ExtendToSearch = JSON.stringify(JSON.parse(DreameActionParams[SPkey][0]['value'])['k']);
+									    if (ExtendToSearch !== 'undefined') {
+										    const jsonExtendData = JSON.parse(ReadRetPointValue.val);
+										    for (const Ex in jsonExtendData) {
+                      if (JSON.stringify(jsonExtendData[Ex]['k']) == ExtendToSearch) {
+												    RetPointValue = jsonExtendData[Ex]['v'];
 												    break;
 											    }
-                                            }
+                    }
 									    }
-									}
-									if (SPkey == "S7P1E1"){
-										RetPointValue = ReadRetPointValue.val;
-									}
-									RetPointValue = parseInt(RetPointValue);
-									if ((RetPointValue < 0) && (RetPointValue > -3)) {RetPointValue = 0;} // Fix negative Value
+                }
+                if (SPkey == 'S7P1E1'){
+                  RetPointValue = ReadRetPointValue.val;
+                }
+                RetPointValue = parseInt(RetPointValue);
+                if ((RetPointValue < 0) && (RetPointValue > -3)) {RetPointValue = 0;} // Fix negative Value
 
-                                } catch (error) {
-									RetPointValue = parseInt(Object.keys(DreameActionExteParams[SPkey][UserLang])[0]);
-									if (LogData) {
+              } catch (error) {
+                RetPointValue = parseInt(Object.keys(DreameActionExteParams[SPkey][UserLang])[0]);
+                if (LogData) {
 									    this.log.warn('Failed to split "' + SPvalue + '" State failed: ' + error);
-									}
-                                }
-						}
-						if (LogData) {
-						    this.log.info("Set and update " + SPvalue + " value to: " + JSON.stringify(RetPointValue));
-						}
-						await this.setState(path, RetPointValue, true);
-					}
-				}
-            } catch (err) {
-                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+                }
+              }
             }
-        }
-	}
-    async DH_GenerateMap() {
-		await this.DH_RequestNewMap()
-		if (!DH_Map) {
-			this.log.warn(DreameInformation[UserLang][3] + DH_CurMap + DreameInformation[UserLang][4]);
-			return;
-		}
-        var canvas = createCanvas();
-        var context = canvas.getContext("2d");
-        canvas.height = 1024;
-        canvas.width = 1024;
-        var ExportHTML = '<html> <head> </head> <body>  <div id="Cam" class="CamPer">';
-        var DH_FillRooms = false;
-        var DH_RoomsNumberState = [];
-        var rooms = DH_Map[DH_CurMap]["walls_info"].storeys[0].rooms; //First Map
-        //alert(JSON.stringify(rooms));
-        var doors = DH_Map[DH_CurMap]["walls_info"].storeys[0].doors;
-        //alert(JSON.stringify(doors));
-        var carpet = DH_Map[DH_CurMap]["carpet_info"];
-        //alert(JSON.stringify(carpet));
-        var funiture = DH_Map[DH_CurMap]["funiture_info"];
-        var charger = DH_Map[DH_CurMap]["charger"];
-        var origin = DH_Map[DH_CurMap]["origin"];
-		var CenterCoordinateRoom = [];
-        //==================>Get Zero X and Y
-        var costXMin = Number.POSITIVE_INFINITY,
-            costXMax = Number.NEGATIVE_INFINITY,
-            tmpcostXMin = 0,
-            tmpcostXMax = 0,
-            costYMin = Number.POSITIVE_INFINITY,
-            costYMax = Number.NEGATIVE_INFINITY,
-            tmpcostYMin = 0,
-            tmpcostYMax = 0;
-        for (var iRoom in rooms) {
-            var walls = rooms[iRoom]["walls"];
-            //this.log.info(JSON.stringify(walls));
-            for (var iWall in walls) {
-                //=======================Get X
-                tmpcostXMin = walls[iWall]["beg_pt_x"];
-                if (tmpcostXMin < costXMin) {
-                    costXMin = tmpcostXMin;
-                }
-                tmpcostXMin = walls[iWall]["end_pt_x"];
-                if (tmpcostXMin < costXMin) {
-                    costXMin = tmpcostXMin;
-                }
-                tmpcostXMax = walls[iWall]["beg_pt_x"];
-                if (tmpcostXMax > costXMax) {
-                    costXMax = tmpcostXMax;
-                }
-                tmpcostXMax = walls[iWall]["end_pt_x"];
-                if (tmpcostXMax > costXMax) {
-                    costXMax = tmpcostXMax;
-                }
-                //=======================Get Y
-                tmpcostYMin = walls[iWall]["beg_pt_y"];
-                if (tmpcostYMin < costYMin) {
-                    costYMin = tmpcostYMin;
-                }
-                tmpcostYMin = walls[iWall]["end_pt_y"];
-                if (tmpcostYMin < costYMin) {
-                    costYMin = tmpcostYMin;
-                }
-                tmpcostYMax = walls[iWall]["beg_pt_y"];
-                if (tmpcostYMax > costYMax) {
-                    costYMax = tmpcostYMax;
-                }
-                tmpcostYMax = walls[iWall]["end_pt_y"];
-                if (tmpcostYMax > costYMax) {
-                    costYMax = tmpcostYMax;
-                }
-            }
-        }
-        var ScaleXZero = (DH_ScaleValue / 10);
-        var ScaleYZero = ((DH_ScaleValue / 10) - 0.5);
-        origin[0] = 0 - (((canvas.width - Math.round(costXMax + costXMin)) + Math.round(costXMax)) * ScaleXZero);
-        origin[1] = 0 - (((canvas.height - Math.round(costYMax + costYMin)) + Math.round(costYMax)) * ScaleYZero);
-        if (LogData) {
-            this.log.info("Max X Cordinate Segment " + (Math.round(costXMax) / DH_ScaleValue));
-            this.log.info("Min X Cordinate Segment " + (Math.round(costXMin) / DH_ScaleValue));
-            this.log.info("Max Y Cordinate Segment " + (Math.round(costYMax) / DH_ScaleValue));
-            this.log.info("Min Y Cordinate Segment " + (Math.round(costYMin) / DH_ScaleValue));
-            this.log.info("Zero X Cordinate Segment " + (origin[0] / DH_ScaleValue));
-            this.log.info("Zero Y Cordinate Segment " + (origin[1] / DH_ScaleValue));
-        }
-        //==================>Create Wall Canvas
-        var iWallcanvas = createCanvas(canvas.width, canvas.height);
-        var Wallcontext = iWallcanvas.getContext("2d");
-        Wallcontext.clearRect(0, 0, canvas.width, canvas.height);
-        Wallcontext.fillStyle = WallColor;
-        Wallcontext.lineWidth = WallLineWidth;
-        Wallcontext.strokeStyle = WallStrokeColor;
-        //==================>Split Rooms Canvas
-        context.strokeStyle = RoomsStrokeColor;
-        //==================>Draw graphics Wall
-        var RoomsContext = [];
-        context.lineWidth = RoomsLineWidth;
-        for (var iRoom in rooms) {
-            //==================>Declare Room State
-            DH_RoomsNumberState.push(rooms[iRoom]["room_id"]);
-            DH_RoomsNumberState[rooms[iRoom]["room_id"]] = 0;
-            //<=====================Declare Room State
-            //==================>Split Rooms Canvas
-            var iRoomcanvas = createCanvas(canvas.width, canvas.height);
-            var Tempcontext = iRoomcanvas.getContext("2d");
-            Tempcontext.clearRect(0, 0, canvas.width, canvas.height);
-            Tempcontext.lineWidth = 6;
-            var iRoomID = rooms[iRoom]["room_id"];
-            var NewColorSegment = await this.DH_hexToRgbA(ColorsItems[iRoomID]);
-            Tempcontext.fillStyle = NewColorSegment.RGBA;
-            //<==================End Split Rooms Canvas
-            context.fillStyle = NewColorSegment.RGBA;
-            var walls = rooms[iRoom]["walls"];
-            context.beginPath();
-            Wallcontext.beginPath();
-            Tempcontext.beginPath();
-            for (var iWall in walls) {
-                var point1 = {
-                    x: (walls[iWall]["beg_pt_x"] + (origin[0] * -1)) / DH_ScaleValue,
-                    y: (walls[iWall]["beg_pt_y"] + (origin[1] * -1)) / DH_ScaleValue,
-                };
-                Wallcontext.lineTo(point1.x, point1.y);
-                var point2 = {
-                    x: (walls[iWall]["end_pt_x"] + (origin[0] * -1)) / DH_ScaleValue,
-                    y: (walls[iWall]["end_pt_y"] + (origin[1] * -1)) / DH_ScaleValue,
-                };
-                //==================>Add Map Canvas
-                context.lineTo(point2.x, point2.y);
-                //==================>Add Wall Canvas
-                Wallcontext.lineTo(point2.x, point2.y);
-                //==================>Add Room Canvas
-                Tempcontext.lineTo(point2.x, point2.y);
-            }
-            context.closePath()
-            context.fill();
-            Wallcontext.stroke();
-            Wallcontext.closePath()
-            Tempcontext.closePath()
-            Tempcontext.fill();
-            fullQuality = iRoomcanvas.toDataURL("image/png", 1.0);
             if (LogData) {
-                this.log.info("Room N: " + iRoomID + ": " + fullQuality);
+						    this.log.info('Set and update ' + SPvalue + ' value to: ' + JSON.stringify(RetPointValue));
             }
-            ExportHTML += ' <img id="Room' + iRoomID + '" class="DH_Mapimages"' + 'onclick="DH_SelectTheRoom(' + iRoomID + ')" src="' + fullQuality + '" >';
-			let CenterW = await this.CalculateRoomCenter(walls);
-			let ExportRoomName = "";
-			for (var iCHroomID in CheckArrayRooms) {
-				if (CheckArrayRooms[iCHroomID].Id == rooms[iRoom]["room_id"]) {
-					ExportRoomName = CheckArrayRooms[iCHroomID].Name;
-					break;
-				}
-			}
-            CenterCoordinateRoom.push({"RN" :rooms[iRoom]["room_id"], "X": (((CenterW.Rx * -1) + (origin[0] * -1)) / DH_ScaleValue) , "y": (((CenterW.Ry * -1) + (origin[1] * -1)) / DH_ScaleValue), "RM": ExportRoomName});
+            await this.setState(path, RetPointValue, true);
+          }
         }
-        //Doors
-        context.globalAlpha = 1.0;
-        Wallcontext.fillStyle = DoorsColor;
-        Wallcontext.lineWidth = DoorsLineWidth;
-        Wallcontext.strokeStyle = DoorsStrokeColor;
-        for (var iDoors in doors) {
-            Wallcontext.beginPath();
-            //context.beginPath();
-            //alert(JSON.stringify(doors[iDoors]["beg_pt_x"]));
-            var point1 = {
-                x: (doors[iDoors]["beg_pt_x"] + (origin[0] * -1)) / DH_ScaleValue,
-                y: (doors[iDoors]["beg_pt_y"] + (origin[1] * -1)) / DH_ScaleValue,
-            };
-            var point2 = {
-                x: (doors[iDoors]["end_pt_x"] + (origin[0] * -1)) / DH_ScaleValue,
-                y: (doors[iDoors]["end_pt_y"] + (origin[1] * -1)) / DH_ScaleValue,
-            };
-            Wallcontext.globalCompositeOperation = 'destination-out';
-            Wallcontext.moveTo(point1.x, point1.y);
-            Wallcontext.lineTo(point2.x, point2.y);
-            Wallcontext.stroke();
-            Wallcontext.fill();
-            Wallcontext.closePath();
+      } catch (err) {
+        this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+      }
+    }
+  }
+  async DH_GenerateMap() {
+    await this.DH_RequestNewMap();
+    if (!DH_Map) {
+      this.log.warn(DreameInformation[UserLang][3] + DH_CurMap + DreameInformation[UserLang][4]);
+      return;
+    }
+    const canvas = createCanvas();
+    const context = canvas.getContext('2d');
+    canvas.height = 1024;
+    canvas.width = 1024;
+    let ExportHTML = '<html> <head> </head> <body>  <div id="Cam" class="CamPer">';
+    const DH_FillRooms = false;
+    const DH_RoomsNumberState = [];
+    const rooms = DH_Map[DH_CurMap]['walls_info'].storeys[0].rooms; //First Map
+    //alert(JSON.stringify(rooms));
+    const doors = DH_Map[DH_CurMap]['walls_info'].storeys[0].doors;
+    //alert(JSON.stringify(doors));
+    const carpet = DH_Map[DH_CurMap]['carpet_info'];
+    //alert(JSON.stringify(carpet));
+    const funiture = DH_Map[DH_CurMap]['funiture_info'];
+    const charger = DH_Map[DH_CurMap]['charger'];
+    const origin = DH_Map[DH_CurMap]['origin'];
+    const CenterCoordinateRoom = [];
+    //==================>Get Zero X and Y
+    let costXMin = Number.POSITIVE_INFINITY,
+      costXMax = Number.NEGATIVE_INFINITY,
+      tmpcostXMin = 0,
+      tmpcostXMax = 0,
+      costYMin = Number.POSITIVE_INFINITY,
+      costYMax = Number.NEGATIVE_INFINITY,
+      tmpcostYMin = 0,
+      tmpcostYMax = 0;
+    for (const iRoom in rooms) {
+      const walls = rooms[iRoom]['walls'];
+      //this.log.info(JSON.stringify(walls));
+      for (const iWall in walls) {
+        //=======================Get X
+        tmpcostXMin = walls[iWall]['beg_pt_x'];
+        if (tmpcostXMin < costXMin) {
+          costXMin = tmpcostXMin;
         }
-        //Charger
-        context.beginPath();
-        context.lineWidth = ChargerLineWidth;
-        context.strokeStyle = ChargerStrokeColor;
-        context.globalAlpha = 0.2;
-        context.rect((charger[0] + (origin[0] * -1)) / DH_ScaleValue, (charger[1] + (origin[1] * -1)) / DH_ScaleValue, 40 * (10 / DH_ScaleValue), 40 * (10 / DH_ScaleValue));
-        context.stroke();
-        context.closePath();
-        //carpet
-        context.globalCompositeOperation = "source-over";
-        context.globalAlpha = 0.1;
-        context.fillStyle = CarpetColor;
-        context.beginPath();
-        context.lineWidth = CarpetLineWidth;
-        context.strokeStyle = CarpetStrokeColor;
-        //carpet Map
-        var iCarpetMapcanvas = createCanvas(canvas.width, canvas.height);
-        var iCarpetMapcontext = iCarpetMapcanvas.getContext("2d");
-        for (var icarpet in carpet) {
-            var iCarpetcanvas = createCanvas(canvas.width, canvas.height);
-            var Tempcontext = iCarpetcanvas.getContext("2d");
-            Tempcontext.clearRect(0, 0, canvas.width, canvas.height);
-            Tempcontext.globalAlpha = 0.2;
-            Tempcontext.beginPath();
-            Tempcontext.rect(((carpet[icarpet][0]) + (origin[0] * -1)) / DH_ScaleValue, ((carpet[icarpet][1]) + (origin[1] * -1)) / DH_ScaleValue,
-                (Math.max(carpet[icarpet][0], carpet[icarpet][2]) - Math.min(carpet[icarpet][0], carpet[icarpet][2])) / DH_ScaleValue, (carpet[icarpet][3] - carpet[icarpet][1]) / DH_ScaleValue);
-            Tempcontext.stroke();
-            Tempcontext.fill();
-            Tempcontext.closePath();
-            //carpet Map
-            iCarpetMapcontext.beginPath();
-            var iCarpetID = parseInt(icarpet);
-            var NewColorCarpet = await this.DH_hexToRgbA(ColorsCarpet[iCarpetID]);
-            iCarpetMapcontext.fillStyle = NewColorCarpet.RGBA;
+        tmpcostXMin = walls[iWall]['end_pt_x'];
+        if (tmpcostXMin < costXMin) {
+          costXMin = tmpcostXMin;
+        }
+        tmpcostXMax = walls[iWall]['beg_pt_x'];
+        if (tmpcostXMax > costXMax) {
+          costXMax = tmpcostXMax;
+        }
+        tmpcostXMax = walls[iWall]['end_pt_x'];
+        if (tmpcostXMax > costXMax) {
+          costXMax = tmpcostXMax;
+        }
+        //=======================Get Y
+        tmpcostYMin = walls[iWall]['beg_pt_y'];
+        if (tmpcostYMin < costYMin) {
+          costYMin = tmpcostYMin;
+        }
+        tmpcostYMin = walls[iWall]['end_pt_y'];
+        if (tmpcostYMin < costYMin) {
+          costYMin = tmpcostYMin;
+        }
+        tmpcostYMax = walls[iWall]['beg_pt_y'];
+        if (tmpcostYMax > costYMax) {
+          costYMax = tmpcostYMax;
+        }
+        tmpcostYMax = walls[iWall]['end_pt_y'];
+        if (tmpcostYMax > costYMax) {
+          costYMax = tmpcostYMax;
+        }
+      }
+    }
+    const ScaleXZero = (DH_ScaleValue / 10);
+    const ScaleYZero = ((DH_ScaleValue / 10) - 0.5);
+    origin[0] = 0 - (((canvas.width - Math.round(costXMax + costXMin)) + Math.round(costXMax)) * ScaleXZero);
+    origin[1] = 0 - (((canvas.height - Math.round(costYMax + costYMin)) + Math.round(costYMax)) * ScaleYZero);
+    if (LogData) {
+      this.log.info('Max X Cordinate Segment ' + (Math.round(costXMax) / DH_ScaleValue));
+      this.log.info('Min X Cordinate Segment ' + (Math.round(costXMin) / DH_ScaleValue));
+      this.log.info('Max Y Cordinate Segment ' + (Math.round(costYMax) / DH_ScaleValue));
+      this.log.info('Min Y Cordinate Segment ' + (Math.round(costYMin) / DH_ScaleValue));
+      this.log.info('Zero X Cordinate Segment ' + (origin[0] / DH_ScaleValue));
+      this.log.info('Zero Y Cordinate Segment ' + (origin[1] / DH_ScaleValue));
+    }
+    //==================>Create Wall Canvas
+    const iWallcanvas = createCanvas(canvas.width, canvas.height);
+    const Wallcontext = iWallcanvas.getContext('2d');
+    Wallcontext.clearRect(0, 0, canvas.width, canvas.height);
+    Wallcontext.fillStyle = WallColor;
+    Wallcontext.lineWidth = WallLineWidth;
+    Wallcontext.strokeStyle = WallStrokeColor;
+    //==================>Split Rooms Canvas
+    context.strokeStyle = RoomsStrokeColor;
+    //==================>Draw graphics Wall
+    const RoomsContext = [];
+    context.lineWidth = RoomsLineWidth;
+    for (const iRoom in rooms) {
+      //==================>Declare Room State
+      DH_RoomsNumberState.push(rooms[iRoom]['room_id']);
+      DH_RoomsNumberState[rooms[iRoom]['room_id']] = 0;
+      //<=====================Declare Room State
+      //==================>Split Rooms Canvas
+      const iRoomcanvas = createCanvas(canvas.width, canvas.height);
+      const Tempcontext = iRoomcanvas.getContext('2d');
+      Tempcontext.clearRect(0, 0, canvas.width, canvas.height);
+      Tempcontext.lineWidth = 6;
+      const iRoomID = rooms[iRoom]['room_id'];
+      const NewColorSegment = await this.DH_hexToRgbA(ColorsItems[iRoomID]);
+      Tempcontext.fillStyle = NewColorSegment.RGBA;
+      //<==================End Split Rooms Canvas
+      context.fillStyle = NewColorSegment.RGBA;
+      const walls = rooms[iRoom]['walls'];
+      context.beginPath();
+      Wallcontext.beginPath();
+      Tempcontext.beginPath();
+      for (const iWall in walls) {
+        const point1 = {
+          x: (walls[iWall]['beg_pt_x'] + (origin[0] * -1)) / DH_ScaleValue,
+          y: (walls[iWall]['beg_pt_y'] + (origin[1] * -1)) / DH_ScaleValue,
+        };
+        Wallcontext.lineTo(point1.x, point1.y);
+        const point2 = {
+          x: (walls[iWall]['end_pt_x'] + (origin[0] * -1)) / DH_ScaleValue,
+          y: (walls[iWall]['end_pt_y'] + (origin[1] * -1)) / DH_ScaleValue,
+        };
+        //==================>Add Map Canvas
+        context.lineTo(point2.x, point2.y);
+        //==================>Add Wall Canvas
+        Wallcontext.lineTo(point2.x, point2.y);
+        //==================>Add Room Canvas
+        Tempcontext.lineTo(point2.x, point2.y);
+      }
+      context.closePath();
+      context.fill();
+      Wallcontext.stroke();
+      Wallcontext.closePath();
+      Tempcontext.closePath();
+      Tempcontext.fill();
+      fullQuality = iRoomcanvas.toDataURL('image/png', 1.0);
+      if (LogData) {
+        this.log.info('Room N: ' + iRoomID + ': ' + fullQuality);
+      }
+      ExportHTML += ' <img id="Room' + iRoomID + '" class="DH_Mapimages"' + 'onclick="DH_SelectTheRoom(' + iRoomID + ')" src="' + fullQuality + '" >';
+      const CenterW = await this.CalculateRoomCenter(walls);
+      let ExportRoomName = '';
+      for (const iCHroomID in CheckArrayRooms) {
+        if (CheckArrayRooms[iCHroomID].Id == rooms[iRoom]['room_id']) {
+          ExportRoomName = CheckArrayRooms[iCHroomID].Name;
+          break;
+        }
+      }
+      CenterCoordinateRoom.push({'RN' :rooms[iRoom]['room_id'], 'X': (((CenterW.Rx * -1) + (origin[0] * -1)) / DH_ScaleValue) , 'y': (((CenterW.Ry * -1) + (origin[1] * -1)) / DH_ScaleValue), 'RM': ExportRoomName});
+    }
+    //Doors
+    context.globalAlpha = 1.0;
+    Wallcontext.fillStyle = DoorsColor;
+    Wallcontext.lineWidth = DoorsLineWidth;
+    Wallcontext.strokeStyle = DoorsStrokeColor;
+    for (const iDoors in doors) {
+      Wallcontext.beginPath();
+      //context.beginPath();
+      //alert(JSON.stringify(doors[iDoors]["beg_pt_x"]));
+      const point1 = {
+        x: (doors[iDoors]['beg_pt_x'] + (origin[0] * -1)) / DH_ScaleValue,
+        y: (doors[iDoors]['beg_pt_y'] + (origin[1] * -1)) / DH_ScaleValue,
+      };
+      const point2 = {
+        x: (doors[iDoors]['end_pt_x'] + (origin[0] * -1)) / DH_ScaleValue,
+        y: (doors[iDoors]['end_pt_y'] + (origin[1] * -1)) / DH_ScaleValue,
+      };
+      Wallcontext.globalCompositeOperation = 'destination-out';
+      Wallcontext.moveTo(point1.x, point1.y);
+      Wallcontext.lineTo(point2.x, point2.y);
+      Wallcontext.stroke();
+      Wallcontext.fill();
+      Wallcontext.closePath();
+    }
+    //Charger
+    context.beginPath();
+    context.lineWidth = ChargerLineWidth;
+    context.strokeStyle = ChargerStrokeColor;
+    context.globalAlpha = 0.2;
+    context.rect((charger[0] + (origin[0] * -1)) / DH_ScaleValue, (charger[1] + (origin[1] * -1)) / DH_ScaleValue, 40 * (10 / DH_ScaleValue), 40 * (10 / DH_ScaleValue));
+    context.stroke();
+    context.closePath();
+    //carpet
+    context.globalCompositeOperation = 'source-over';
+    context.globalAlpha = 0.1;
+    context.fillStyle = CarpetColor;
+    context.beginPath();
+    context.lineWidth = CarpetLineWidth;
+    context.strokeStyle = CarpetStrokeColor;
+    //carpet Map
+    const iCarpetMapcanvas = createCanvas(canvas.width, canvas.height);
+    const iCarpetMapcontext = iCarpetMapcanvas.getContext('2d');
+    for (const icarpet in carpet) {
+      const iCarpetcanvas = createCanvas(canvas.width, canvas.height);
+      const Tempcontext = iCarpetcanvas.getContext('2d');
+      Tempcontext.clearRect(0, 0, canvas.width, canvas.height);
+      Tempcontext.globalAlpha = 0.2;
+      Tempcontext.beginPath();
+      Tempcontext.rect(((carpet[icarpet][0]) + (origin[0] * -1)) / DH_ScaleValue, ((carpet[icarpet][1]) + (origin[1] * -1)) / DH_ScaleValue,
+        (Math.max(carpet[icarpet][0], carpet[icarpet][2]) - Math.min(carpet[icarpet][0], carpet[icarpet][2])) / DH_ScaleValue, (carpet[icarpet][3] - carpet[icarpet][1]) / DH_ScaleValue);
+      Tempcontext.stroke();
+      Tempcontext.fill();
+      Tempcontext.closePath();
+      //carpet Map
+      iCarpetMapcontext.beginPath();
+      const iCarpetID = parseInt(icarpet);
+      const NewColorCarpet = await this.DH_hexToRgbA(ColorsCarpet[iCarpetID]);
+      iCarpetMapcontext.fillStyle = NewColorCarpet.RGBA;
 
-            iCarpetMapcontext.rect(((carpet[icarpet][0]) + (origin[0] * -1)) / DH_ScaleValue, ((carpet[icarpet][1]) + (origin[1] * -1)) / DH_ScaleValue,
-                (Math.max(carpet[icarpet][0], carpet[icarpet][2]) - Math.min(carpet[icarpet][0], carpet[icarpet][2])) / DH_ScaleValue, (carpet[icarpet][3] - carpet[icarpet][1]) / DH_ScaleValue);
-            //iCarpetMapcontext.stroke();
-            iCarpetMapcontext.fill();
-            iCarpetMapcontext.closePath();
+      iCarpetMapcontext.rect(((carpet[icarpet][0]) + (origin[0] * -1)) / DH_ScaleValue, ((carpet[icarpet][1]) + (origin[1] * -1)) / DH_ScaleValue,
+        (Math.max(carpet[icarpet][0], carpet[icarpet][2]) - Math.min(carpet[icarpet][0], carpet[icarpet][2])) / DH_ScaleValue, (carpet[icarpet][3] - carpet[icarpet][1]) / DH_ScaleValue);
+      //iCarpetMapcontext.stroke();
+      iCarpetMapcontext.fill();
+      iCarpetMapcontext.closePath();
 
-            fullQuality = iCarpetcanvas.toDataURL("image/png", 1.0);
-            if (LogData) {
-                this.log.info("Carpet N': " + carpet[icarpet][4] + ": " + fullQuality);
-            }
-            ExportHTML += ' <img id="Carpet' + icarpet + '" class="DH_Carpetimages"' + 'onclick="DH_SelectTheCarpet(' + icarpet + ')" src="' + fullQuality + '" >';
-        }
-        fullQuality = iCarpetMapcanvas.toDataURL("image/png", 1.0);
-        if (LogData) {
-            this.log.info("Carpet Map: " + fullQuality);
-        }
-        ExportHTML += ' <img id="CarpetMap" class="DH_CarpetMap" src="' + fullQuality + '" >';
+      fullQuality = iCarpetcanvas.toDataURL('image/png', 1.0);
+      if (LogData) {
+        this.log.info("Carpet N': " + carpet[icarpet][4] + ': ' + fullQuality);
+      }
+      ExportHTML += ' <img id="Carpet' + icarpet + '" class="DH_Carpetimages"' + 'onclick="DH_SelectTheCarpet(' + icarpet + ')" src="' + fullQuality + '" >';
+    }
+    fullQuality = iCarpetMapcanvas.toDataURL('image/png', 1.0);
+    if (LogData) {
+      this.log.info('Carpet Map: ' + fullQuality);
+    }
+    ExportHTML += ' <img id="CarpetMap" class="DH_CarpetMap" src="' + fullQuality + '" >';
 
-        fullQuality = canvas.toDataURL("image/png", 1.0);
-        if (LogData) {
-            this.log.info("BG: " + fullQuality);
-        }
-        ExportHTML += ' <img id="BG" class="DH_BGMapimages" src="' + fullQuality + '" >';
-        fullQuality = iWallcanvas.toDataURL("image/png", 1.0);
-        if (LogData) {
-            this.log.info("Walls: " + fullQuality);
-        }
-        ExportHTML += ' <img id="Walls" class="DH_Wallapimages" src="' + fullQuality + '" >' +
+    fullQuality = canvas.toDataURL('image/png', 1.0);
+    if (LogData) {
+      this.log.info('BG: ' + fullQuality);
+    }
+    ExportHTML += ' <img id="BG" class="DH_BGMapimages" src="' + fullQuality + '" >';
+    fullQuality = iWallcanvas.toDataURL('image/png', 1.0);
+    if (LogData) {
+      this.log.info('Walls: ' + fullQuality);
+    }
+    ExportHTML += ' <img id="Walls" class="DH_Wallapimages" src="' + fullQuality + '" >' +
             ' <canvas id="DHMapcanvas" width="1024" height="1024" class="MapDHcanvas" onclick="DH_SelectTheRoom(1)"></canvas>' +
             ' <canvas id="DHRobotcanvas" width="1024" height="1024" class="RobotDHcanvas" onclick="DH_SelectTheRoom(1)"></canvas>' +
 		    ' <canvas id="ChargerPos" width="1024" height="1024" class="DHCharger"></canvas>' +
@@ -2750,7 +2872,7 @@ class Dreamehome extends utils.Adapter {
             ' <img id="DreameZoomIn" class="MapPerspective" onclick="DH_PerspectiveMap()" src=" data:image/png;base64,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">' +
             ' <img id="DreamePerspective" class="MapPerspectiveBG" onclick="DH_PerspectiveMap()" src="data:image/png;base64,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">' +
             ' </div>';
-        ExportHTML += ' <script> ' +
+    ExportHTML += ' <script> ' +
             '       var Offline = false;' +
             '       var PerspectivePX = 2000,' +
             '         RotAngleXVar = 0,' +
@@ -2824,20 +2946,20 @@ class Dreamehome extends utils.Adapter {
             '       FadeIn("DVViewControl");' +
             ' ' +
             '   var ColorsItems = ' + JSON.stringify(ColorsItems) + '; ';
-        let RoomsIDVis = Object.keys(rooms).map(function(key) {
-            return "Room" + rooms[key]["room_id"];
-        });
-        ExportHTML += '   var ColorsCarpet = ' + JSON.stringify(ColorsCarpet) + '; ';
-		var CarpetIDVis = [];
-		if (Object.prototype.toString.call(carpet) === '[object Object]') {
-            CarpetIDVis = Object.keys(carpet).map(function(key) {
-                return "Carpet" + key;
-            });
+    const RoomsIDVis = Object.keys(rooms).map(function(key) {
+      return 'Room' + rooms[key]['room_id'];
+    });
+    ExportHTML += '   var ColorsCarpet = ' + JSON.stringify(ColorsCarpet) + '; ';
+    let CarpetIDVis = [];
+    if (Object.prototype.toString.call(carpet) === '[object Object]') {
+      CarpetIDVis = Object.keys(carpet).map(function(key) {
+        return 'Carpet' + key;
+      });
 	    }
-        ExportHTML += ' RoomsIDVis = ' + JSON.stringify(RoomsIDVis) + '; ';
-        ExportHTML += ' CarpetIDVis = ' + JSON.stringify(CarpetIDVis) + '; ';
-		ExportHTML += ' CenterCoordinateRoom = ' + JSON.stringify(CenterCoordinateRoom) + '; ';
-        ExportHTML += ' DH_RoomsNumberState = ' +
+    ExportHTML += ' RoomsIDVis = ' + JSON.stringify(RoomsIDVis) + '; ';
+    ExportHTML += ' CarpetIDVis = ' + JSON.stringify(CarpetIDVis) + '; ';
+    ExportHTML += ' CenterCoordinateRoom = ' + JSON.stringify(CenterCoordinateRoom) + '; ';
+    ExportHTML += ' DH_RoomsNumberState = ' +
             JSON.stringify(DH_RoomsNumberState) + '; ' +
             '       document.querySelector(".MapCarpet").style.setProperty("--CarpetOpacityVariable", "0.4");' +
             '	    for (let i = 0; i < CarpetIDVis.length; i++) {' +
@@ -3375,7 +3497,7 @@ class Dreamehome extends utils.Adapter {
             '         context2.drawImage(RobotImage, RobotNewX, RobotNewY, DH_IconW, DH_IconH);' +
             '       }' +
             ' ' +
- //           '       DH_RegisterUpdateSR();' +
+    //           '       DH_RegisterUpdateSR();' +
             '       function DH_RegisterUpdateSR() {' +
             '           UpdateSelectedRoomsInterval = setInterval(function() {' +
             '               DH_UpdateSelectedRooms();' +
@@ -3393,8 +3515,8 @@ class Dreamehome extends utils.Adapter {
             '                   RoomCleanSettings = {};' +
             '                   for (var r in ArrDreameSA) {' +
             '                       for (var s in ArrDreameSA[r]) {' +
-                                       //sa Path; 1: DreameRoomNumber, 2: DreameRepeat 3: DreameLevel, 4: DreameSetWaterVolume, 5: DreameRoomOrder, 6: DreameCleaningMode
-                                       //cleanset Patht; 1: DreameLevel, 2: DreameSetWaterVolume, 3: DreameRepeat, 4: DreameRoomNumber, 5: DreameCleaningMode, 6: Route
+    //sa Path; 1: DreameRoomNumber, 2: DreameRepeat 3: DreameLevel, 4: DreameSetWaterVolume, 5: DreameRoomOrder, 6: DreameCleaningMode
+    //cleanset Patht; 1: DreameLevel, 2: DreameSetWaterVolume, 3: DreameRepeat, 4: DreameRoomNumber, 5: DreameCleaningMode, 6: Route
             '                           RoomCleanSettings["Room" + ArrDreameSA[r][0]] = {' +
             '                               "Number": ArrDreameSA[r][4],' +
             '                               "Repeat": ArrDreameCleanset[ArrDreameSA[r][0]][2],' +
@@ -3407,7 +3529,7 @@ class Dreamehome extends utils.Adapter {
             '                           };' +
             '                       }' +
             '                   }' +
-                                //console.log(JSON.stringify(RoomCleanSettings));
+    //console.log(JSON.stringify(RoomCleanSettings));
 			'					if (!UpdateIcon) {' +
             '                       for (var ar in RoomsIDVis) {' +
             '                           let MapImage = document.getElementById(RoomsIDVis[ar]);' +
@@ -3872,8 +3994,8 @@ class Dreamehome extends utils.Adapter {
             '         };' +
             '       }' +
             ' ';
-        ExportHTML += ' <';
-        ExportHTML += '/script> <style>' +
+    ExportHTML += ' <';
+    ExportHTML += '/script> <style>' +
             '       body {' +
             '         height: 100%;' +
             '         overflow-y: hidden;' +
@@ -4068,521 +4190,514 @@ class Dreamehome extends utils.Adapter {
             '         opacity: 0;' +
             '       }' +
             ' </style></body></html>';
-        if (LogData) {
-            this.log.info("VIS HTML: " + ExportHTML);
-        }
-        this.setStateAsync(DH_Did + ".vis.vishtml" + DH_CurMap, ExportHTML, true);
-		this.log.info(DreameInformation[UserLang][6] + DH_Did + ".vis.vishtml" + DH_CurMap + DreameInformation[UserLang][7]);
-        ExportHTML = "";
+    if (LogData) {
+      this.log.info('VIS HTML: ' + ExportHTML);
     }
-    async DH_getMapFromCanvas(Color, RoomNumber) {
-        //this.log.info("Color: " + JSON.stringify(Color));
-        var DH_OffsetCutMap = false;
-        var DH_CutMapBox = await this.DH_getCenterCoordsFromCanvas({
-            red: Color.R,
-            green: Color.G,
-            blue: Color.B,
-            alpha: Color.A
-        }, DH_OffsetCutMap);
-        //this.log.info(JSON.stringify(DH_CutMapBox));
-        DH_OffsetCutMap = true;
-        var DH_CutMapCoord = await this.DH_getCenterCoordsFromCanvas({
-            red: Color.R,
-            green: Color.G,
-            blue: Color.B,
-            alpha: Color.A
-        }, DH_OffsetCutMap);
-        //this.log.info(JSON.stringify(DH_CutMapCoord));
-        var offsetX = DH_CutMapCoord.offsetX;
-        var offsetY = DH_CutMapCoord.offsetY;
-        var boxWidth = DH_CutMapBox.x * 2;
-        var boxHeight = DH_CutMapBox.y * 2;
-        return {
-            segment: RoomNumber,
-            x: boxWidth,
-            y: boxHeight,
-            offX: offsetX,
-            offY: offsetY
-        }
-        /*var imageData = context.getImageData(offsetX, offsetY, boxWidth, boxHeight);
+    this.setStateAsync(DH_Did + '.vis.vishtml' + DH_CurMap, ExportHTML, true);
+    this.log.info(DreameInformation[UserLang][6] + DH_Did + '.vis.vishtml' + DH_CurMap + DreameInformation[UserLang][7]);
+    ExportHTML = '';
+  }
+  async DH_getMapFromCanvas(Color, RoomNumber) {
+    //this.log.info("Color: " + JSON.stringify(Color));
+    let DH_OffsetCutMap = false;
+    const DH_CutMapBox = await this.DH_getCenterCoordsFromCanvas({
+      red: Color.R,
+      green: Color.G,
+      blue: Color.B,
+      alpha: Color.A
+    }, DH_OffsetCutMap);
+    //this.log.info(JSON.stringify(DH_CutMapBox));
+    DH_OffsetCutMap = true;
+    const DH_CutMapCoord = await this.DH_getCenterCoordsFromCanvas({
+      red: Color.R,
+      green: Color.G,
+      blue: Color.B,
+      alpha: Color.A
+    }, DH_OffsetCutMap);
+    //this.log.info(JSON.stringify(DH_CutMapCoord));
+    const offsetX = DH_CutMapCoord.offsetX;
+    const offsetY = DH_CutMapCoord.offsetY;
+    const boxWidth = DH_CutMapBox.x * 2;
+    const boxHeight = DH_CutMapBox.y * 2;
+    return {
+      segment: RoomNumber,
+      x: boxWidth,
+      y: boxHeight,
+      offX: offsetX,
+      offY: offsetY
+    };
+    /*var imageData = context.getImageData(offsetX, offsetY, boxWidth, boxHeight);
         document.getElementById('canvas').height = boxHeight;
         document.getElementById('canvas').width = boxWidth;
         context.putImageData(imageData, 0, 0);*/
+  }
+  async DH_getCenterCoordsFromCanvas(colors, relativeToCanvas) {
+    let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const len = imageData.data.length;
+    const minX = Infinity;
+    const minY = Infinity;
+    const maxX = 0;
+    const maxY = 0;
+    let xCor = 0;
+    let yCor = 0;
+    const pixelFound = 0;
+    for (let i = 0; i < len; i += 4) {
+      xCor = (i / 4) % canvas.width;
+      yCor = Math.floor((i / 4) / canvas.width);
     }
-    async DH_getCenterCoordsFromCanvas(colors, relativeToCanvas) {
-        var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        var len = imageData.data.length;
-        var minX = Infinity;
-        var minY = Infinity;
-        var maxX = 0;
-        var maxY = 0;
-        var xCor = 0;
-        var yCor = 0;
-        var pixelFound = 0;
-        for (var i = 0; i < len; i += 4) {
-            xCor = (i / 4) % canvas.width;
-            yCor = Math.floor((i / 4) / canvas.width);
-        }
-        var middleX = (maxX - minX) / 2;
-        var middleY = (maxY - minY) / 2;
-        imageData = null;
-        return {
-            x: (relativeToCanvas ? minX : 0) + middleX,
-            y: (relativeToCanvas ? minY : 0) + middleY,
-            offsetX: relativeToCanvas ? minX : 0,
-            offsetY: relativeToCanvas ? minY : 0
-        }
+    const middleX = (maxX - minX) / 2;
+    const middleY = (maxY - minY) / 2;
+    imageData = null;
+    return {
+      x: (relativeToCanvas ? minX : 0) + middleX,
+      y: (relativeToCanvas ? minY : 0) + middleY,
+      offsetX: relativeToCanvas ? minX : 0,
+      offsetY: relativeToCanvas ? minY : 0
+    };
+  }
+  async DH_hexToRgbA(hex) {
+    let Color;
+    Color = hex.substring(1).split('');
+    if (Color.length == 3) {
+      Color = [Color[0], Color[0], Color[1], Color[1], Color[2], Color[2]];
     }
-    async DH_hexToRgbA(hex) {
-        var Color;
-        Color = hex.substring(1).split('');
-        if (Color.length == 3) {
-            Color = [Color[0], Color[0], Color[1], Color[1], Color[2], Color[2]];
-        }
-        Color = '0x' + Color.join('');
-        let ColR = (Color >> 16) & 255;
-        let ColG = (Color >> 8) & 255;
-        let ColB = Color & 255;
-        let ColA = 255;
-        let RGBA = 'rgba(' + [ColR, ColG, ColB, ColA].join(',') + ')';
-        return {
-            RGBA: RGBA,
-            R: ColR,
-            G: ColG,
-            B: ColB,
-            A: ColA
-        };
-    }
-    async DH_Clean() {
-        DH_URLTK = null;
-        DH_URLLST = null;
-        DH_URLINF = null;
-        DH_URLOTCINF = null;
-        DH_URLPROP = null;
-        DH_URLDOWNURL = null;
-        DH_URLUSA = null;
-        DH_URLDRLC = null;
-        DH_URLAUTH = null;
-		DH_DHURLSENDA = null;
-		DH_DHURLSENDB = null;
-		DH_DHURLSENDDOM = null;
-    }
+    Color = '0x' + Color.join('');
+    const ColR = (Color >> 16) & 255;
+    const ColG = (Color >> 8) & 255;
+    const ColB = Color & 255;
+    const ColA = 255;
+    const RGBA = 'rgba(' + [ColR, ColG, ColB, ColA].join(',') + ')';
+    return {
+      RGBA: RGBA,
+      R: ColR,
+      G: ColG,
+      B: ColB,
+      A: ColA
+    };
+  }
+  async DH_Clean() {
+    DH_URLTK = null;
+    DH_URLLST = null;
+    DH_URLINF = null;
+    DH_URLOTCINF = null;
+    DH_URLPROP = null;
+    DH_URLDOWNURL = null;
+    DH_URLUSA = null;
+    DH_URLDRLC = null;
+    DH_URLAUTH = null;
+    DH_DHURLSENDA = null;
+    DH_DHURLSENDB = null;
+    DH_DHURLSENDDOM = null;
+  }
 
-    async DH_SearchIID(ToFindVar) {
-        var RetSPKey = false;
-        for (var [SPkey, SPvalue] of Object.entries(DreameStateProperties)) {
-             //this.log.info('=====> ' + SPkey + " => " + ToFindVar);
-            if (SPvalue != null) {
-                if (SPkey == ToFindVar) {
-                    RetSPKey = SPvalue;
-                    break;
-                }
-            }
+  async DH_SearchIID(ToFindVar) {
+    let RetSPKey = false;
+    for (const [SPkey, SPvalue] of Object.entries(DreameStateProperties)) {
+      //this.log.info('=====> ' + SPkey + " => " + ToFindVar);
+      if (SPvalue != null) {
+        if (SPkey == ToFindVar) {
+          RetSPKey = SPvalue;
+          break;
         }
-        return RetSPKey;
+      }
     }
+    return RetSPKey;
+  }
 
-    async DH_createStates() {
-        for (var [SPkey, SPvalue] of Object.entries(DreameStateProperties)) {
-            await this.DH_getType(Setvalue, path, SPkey);
-            await this.DH_setState(path, Setvalue, true);
-        }
-    }
+  async DH_CheckTaskStatus() {
+    try {
+      const RobTaskStatusOb = await this.getStateAsync(DH_Did + '.state.TaskStatus');
+      const RobTaskStatus = RobTaskStatusOb.val;
 
-    async DH_CheckTaskStatus() {
-        try {
-            var RobTaskStatusOb = await this.getStateAsync(DH_Did + ".state.TaskStatus");
-            var RobTaskStatus = RobTaskStatusOb.val;
+      switch (RobTaskStatus) {
+        case DreameTaskStatus[UserLang][0]: /*'Completed':*/
+          DH_NewTaskStatus = 0;
 
-            switch (RobTaskStatus) {
-                case DreameTaskStatus[UserLang][0]: /*'Completed':*/
-                    DH_NewTaskStatus = 0;
-
-                    break;
-                case DreameTaskStatus[UserLang][1]: /*'Auto cleaning':*/
-                    DH_NewTaskStatus = 1;
-                    break;
-                case DreameTaskStatus[UserLang][2]: /*'Zone cleaning':*/
-                    DH_NewTaskStatus = 2;
-                    break;
-                case DreameTaskStatus[UserLang][3]: /*'Segment cleaning':*/
-                    DH_NewTaskStatus = 3;
-                    break;
-                case DreameTaskStatus[UserLang][4]: /*'Spot cleaning':*/
-                    DH_NewTaskStatus = 4;
-                    break;
-                case DreameTaskStatus[UserLang][5]: /*'Fast mapping':*/
-                    DH_NewTaskStatus = 5;
-                    break;
-            }
+          break;
+        case DreameTaskStatus[UserLang][1]: /*'Auto cleaning':*/
+          DH_NewTaskStatus = 1;
+          break;
+        case DreameTaskStatus[UserLang][2]: /*'Zone cleaning':*/
+          DH_NewTaskStatus = 2;
+          break;
+        case DreameTaskStatus[UserLang][3]: /*'Segment cleaning':*/
+          DH_NewTaskStatus = 3;
+          break;
+        case DreameTaskStatus[UserLang][4]: /*'Spot cleaning':*/
+          DH_NewTaskStatus = 4;
+          break;
+        case DreameTaskStatus[UserLang][5]: /*'Fast mapping':*/
+          DH_NewTaskStatus = 5;
+          break;
+      }
 			 //this.log.info('Get the last task status :' + DH_NewTaskStatus);
-        } catch (error) {
-            this.log.error(error);
-        }
-        //Reset PosHistory
-        if ((DH_OldTaskStatus == 0) &&
+    } catch (error) {
+      this.log.error(error);
+    }
+    //Reset PosHistory
+    if ((DH_OldTaskStatus == 0) &&
             ((DH_NewTaskStatus == 1) || (DH_NewTaskStatus == 2) || (DH_NewTaskStatus == 3) || (DH_NewTaskStatus == 4) || (DH_NewTaskStatus == 5))) {
-            //1: "Auto cleaning"---------2: "Zone cleaning"----------3: "Segment cleaning"-----4: "Spot cleaning"----------5: "Fast mapping"
-            await this.setState(DH_Did + ".vis.PosHistory" + DH_CurMap, "{}", true);
-            await this.setState(DH_Did + ".vis.CharHistory" + DH_CurMap, "{}", true);
-			DH_CleanStatus = false;
-			DH_SetLastStatus = false;
-            DH_OldTaskStatus = DH_NewTaskStatus;
-            //if (LogData) {
-            this.log.info('A new cleaning was initiated, the object state PosHistory was reset to :' + DH_OldTaskStatus);
-            //}
-        }
+      //1: "Auto cleaning"---------2: "Zone cleaning"----------3: "Segment cleaning"-----4: "Spot cleaning"----------5: "Fast mapping"
+      await this.setState(DH_Did + '.vis.PosHistory' + DH_CurMap, '{}', true);
+      await this.setState(DH_Did + '.vis.CharHistory' + DH_CurMap, '{}', true);
+      DH_CleanStatus = false;
+      DH_SetLastStatus = false;
+      DH_OldTaskStatus = DH_NewTaskStatus;
+      //if (LogData) {
+      this.log.info('A new cleaning was initiated, the object state PosHistory was reset to :' + DH_OldTaskStatus);
+      //}
     }
+  }
 
-	async DH_Base64DecodeUnicode(str) {
-        return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        }).join(''))
-    }
+  async DH_Base64DecodeUnicode(str) {
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  }
 
-	async DH_GetRobotPosition(Position, SegmentObject) {
-		//this.log.info("Robot Position: " + JSON.stringify(Position) + " Rooms Array: " + JSON.stringify(SegmentObject));
-        var Inside = 0;
-        for (var iSegCoor in SegmentObject) {
-            var a = 0, b = SegmentObject[iSegCoor].X.length - 1;
-            var CoordX = SegmentObject[iSegCoor].X;
-            var CoordY = SegmentObject[iSegCoor].Y;
-            for (a = 0; a < SegmentObject[iSegCoor].X.length; a++) {
-                if ((CoordY[a] < Position[1] && CoordY[b] >= Position[1] || CoordY[b] < Position[1] && CoordY[a] >= Position[1]) &&
+  async DH_GetRobotPosition(Position, SegmentObject) {
+    //this.log.info("Robot Position: " + JSON.stringify(Position) + " Rooms Array: " + JSON.stringify(SegmentObject));
+    let Inside = 0;
+    for (const iSegCoor in SegmentObject) {
+      let a = 0, b = SegmentObject[iSegCoor].X.length - 1;
+      const CoordX = SegmentObject[iSegCoor].X;
+      const CoordY = SegmentObject[iSegCoor].Y;
+      for (a = 0; a < SegmentObject[iSegCoor].X.length; a++) {
+        if ((CoordY[a] < Position[1] && CoordY[b] >= Position[1] || CoordY[b] < Position[1] && CoordY[a] >= Position[1]) &&
                     (CoordX[a] <= Position[0] || CoordX[b] <= Position[0])) {
-                    Inside ^= (CoordX[a] + (Position[1] - CoordY[a]) * (CoordX[b] - CoordX[a]) / (CoordY[b] - CoordY[a])) < Position[0];
-                }
-                b = a;
-            }
-            if (Inside == 1) {
-				if (LogData) {
-                }
-                //this.log.info(Inside + ": Room Number: " + SegmentObject[iSegCoor].Id + " Room Name: " + SegmentObject[iSegCoor].Name);
-				await this.setState(DH_Did + ".state.CurrentRoomCleaningName", SegmentObject[iSegCoor].Name, true);
-				await this.setState(DH_Did + ".state.CurrentRoomCleaningNumber", SegmentObject[iSegCoor].Id, true);
-
-                Inside = 0;
-                break;
-            }
+          Inside ^= (CoordX[a] + (Position[1] - CoordY[a]) * (CoordX[b] - CoordX[a]) / (CoordY[b] - CoordY[a])) < Position[0];
         }
+        b = a;
+      }
+      if (Inside == 1) {
+        if (LogData) {this.log.info(Inside + ': Room Number: ' + SegmentObject[iSegCoor].Id + ' Room Name: ' + SegmentObject[iSegCoor].Name);
+        }
+        //this.log.info(Inside + ": Room Number: " + SegmentObject[iSegCoor].Id + " Room Name: " + SegmentObject[iSegCoor].Name);
+        await this.setState(DH_Did + '.state.CurrentRoomCleaningName', SegmentObject[iSegCoor].Name, true);
+        await this.setState(DH_Did + '.state.CurrentRoomCleaningNumber', SegmentObject[iSegCoor].Id, true);
+
+        Inside = 0;
+        break;
+      }
     }
+  }
 
-	async CalculateRoomCenter(WAr) {
-        let x0 = WAr.map(m => (m["beg_pt_x"]));
-        let x1 = WAr.map(m => (m["end_pt_x"]));
-        var x = x0.concat(x1);
-        let minx = Math.min(...x);
-        let maxx = Math.max(...x);
-        let Rx = (minx + maxx) / 2;
+  async CalculateRoomCenter(WAr) {
+    const x0 = WAr.map(m => (m['beg_pt_x']));
+    const x1 = WAr.map(m => (m['end_pt_x']));
+    const x = x0.concat(x1);
+    const minx = Math.min(...x);
+    const maxx = Math.max(...x);
+    let Rx = (minx + maxx) / 2;
 
-        let y0 = WAr.map(m => (m["beg_pt_y"]));
-        let y1 = WAr.map(m => (m["end_pt_y"]));
-        var y = y0.concat(y1);
-        let miny = Math.min(...y);
-        let maxy = Math.max(...y);
+    const y0 = WAr.map(m => (m['beg_pt_y']));
+    const y1 = WAr.map(m => (m['end_pt_y']));
+    let y = y0.concat(y1);
+    let miny = Math.min(...y);
+    let maxy = Math.max(...y);
 
-        if (maxy - miny > 180) {
-            y = y.map(val => val < maxy - 180 ? val + 360 : val);
-            miny = Math.min(...y);
-            maxy = Math.max(...y);
-        }
-        let Ry = (miny + maxy) / 2;
-        if (Ry > 180) {
-            Ry -= 360
-        }
-        Rx = Rx * -1, Ry = Ry * -1;
-        return {
-            Rx,
-            Ry
-        };
+    if (maxy - miny > 180) {
+      y = y.map(val => val < maxy - 180 ? val + 360 : val);
+      miny = Math.min(...y);
+      maxy = Math.max(...y);
     }
-
-    async DH_GetControl() {
-
-        const requestId = Math.floor(Math.random() * 9000) + 1000;
-        for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
-			var PiidAction = DreameActionParams[SPkey];
-			if (Object.prototype.toString.call(DreameActionParams[SPkey]).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-				PiidAction = JSON.parse(DreameActionParams[SPkey]);
-			}
-			//JSON.parse(JSON.stringify(DreameActionParams[SPkey]))
-
-            var GetSIID = parseInt((SPkey.split("S")[1] || "").split("A")[0]);
-            var GetAIID = parseInt(SPkey.replace("S" + GetSIID + "A", ""));
-			if ((SPkey.indexOf("P") !== -1) && (SPkey.indexOf("C") !== -1)) {
-				GetAIID = (SPkey.split("P")[1] || "").split("C")[0];
-			}
-            var GetSIIDAIID = GetSIID + "." + GetAIID;
-            var SETURLData = {
-                did: DH_Did,
-                id: requestId,
-                data: {
-                    did: DH_Did,
-                    id: requestId,
-                    method: 'action',
-                    params: {
-                        did: DH_Did,
-                        siid: GetSIID,
-                        aiid: GetAIID,
-                        in: PiidAction
-                    },
-                },
-
-            };
-            try {
-                var GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
-            } catch (err) {
-                this.log.warn('Getting "' + SPvalue + '" State from cloud failed: ' + err);
-            }
-        }
+    let Ry = (miny + maxy) / 2;
+    if (Ry > 180) {
+      Ry -= 360;
     }
+    Rx = Rx * -1, Ry = Ry * -1;
+    return {
+      Rx,
+      Ry
+    };
+  }
 
-    async DH_URLSend(DHurl, SetData) {
-        return await this.DH_requestClient({
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: DHurl,
-            headers: {
-                "Accept": "*/*",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept-Language": "en-US;q=0.8",
-                "Accept-Encoding": "gzip, deflate",
-                "User-Agent": DH_URLUSA,
-                "Authorization": DH_URLAUTH,
-                "Tenant-Id": DH_Tenant,
-                "Content-Type": "application/json",
-                "Dreame-Auth": DH_Auth,
-            },
-            data: SetData,
-        }).then(async (response) => {
-            this.log.info(DHurl + " | " + JSON.stringify(SetData) + " | Response: " + JSON.stringify(response.data));
+  async DH_GetControl() {
+
+    const requestId = Math.floor(Math.random() * 9000) + 1000;
+    for (const [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
+      let PiidAction = DreameActionParams[SPkey];
+      if (Object.prototype.toString.call(DreameActionParams[SPkey]).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+        PiidAction = JSON.parse(DreameActionParams[SPkey]);
+      }
+      //JSON.parse(JSON.stringify(DreameActionParams[SPkey]))
+
+      const GetSIID = parseInt((SPkey.split('S')[1] || '').split('A')[0]);
+      let GetAIID = parseInt(SPkey.replace('S' + GetSIID + 'A', ''));
+      if ((SPkey.indexOf('P') !== -1) && (SPkey.indexOf('C') !== -1)) {
+        GetAIID = (SPkey.split('P')[1] || '').split('C')[0];
+      }
+      const GetSIIDAIID = GetSIID + '.' + GetAIID;
+      const SETURLData = {
+        did: DH_Did,
+        id: requestId,
+        data: {
+          did: DH_Did,
+          id: requestId,
+          method: 'action',
+          params: {
+            did: DH_Did,
+            siid: GetSIID,
+            aiid: GetAIID,
+            in: PiidAction
+          },
+        },
+
+      };
+      try {
+        const GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
+      } catch (err) {
+        this.log.warn('Getting "' + SPvalue + '" State from cloud failed: ' + err);
+      }
+    }
+  }
+
+  async DH_URLSend(DHurl, SetData) {
+    return await this.DH_requestClient({
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: DHurl,
+      headers: {
+        'Accept': '*/*',
+        //'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept-Language': 'en-US;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'User-Agent': DH_URLUSA,
+        'Authorization': DH_URLAUTH,
+        'Tenant-Id': DH_Tenant,
+        'Content-Type': 'application/json',
+        'Dreame-Auth': DH_Auth,
+      },
+      data: SetData,
+    }).then(async (response) => {
+      this.log.info(DHurl + ' | ' + JSON.stringify(SetData) + ' | Response: ' + JSON.stringify(response.data));
+      if (LogData) {
+        this.log.info(DHurl + ' | ' + JSON.stringify(SetData) + ' | Response: ' + JSON.stringify(response.data));
+      }
+      return response.data;
+    }).catch((error) => {
+      this.log.warn('unable to send Command: DH_URLSend | ' + SetData + ' | Error: ' + JSON.stringify(error));
+    });
+  }
+
+  async DH_connectMqtt() {
+    if (this.mqttClient) {
+      this.mqttClient.end();
+    }
+    this.mqttClient = mqtt.connect('mqtts://' + DH_BDomain, {
+      clientId: 'p_' + crypto.randomBytes(8).toString('hex'),
+      username: DH_Uid,
+      password: DH_Auth,
+      rejectUnauthorized: false,
+      reconnectPeriod: 10000,
+    });
+    this.mqttClient.on('connect', () => {
+      this.log.info('Connection to MQTT successfully established');
+      this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
+      this.DH_CheckTaskStatus();
+    });
+    this.mqttClient.on('message', async (topic, message) => {
+      // message is Buffer
+      this.log.debug(topic.toString());
+      this.log.debug(message.toString());
+      try {
+        message = JSON.parse(message.toString());
+        if (LogData) {
+          this.log.info('Get Message from the device:' + JSON.stringify(message));
+        }
+      } catch (error) {
+        this.log.error(error);
+        return;
+      }
+      if (message.data && message.data.method === 'properties_changed') {
+
+        //Check Dreame Task Status
+        this.DH_CheckTaskStatus();
+
+        for (const element of message.data.params) {
+          if ((JSON.stringify(element.siid) === '6' && JSON.stringify(element.piid) === '1') && DH_UpdateTheMap == true) {
             if (LogData) {
-                this.log.info(DHurl + " | " + JSON.stringify(SetData) + " | Response: " + JSON.stringify(response.data));
+              this.log.info('Map data:' + JSON.stringify(element.value));
             }
-            return response.data;
-        }).catch((error) => {
-            this.log.warn("unable to send Command: DH_URLSend | " + SetData + " | Error: " + JSON.stringify(error));
-        });
-    }
+            let encode = JSON.stringify(element.value);
+            const mappath = DH_Did + '.mqtt.';
+            this.DH_uncompress(encode, mappath);
+            encode = null;
+            DH_UpdateTheMap = false;
+          }
+          const ObjectPoint = await this.DH_SearchIID('S' + element.siid + 'P' + element.piid);
+          if (ObjectPoint) {
+            const path = DH_Did + '.state.' + ObjectPoint.replace(/\w\S*/g, function(SPName) {
+              return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+            }).replace(/\s/g, '');
+            if (path) {
+              let Setvalue = element.value;
+              //this.log.info('===> path: ' + path + "value: " + JSON.stringify(Setvalue) + " element: " + JSON.stringify(element));
+              if (Object.prototype.toString.call(Setvalue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+                Setvalue = JSON.stringify(Setvalue);
+              }
+              if ('S' + element.siid + 'P' + element.piid == 'S2P1') {
+                await this.DH_getType(Setvalue, path.replace('.state.', '.vis.'), 'S' + element.siid + 'P' + element.piid);
+                await this.DH_setState(path.replace('.state.', '.vis.'), Setvalue, true);
+              }
 
-    async DH_connectMqtt() {
-        if (this.mqttClient) {
-            this.mqttClient.end();
-        }
-        this.mqttClient = mqtt.connect('mqtts://' + DH_BDomain, {
-            clientId: 'p_' + crypto.randomBytes(8).toString('hex'),
-            username: DH_Uid,
-            password: DH_Auth,
-            rejectUnauthorized: false,
-            reconnectPeriod: 10000,
-        });
-        this.mqttClient.on('connect', () => {
-            this.log.info('Connection to MQTT successfully established');
-            this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
-			this.DH_CheckTaskStatus();
-        });
-        this.mqttClient.on('message', async (topic, message) => {
-            // message is Buffer
-            this.log.debug(topic.toString());
-            this.log.debug(message.toString());
-            try {
-                message = JSON.parse(message.toString());
-				if (LogData) {
-                this.log.info('Get Message from the device:' + JSON.stringify(message));
-				}
-            } catch (error) {
-                this.log.error(error);
-                return;
-            }
-            if (message.data && message.data.method === 'properties_changed') {
+              Setvalue = await this.DH_SetPropSPID('S' + element.siid + 'P' + element.piid, Setvalue);
+              await this.DH_getType(Setvalue, path, 'S' + element.siid + 'P' + element.piid);
+              await this.DH_setState(path, Setvalue, true);
 
-				//Check Dreame Task Status
-				this.DH_CheckTaskStatus();
-
-                for (const element of message.data.params) {
-                    if ((JSON.stringify(element.siid) === '6' && JSON.stringify(element.piid) === '1') && DH_UpdateTheMap == true) {
-						if (LogData) {
-                            this.log.info('Map data:' + JSON.stringify(element.value));
-						}
-                        let encode = JSON.stringify(element.value);
-                        let mappath = DH_Did + '.mqtt.';
-                        this.DH_uncompress(encode, mappath);
-						encode = null;
-						DH_UpdateTheMap = false;
-                    }
-                    var ObjectPoint = await this.DH_SearchIID("S" + element.siid + 'P' + element.piid);
-                    if (ObjectPoint) {
-                        let path = DH_Did + ".state." + ObjectPoint.replace(/\w\S*/g, function(SPName) {
-                            return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                        }).replace(/\s/g, '');
-                        if (path) {
-                            var Setvalue = element.value;
-							//this.log.info('===> path: ' + path + "value: " + JSON.stringify(Setvalue) + " element: " + JSON.stringify(element));
-                            if (Object.prototype.toString.call(Setvalue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                                Setvalue = JSON.stringify(Setvalue);
-                            }
-							if ("S" + element.siid + 'P' + element.piid == "S2P1") {
-								await this.DH_getType(Setvalue, path.replace(".state.", ".vis."), "S" + element.siid + 'P' + element.piid);
-								await this.DH_setState(path.replace(".state.", ".vis."), Setvalue, true);
-							}
-
-							Setvalue = await this.DH_SetPropSPID("S" + element.siid + 'P' + element.piid, Setvalue);
-                            await this.DH_getType(Setvalue, path, "S" + element.siid + 'P' + element.piid);
-                            await this.DH_setState(path, Setvalue, true);
-
-							if (("S" + element.siid + 'P' + element.piid == "S4P26") && (Setvalue == 1)) {
-								this.log.info("Set and update Cleaning Mode value to: " + JSON.stringify(Setvalue));
-								let ReadpathCM = DH_Did + ".control." + (DreameStateProperties["S4P23"]).replace(/\w\S*/g, function(SPName) {
-                                return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                                }).replace(/\s/g, '');
+              if (('S' + element.siid + 'P' + element.piid == 'S4P26') && (Setvalue == 1)) {
+                this.log.info('Set and update Cleaning Mode value to: ' + JSON.stringify(Setvalue));
+                const ReadpathCM = DH_Did + '.control.' + (DreameStateProperties['S4P23']).replace(/\w\S*/g, function(SPName) {
+                  return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                }).replace(/\s/g, '');
 						        await this.setState(ReadpathCM, Setvalue, true);
-							}
+              }
 
-							let AppChanged = false;
-                            for (var ex in DreameActionExteParams) {
-                                if (ex.indexOf("S" + element.siid + 'P' + element.piid) !== -1) {
+              let AppChanged = false;
+              for (const ex in DreameActionExteParams) {
+                if (ex.indexOf('S' + element.siid + 'P' + element.piid) !== -1) {
 								    AppChanged = true;
 								    break;
-								}
-							}
-							if (AppChanged) {
-								await this.DH_RequestControlState();
-					        }
-                        }
-                    }
                 }
+              }
+              if (AppChanged) {
+                await this.DH_RequestControlState();
+					        }
             }
-        });
-        this.mqttClient.on('error', async (error) => {
-            this.log.error(error);
-            if (error.message && error.message.includes('Not authorized')) {
-                this.log.error('Not authorized to connect to MQTT');
-                this.setState('info.connection', false, true);
-                await this.DH_refreshToken();
-            }
-        });
-        this.mqttClient.on('close', () => {
-            this.log.info('MQTT Connection closed');
-        });
+          }
+        }
+      }
+    });
+    this.mqttClient.on('error', async (error) => {
+      this.log.error(error);
+      if (error.message && error.message.includes('Not authorized')) {
+        this.log.error('Not authorized to connect to MQTT');
+        this.setState('info.connection', false, true);
+        await this.DH_refreshToken();
+      }
+    });
+    this.mqttClient.on('close', () => {
+      this.log.info('MQTT Connection closed');
+    });
+  }
+
+  async DH_SetPropSPID(InSetPropSPID, InSetvalue) {
+    if (InSetPropSPID == 'S2P1' /*"State"*/ ) {
+      InSetvalue = DreameVacuumState[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S2P2' /*"Error"*/ ) {
+      InSetvalue = DreameVacuumErrorCode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S3P2' /*"Charging status"*/ ) {
+      InSetvalue = DreameChargingStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P1' /*"Status"*/ ) {
+      DH_NowStatus = JSON.parse(JSON.stringify(InSetvalue));
+      InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P4' /*"Suction level"*/ ) {
+      InSetvalue = DreameSuctionLevel[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P5' /*"Water volume"*/ ) {
+      InSetvalue = DreameWaterVolume[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P6' /*"Water tank"*/ ) {
+      InSetvalue = DreameWaterTank[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P7' /*"Task status"*/ ) {
+      DH_NowTaskStatus = JSON.parse(JSON.stringify(InSetvalue));
+      InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P23' /*"Cleaning mode"*/ ) {
+      InSetvalue = DreameCleaningMode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P25' /*"Self wash base status"*/ ) {
+      InSetvalue = DreameSelfWashBaseStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P28' /*"Carpet sensitivity"*/ ) {
+      InSetvalue = DreameCarpetSensitivity[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P35' /*"Warn status"*/ ) {
+      InSetvalue = DreameVacuumErrorCode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P36' /*"Carpet avoidance"*/ ) {
+      InSetvalue = DreameCarpetAvoidance[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P41' /*"Low water warning"*/ ) {
+      InSetvalue = DreameLowWaterWarning[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P46' /*"Mop wash level"*/ ) {
+      InSetvalue = DreameMopWashLevel[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S15P1' /*"Auto dust collecting"*/ ) {
+      InSetvalue = DreameAutoDustCollecting[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P63' /*"Cleaning completed"*/ ) {
+      DH_CompletStatus = JSON.parse(JSON.stringify(InSetvalue));
+    }
+    if (InSetPropSPID == 'S15P5' /*"Auto empty status"*/ ) {
+      InSetvalue = DreameAutoEmptyStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S27P2' /*"Dirty water tank"*/ ) {
+      if (InSetvalue == 1) {/*"Reset the Warn status Object"*/
+			    const DWpath = DH_Did + '.state.' + DreameStateProperties['S4P35'].replace(/\w\S*/g, function(SPName) {
+          return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+        }).replace(/\s/g, '');
+        await this.DH_setState(DWpath, DreameVacuumErrorCode[UserLang][0], true);
+      }
+      InSetvalue = DreameDirtyWaterTank[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S27P1' /*"Pure water tank"*/ ) {
+      let DWpath = DH_Did + '.state.' + DreameStateProperties['S4P41'].replace(/\w\S*/g, function(SPName) { /*"Change Low water warning Object"*/
+        return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+      }).replace(/\s/g, '');
+      if (InSetvalue == 0) {
+        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][6], true);
+      } else if (InSetvalue == 2) {
+        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][2], true);
+      } else if (InSetvalue == 3) {
+        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][0], true);
+      }
+      DWpath = DH_Did + '.state.' + DreameStateProperties['S4P6'].replace(/\w\S*/g, function(SPName) { /*"Change Water tank Object"*/
+        return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+      }).replace(/\s/g, '');
+      if (InSetvalue == 0) {
+        await this.DH_setState(DWpath, DreameWaterTank[UserLang][0], true);
+      } else if (InSetvalue == 2) {
+        await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
+      } else if (InSetvalue == 3) {
+        await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
+      }
+      InSetvalue = DreamePureWaterTank[UserLang][parseInt(InSetvalue)];
     }
 
-    async DH_SetPropSPID(InSetPropSPID, InSetvalue) {
-        if (InSetPropSPID == "S2P1" /*"State"*/ ) {
-            InSetvalue = DreameVacuumState[UserLang][parseInt(InSetvalue)];
-        }
-        if (InSetPropSPID == "S2P2" /*"Error"*/ ) {
-            InSetvalue = DreameVacuumErrorCode[UserLang][parseInt(InSetvalue)];
-        }
-        if (InSetPropSPID == "S3P2" /*"Charging status"*/ ) {
-            InSetvalue = DreameChargingStatus[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P1" /*"Status"*/ ) {
-            DH_NowStatus = JSON.parse(JSON.stringify(InSetvalue));
-            InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P4" /*"Suction level"*/ ) {
-            InSetvalue = DreameSuctionLevel[UserLang][parseInt(InSetvalue)];
-        }
-        if (InSetPropSPID == "S4P5" /*"Water volume"*/ ) {
-            InSetvalue = DreameWaterVolume[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P6" /*"Water tank"*/ ) {
-            InSetvalue = DreameWaterTank[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P7" /*"Task status"*/ ) {
-            DH_NowTaskStatus = JSON.parse(JSON.stringify(InSetvalue));
-            InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P23" /*"Cleaning mode"*/ ) {
-            InSetvalue = DreameCleaningMode[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P25" /*"Self wash base status"*/ ) {
-            InSetvalue = DreameSelfWashBaseStatus[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P28" /*"Carpet sensitivity"*/ ) {
-            InSetvalue = DreameCarpetSensitivity[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P35" /*"Warn status"*/ ) {
-            InSetvalue = DreameVacuumErrorCode[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P36" /*"Carpet avoidance"*/ ) {
-            InSetvalue = DreameCarpetAvoidance[UserLang][parseInt(InSetvalue)];
-        }
-        if (InSetPropSPID == "S4P41" /*"Low water warning"*/ ) {
-            InSetvalue = DreameLowWaterWarning[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P46" /*"Mop wash level"*/ ) {
-            InSetvalue = DreameMopWashLevel[UserLang][parseInt(InSetvalue)];
-        }
-        if (InSetPropSPID == "S15P1" /*"Auto dust collecting"*/ ) {
-            InSetvalue = DreameAutoDustCollecting[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S4P63" /*"Cleaning completed"*/ ) {
-           DH_CompletStatus = JSON.parse(JSON.stringify(InSetvalue));
-        }
-        if (InSetPropSPID == "S15P5" /*"Auto empty status"*/ ) {
-            InSetvalue = DreameAutoEmptyStatus[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S27P2" /*"Dirty water tank"*/ ) {
-			if (InSetvalue == 1) {/*"Reset the Warn status Object"*/
-			    let DWpath = DH_Did + ".state." + DreameStateProperties["S4P35"].replace(/\w\S*/g, function(SPName) {
-					return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-				}).replace(/\s/g, '');
-				await this.DH_setState(DWpath, DreameVacuumErrorCode[UserLang][0], true);
-			}
-            InSetvalue = DreameDirtyWaterTank[UserLang][parseInt(InSetvalue)];
-        }
-		if (InSetPropSPID == "S27P1" /*"Pure water tank"*/ ) {
-			let DWpath = DH_Did + ".state." + DreameStateProperties["S4P41"].replace(/\w\S*/g, function(SPName) { /*"Change Low water warning Object"*/
-					return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-				}).replace(/\s/g, '');
-			if (InSetvalue == 0) {
-				await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][6], true);
-			} else if (InSetvalue == 2) {
-				await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][2], true);
-			} else if (InSetvalue == 3) {
-				await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][0], true);
-			}
-			DWpath = DH_Did + ".state." + DreameStateProperties["S4P6"].replace(/\w\S*/g, function(SPName) { /*"Change Water tank Object"*/
-					return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-				}).replace(/\s/g, '');
-			if (InSetvalue == 0) {
-				await this.DH_setState(DWpath, DreameWaterTank[UserLang][0], true);
-			} else if (InSetvalue == 2) {
-				await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
-			} else if (InSetvalue == 3) {
-				await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
-			}
-            InSetvalue = DreamePureWaterTank[UserLang][parseInt(InSetvalue)];
-        }
 
+    return InSetvalue;
+  }
 
-        return InSetvalue;
+  async DH_uncompress(In_Compressed, In_path) {
+    let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
+    let decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
+    let jsondecode = decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
+    let jsonread = (_ => {
+      try {
+        return JSON.parse(jsondecode);
+      } catch (err) {
+        this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
+        return 'undefined';
+      }
+    })();
+    if (!jsonread) {
+      return;
     }
 
-    async DH_uncompress(In_Compressed, In_path) {
-        var input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
-		var decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString()
-        var jsondecode = decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-        var jsonread = (_ => {
-            try {
-                return JSON.parse(jsondecode);
-            } catch (err) {
-                this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
-                return 'undefined';
-            }
-        })();
-        if (!jsonread) {
-            return;
-        }
+    await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
+    input_Raw = null;
+    decode = null;
+    jsondecode = null;
+    jsonread = null;
 
-		await this.DH_PropMQTTObject(jsonread, DH_Did + ".mqtt.", "Decode map: ");
-		input_Raw = null;
-		decode = null;
-		jsondecode = null;
-		jsonread = null;
-
-		/*for (var [key, value] of Object.entries(jsonread)) {
+    /*for (var [key, value] of Object.entries(jsonread)) {
             //this.log.info(' decode Map JSON:' + `${key}: ${value}`);
             if (Object.prototype.toString.call(value) !== '[object Object]') {
                 if (value != null) {
@@ -4647,908 +4762,928 @@ class Dreamehome extends utils.Adapter {
                 }
             }
         }*/
-    }
+  }
 
-	async DH_PropMQTTObject(InData, InPath, InLog) {
-        for (var [key, value] of Object.entries(InData)) {
-            var path = InPath + key;
-            if (path) {
-                if (value != null) {
-					 if ((path.toString().lastIndexOf('.cleanset') != -1) && typeof (value === 'object')) {
-						// await this.DH_PropMQTTObject(value, path + ".", InLog);
-						if (LogData) {
-						    this.log.info("==> cleanset Path found | typeof: " + typeof(value));
-						}
-						value = JSON.stringify(value);
-					 }
-                    if (Object.prototype.toString.call(value) !== '[object Object]')  {
-                        if (LogData) {
-                            this.log.info(InLog + " Set " + path + " to " + value);
-                        }
-                        if (Object.prototype.toString.call(value).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                            value = JSON.stringify(value);
-                        }
-                        await this.DH_getType(value, path);
-                        await this.DH_setState(path, value, true);
+  async DH_PropMQTTObject(InData, InPath, InLog) {
+    const validTaskStatuses = [1, 2, 3, 4, 5]; // List of valid task statuses for robot
+    const validNowStatuses = [2, 4, 18, 19, 20]; // List of valid current statuses for robot
 
-						if (path.toString().lastIndexOf('.robot') != -1) {
-							//Get Room
-							try {
-								await this.DH_GetRobotPosition(JSON.parse(value), CheckArrayRooms);
-							} catch (SRPerror) {
-								this.log.warn("Unable to Set Current room cleaning name | In Value: " + value + " | Error: " + SRPerror );
-                            }
+    for (const [key, value] of Object.entries(InData)) {
+      let valueCopy = value;
+      const path = InPath + key;
+      if (path && valueCopy != null) {
 
-
-							//this.log.info("==> DH_NowTaskStatus is |" + DH_NowTaskStatus + "|");
-							if (DH_CompletStatus == 100) {
-								DH_CleanStatus = false;
-								DH_SetLastStatus = false;
-							}
-							if (((DH_NowTaskStatus == 1) || (DH_NowTaskStatus == 2) || (DH_NowTaskStatus == 3) || (DH_NowTaskStatus == 4) || (DH_NowTaskStatus == 5)) &&
-							((DH_NowStatus == 2) || (DH_NowStatus == 4) || (DH_NowStatus == 18) || (DH_NowStatus == 19) || (DH_NowStatus == 20))){
-							    await this.DH_SetHistory(value, DH_Did + ".vis.PosHistory" + DH_CurMap);
-								DH_CleanStatus = true;
-								DH_SetLastStatus = false;
-
-							}
-							//Set History Coordinates => Back to Base
-							if ((DH_CompletStatus < 100) && (DH_CleanStatus == true) && (DH_SetLastStatus == false)) {
-								DH_SetLastStatus = true;
-								//await this.DH_SetHistory("[-1,-1]", DH_Did + ".vis.PosHistory" + DH_CurMap);
-							}
-						}
-
-                    }
-                }
-            }
-        }
-    }
-    async DH_SetHistory(NewRobVal, InRobPath) {
-        try {
-            //Get Robot X Y History
-            var RobPosOb = await this.getStateAsync(InRobPath);
-            var OldObjectRobPos = JSON.parse(RobPosOb.val);
-            //Get Charger X Y History
-            /*var CharPosOb = await this.getStateAsync(DH_Did + ".vis.CharHistory" + DH_CurMap);
-            var OldObjectCharPos = JSON.parse(CharPosOb.val);*/
-            // Get Charger New X Y
-            var NewObjCharVal = await this.getStateAsync(DH_Did + ".mqtt.charger");
-            var NewCharVal = NewObjCharVal.val
-            //Get Object Index
-            var lastRobIndex = Object.keys(OldObjectRobPos)[Object.keys(OldObjectRobPos).length - 1];
-
-            if ((lastRobIndex == 'undefined') || (lastRobIndex == 'NaN')) {
-                OldObjectRobPos = {"0": JSON.stringify(NewRobVal)};
-                await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
-                //Charger History
-                var OldObjectCharPos = {};
-                OldObjectCharPos[0] = JSON.stringify(NewCharVal);
-                await this.setState(DH_Did + ".vis.CharHistory" + DH_CurMap, JSON.stringify(OldObjectCharPos), true);
-
-            } else {
-                OldObjectRobPos[parseInt(lastRobIndex) + 1] = JSON.stringify(NewRobVal);
-                await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
-                //Charger
-                /*OldObjectCharPos[parseInt(lastRobIndex) + 1] = JSON.stringify(NewCharVal);
-                await this.setState(DH_Did + ".vis.CharHistory" + DH_CurMap, JSON.stringify(OldObjectCharPos), true);*/
-
-                //Clean
-                RobPosOb = null, OldObjectRobPos = null, /*CharPosOb = null,*/ OldObjectCharPos = null, NewObjCharVal = null, NewCharVal = null;
-
-            }
-        } catch (error) {
-            this.log.error("DH_SetHistory Error: " + error);
+        // Check if the path contains '.cleanset' and if the value is an object
+        if (path.endsWith('.cleanset') && typeof valueCopy === 'object') {
+          if (LogData) {
+            this.log.info('==> cleanset Path found | typeof: ' + typeof valueCopy);
+          }
+          valueCopy = JSON.stringify(valueCopy);  // Serialize the object to a JSON string for transmission
         }
 
+        // Handle non-object values, including arrays (arrays should also be serialized)
+        if (typeof valueCopy !== 'object' || Array.isArray(valueCopy)) {
+          if (LogData) {
+            this.log.info(`${InLog} Set ${path} to ${valueCopy}`);
+          }
+
+          // If the value is an array, serialize it into a JSON string
+          if (Array.isArray(valueCopy)) {
+            valueCopy = JSON.stringify(valueCopy);
+          }
+
+          // Set the value and its type in the state
+          await this.DH_getType(valueCopy, path);
+          await this.DH_setState(path, valueCopy, true);
+
+          // Handle logic specific to paths related to robot states
+          if (path.includes('.robot')) {
+            try {
+            // Parse the value and update the robot's position
+              await this.DH_GetRobotPosition(JSON.parse(valueCopy), CheckArrayRooms);
+            } catch (SRPerror) {
+              this.log.error(`Failed to update robot position for value: ${valueCopy}. Error: ${SRPerror.message}`);
+            }
+
+            // Check the task completion status and handle history updates
+            if (DH_CompletStatus === 100) {
+            // If the task is complete, reset cleaning and status flags
+              DH_CleanStatus = false;
+              DH_SetLastStatus = false;
+            }
+
+            // If the current task status is one of the valid values and the robot is in one of the valid statuses
+            if (validTaskStatuses.includes(DH_NowTaskStatus) && validNowStatuses.includes(DH_NowStatus)) {
+              await this.DH_SetHistory(valueCopy, DH_Did + '.vis.PosHistory' + DH_CurMap);
+              DH_CleanStatus = true;
+              DH_SetLastStatus = false;
+            }
+
+            // If cleaning is in progress but not yet complete, record history
+            if (DH_CompletStatus < 100 && DH_CleanStatus && !DH_SetLastStatus) {
+              DH_SetLastStatus = true;
+            // Optionally, uncomment this line if needed to set history back to base position
+            // await this.DH_SetHistory("[-1,-1]", DH_Did + ".vis.PosHistory" + DH_CurMap);
+            }
+          }
+        }
+      }
     }
-    async setcleansetPath(createpath, CsetS) {
-        //let jsonString = `{${Object.entries(CsetS).map(([key, value]) => `"${key}":"${value}"`).join(', ')}}`;
-        await this.extendObject(createpath, {
-            type: 'state',
-            common: {
-                name: createpath,
-                type: 'number',
-                role: 'level',
-                states: CsetS,
-                write: true,
-                read: true,
-            },
-            native: {},
-        });
+  }
+
+
+  async DH_SetHistory(NewRobVal, InRobPath) {
+    try {
+    // Get Robot X Y History (current robot position history)
+      let RobPosOb = await this.getStateAsync(InRobPath);
+      let OldObjectRobPos = JSON.parse(RobPosOb.val);
+
+      // Get Charger New X Y (current charger position)
+      let NewObjCharVal = await this.getStateAsync(DH_Did + '.mqtt.charger');
+      let NewCharVal = NewObjCharVal.val;
+
+      // Get Object Index (the last index of the robot's position history)
+      const lastRobIndex = Object.keys(OldObjectRobPos).length - 1;
+
+      // Check if the last index is valid
+      if (lastRobIndex === -1 || isNaN(lastRobIndex)) {
+      // If no previous history, create new entry
+        OldObjectRobPos = { '0': JSON.stringify(NewRobVal) };
+        await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
+
+        // Create charger history entry
+        const OldObjectCharPos = { '0': JSON.stringify(NewCharVal) };
+        await this.setState(DH_Did + '.vis.CharHistory' + DH_CurMap, JSON.stringify(OldObjectCharPos), true);
+      } else {
+      // Add new robot position to the history
+        OldObjectRobPos[lastRobIndex + 1] = JSON.stringify(NewRobVal);
+        await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
+
+      // Optionally, you can handle charger history as well:
+      // OldObjectCharPos[lastRobIndex + 1] = JSON.stringify(NewCharVal);
+      // await this.setState(DH_Did + ".vis.CharHistory" + DH_CurMap, JSON.stringify(OldObjectCharPos), true);
+      }
+
+      // Clean up references to avoid memory leaks
+      RobPosOb = null;
+      OldObjectRobPos = null;
+      NewObjCharVal = null;
+      NewCharVal = null;
+
+    } catch (error) {
+    // Log any error that occurs
+      this.log.error('DH_SetHistory Error: ' + error.message);
     }
-    async DH_getType(element, createpath, SetSPiid = '', SetExtendVal = "") {
-		if ((element == 'undefined') || (element == null)) {element = "";}
-		try {
-            element = JSON.parse(element);
-        } catch (StGer) {
+  }
+
+
+  async setcleansetPath(createpath, CsetS) {
+    //let jsonString = `{${Object.entries(CsetS).map(([key, value]) => `"${key}":"${value}"`).join(', ')}}`;
+    await this.extendObject(createpath, {
+      type: 'state',
+      common: {
+        name: createpath,
+        type: 'number',
+        role: 'level',
+        states: CsetS,
+        write: true,
+        read: true,
+      },
+      native: {},
+    });
+  }
+  async DH_getType(element, createpath, SetSPiid = '', SetExtendVal = '') {
+    if ((element == 'undefined') || (element == null)) {element = '';}
+    try {
+      element = JSON.parse(element);
+    } catch (StGer) {
 		    if (LogData) {
-			    this.log.info('Test DH_getType value: ' + element + " return " + StGer);
+			    this.log.info('Test DH_getType value: ' + element + ' return ' + StGer);
 		    }
-		}
-        var setrolT = ['string', 'text'];
-        var Typeof = Object.prototype.toString.call(element).match(/\s([\w]+)/)[1].toLowerCase();
-        switch (Typeof) { //number, string, boolean, array, object, mixed, json
-            case 'object':
-                setrolT[0] = 'object';
-                setrolT[1] = 'json';
-                break;
-            case 'array':
-                setrolT[0] = 'json';
-                setrolT[1] = 'array';
-                break;
-            case 'boolean':
-                setrolT[0] = 'boolean';
-                setrolT[1] = 'switch';
-                break;
-            case 'number':
-                setrolT[0] = 'number';
-                setrolT[1] = 'value';
-                break;
-            case 'undefined':
-                setrolT[0] = 'string';
-                setrolT[1] = 'text';
-                break;
-            case 'json':
-                setrolT[0] = 'json';
-                setrolT[1] = 'json';
-                break;
+    }
+    const setrolT = ['string', 'text'];
+    const Typeof = Object.prototype.toString.call(element).match(/\s([\w]+)/)[1].toLowerCase();
+    switch (Typeof) { //number, string, boolean, array, object, mixed, json
+      case 'object':
+        setrolT[0] = 'object';
+        setrolT[1] = 'json';
+        break;
+      case 'array':
+        setrolT[0] = 'json';
+        setrolT[1] = 'array';
+        break;
+      case 'boolean':
+        setrolT[0] = 'boolean';
+        setrolT[1] = 'switch';
+        break;
+      case 'number':
+        setrolT[0] = 'number';
+        setrolT[1] = 'value';
+        break;
+      case 'undefined':
+        setrolT[0] = 'string';
+        setrolT[1] = 'text';
+        break;
+      case 'json':
+        setrolT[0] = 'json';
+        setrolT[1] = 'json';
+        break;
+    }
+
+    let Stwrite = false, Stname = '', Stunit = '', Stnative = {}, Sstates = {}, Stsiid = '', Stpiid = '';
+    Stname = createpath.split(/[\s.]/).pop().replace(/(?<!^)([A-Z])/g, ' $1');
+
+    let Delimiter = 'P';
+    if (SetSPiid != ''){
+      if (SetSPiid.indexOf('A') !== -1) {
+        Delimiter = 'A';
+        Stwrite = true;
+      }
+      if (SetSPiid.indexOf('C') !== -1) {
+        Delimiter = 'C';
+        Stwrite = true;
+      }
+      if (SetSPiid.indexOf('E') !== -1) {
+        Delimiter = 'E';
+        Stwrite = true;
+      }
+      if (Delimiter == 'C') {
+			    Stsiid = (SetSPiid.split('S')[1] || '').split('A')[0];
+        if ((SetSPiid.indexOf('P') !== -1) && (SetSPiid.indexOf('C') !== -1)) {
+          Stsiid = (SetSPiid.split('S')[1] || '').split('P')[0];
         }
-
-        let Stwrite = false, Stname = '', Stunit = '', Stnative = {}, Sstates = {}, Stsiid = '', Stpiid = '';
-		Stname = createpath.split(/[\s.]/).pop().replace(/(?<!^)([A-Z])/g, ' $1');
-
-		if (SetSPiid != ''){
-			var Delimiter = "P";
-			if (SetSPiid.indexOf("A") !== -1) {
-				Delimiter = "A";
-				Stwrite = true;
-			}
-			if (SetSPiid.indexOf("C") !== -1) {
-				Delimiter = "C";
-				Stwrite = true;
-			}
-			if (SetSPiid.indexOf("E") !== -1) {
-				Delimiter = "E";
-				Stwrite = true;
-			}
-			if (Delimiter == "C") {
-			    Stsiid = (SetSPiid.split("S")[1] || "").split("A")[0];
-				if ((SetSPiid.indexOf("P") !== -1) && (SetSPiid.indexOf("C") !== -1)) {
-					Stsiid = (SetSPiid.split("S")[1] || "").split("P")[0];
-				}
-			} else if (Delimiter == "E") {
-			    Stsiid = (SetSPiid.split("S")[1] || "").split("P")[0];
-			} else {
-			    Stsiid = (SetSPiid.split("S")[1] || "").split(Delimiter)[0];
-			}
-			Stpiid = SetSPiid.replace("S" + Stsiid + Delimiter, "");
-			if (Delimiter == "A") {
+      } else if (Delimiter == 'E') {
+			    Stsiid = (SetSPiid.split('S')[1] || '').split('P')[0];
+      } else {
+			    Stsiid = (SetSPiid.split('S')[1] || '').split(Delimiter)[0];
+      }
+      Stpiid = SetSPiid.replace('S' + Stsiid + Delimiter, '');
+      if (Delimiter == 'A') {
 			    Stnative = {siid: Stsiid, aiid: Stpiid, did: DH_Did, model: DH_Model};
-			} else if (Delimiter == "P") {
-				Stnative = {siid: Stsiid, piid: Stpiid, did: DH_Did, model: DH_Model};
-			} else if (Delimiter == "C") {
-				if ((SetSPiid.indexOf("P") !== -1) && (SetSPiid.indexOf("C") !== -1)) {
-					Stpiid = (SetSPiid.split("P")[1] || "").split("C")[0];
+      } else if (Delimiter == 'P') {
+        Stnative = {siid: Stsiid, piid: Stpiid, did: DH_Did, model: DH_Model};
+      } else if (Delimiter == 'C') {
+        if ((SetSPiid.indexOf('P') !== -1) && (SetSPiid.indexOf('C') !== -1)) {
+          Stpiid = (SetSPiid.split('P')[1] || '').split('C')[0];
 				    Stnative = {siid: Stsiid, Piid: Stpiid, did: DH_Did, model: DH_Model};
-				} else {
-				    Stpiid = (SetSPiid.split("A")[1] || "").split("C")[0];
+        } else {
+				    Stpiid = (SetSPiid.split('A')[1] || '').split('C')[0];
 				    Stnative = {siid: Stsiid, aiid: Stpiid, did: DH_Did, model: DH_Model};
 			    }
-			} else if (Delimiter == "E") {
-				Stpiid = (SetSPiid.split("P")[1] || "").split("E")[0];
-				Stnative = {siid: Stsiid, piid: Stpiid, value: SetExtendVal, did: DH_Did, model: DH_Model};
-				setrolT[0] = "number";
-				setrolT[1] = "level";
-				if (SetSPiid !== "S7P1E1") {
+      } else if (Delimiter == 'E') {
+        Stpiid = (SetSPiid.split('P')[1] || '').split('E')[0];
+        Stnative = {siid: Stsiid, piid: Stpiid, value: SetExtendVal, did: DH_Did, model: DH_Model};
+        setrolT[0] = 'number';
+        setrolT[1] = 'level';
+        if (SetSPiid !== 'S7P1E1') {
 				    Sstates = element;
-				} else {
-					setrolT[1] = "value";
-				}
-			}
-		}
-
-		if (createpath.match(/left|batterylevel|CleaningCompleted|CameraBrightness$/gi) || (createpath.split(/[\s.]/).pop() == "Volume")){
-			Stunit = '%';
-		}
-
-		if (createpath.match(/timeleft|time$/gi)){
-			Stunit = 'hours';
-		}
-		if (createpath.match(/CleaningTime$/gi)){
-			Stunit = 'minutes';
-		}
-		if (createpath.match(/area$/gi)){
-			Stunit = 'm²';
-		}
-
-		let ExtendObjectProp = {
-            type: 'state',
-            common: {
-                name: Stname,
-                type: setrolT[0].toString(),
-                role: setrolT[1].toString(),
-				unit: Stunit,
-                write: Stwrite,
-                read: true,
-            },
-            native: Stnative,
+        } else {
+          setrolT[1] = 'value';
         }
-		if (Delimiter == "E") {
-			if (SetSPiid == "S7P1E1") {
-			    ExtendObjectProp["common"]["min"] = 0;
-				ExtendObjectProp["common"]["max"] = 100;
-			} else {
-				ExtendObjectProp["common"]["states"] = Sstates;
-			}
-		}
-        await this.extendObject(createpath, ExtendObjectProp);
-		if (LogData) {
-            this.log.info('common Type is: ' + setrolT + " | common Role is: " + setrolT[1] + " | " + Typeof + " is: " + element);
-		}
+      }
     }
-	async DH_setState(VarPath, VarPointValue, VarBool) {
-		if ((VarPointValue == 'undefined') || (VarPointValue == null)) {VarPointValue = "";}
-		try {
-            VarPointValue = JSON.parse(VarPointValue);
-        } catch (StSer) {
+
+    if (createpath.match(/left|batterylevel|CleaningCompleted|CameraBrightness$/gi) || (createpath.split(/[\s.]/).pop() == 'Volume')){
+      Stunit = '%';
+    }
+
+    if (createpath.match(/timeleft|time$/gi)){
+      Stunit = 'hours';
+    }
+    if (createpath.match(/CleaningTime$/gi)){
+      Stunit = 'minutes';
+    }
+    if (createpath.match(/area$/gi)){
+      Stunit = 'm²';
+    }
+
+    const ExtendObjectProp = {
+      type: 'state',
+      common: {
+        name: Stname,
+        type: setrolT[0].toString(),
+        role: setrolT[1].toString(),
+        unit: Stunit,
+        write: Stwrite,
+        read: true,
+      },
+      native: Stnative,
+    };
+    if (Delimiter == 'E') {
+      if (SetSPiid == 'S7P1E1') {
+			    ExtendObjectProp['common']['min'] = 0;
+        ExtendObjectProp['common']['max'] = 100;
+      } else {
+        ExtendObjectProp['common']['states'] = Sstates;
+      }
+    }
+    await this.extendObject(createpath, ExtendObjectProp);
+    if (LogData) {
+      this.log.info('common Type is: ' + setrolT + ' | common Role is: ' + setrolT[1] + ' | ' + Typeof + ' is: ' + element);
+    }
+  }
+  async DH_setState(VarPath, VarPointValue, VarBool) {
+    if ((VarPointValue == 'undefined') || (VarPointValue == null)) {VarPointValue = '';}
+    try {
+      VarPointValue = JSON.parse(VarPointValue);
+    } catch (StSer) {
 		    if (LogData) {
-			    this.log.info('Test DH_setState value: ' + VarPointValue + " return " + StSer);
+			    this.log.info('Test DH_setState value: ' + VarPointValue + ' return ' + StSer);
 		    }
-		}
-
-        var Typeof = Object.prototype.toString.call(VarPointValue).match(/\s([\w]+)/)[1].toLowerCase();
-        switch (Typeof) { //number, string, boolean, array, object, mixed, json
-            case 'object':
-               VarPointValue = JSON.stringify(VarPointValue);
-                break;
-            case 'array':
-                VarPointValue = JSON.stringify(VarPointValue);
-                break;
-            case 'boolean':
-                VarPointValue = JSON.parse(VarPointValue);
-                break;
-            case 'number':
-                VarPointValue = JSON.parse(VarPointValue);
-                break;
-            case 'undefined':
-                VarPointValue = VarPointValue;
-                break;
-            case 'json':
-                VarPointValue = JSON.stringify(VarPointValue);
-                break;
-        }
-
-		if (LogData) {
-            this.log.info('Send action | to set Path is:' + VarPath + " | to set Data is: " + VarPointValue);
-		}
-		await this.setState(VarPath, VarPointValue, VarBool);
-	}
-    async jsonFromString(str) {
-        const matches = str.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-        return Object.assign({}, ...matches.map((m) => m)); //JSON.parse(m)));
     }
 
-	async DH_GetSetRoomCleanSettings() {
-        let PromDreameCleanset = await this.getStateAsync(DH_Did + ".mqtt.cleanset");
-		var ArrDreameCleanset = (PromDreameCleanset !== null && typeof PromDreameCleanset === 'object') ? JSON.parse(PromDreameCleanset.val) : "undefined";
+    const Typeof = Object.prototype.toString.call(VarPointValue).match(/\s([\w]+)/)[1].toLowerCase();
+    switch (Typeof) { //number, string, boolean, array, object, mixed, json
+      case 'object':
+        VarPointValue = JSON.stringify(VarPointValue);
+        break;
+      case 'array':
+        VarPointValue = JSON.stringify(VarPointValue);
+        break;
+      case 'boolean':
+        VarPointValue = JSON.parse(VarPointValue);
+        break;
+      case 'number':
+        VarPointValue = JSON.parse(VarPointValue);
+        break;
+      case 'undefined':
+        //VarPointValue = VarPointValue;
+        break;
+      case 'json':
+        VarPointValue = JSON.stringify(VarPointValue);
+        break;
+    }
 
-        if (ArrDreameCleanset !== "undefined") {
-			if (LogData) {
-			    this.log.info("ArrDreameCleanset " +  JSON.stringify(ArrDreameCleanset));
-			    this.log.info("CheckArrayRooms " +  JSON.stringify(CheckArrayRooms));
-			}
+    if (LogData) {
+      this.log.info('Send action | to set Path is:' + VarPath + ' | to set Data is: ' + VarPointValue);
+    }
+    await this.setState(VarPath, VarPointValue, VarBool);
+  }
+  async jsonFromString(str) {
+    const matches = str.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
+    return Object.assign({}, ...matches.map((m) => m)); //JSON.parse(m)));
+  }
 
-            for (var r in ArrDreameCleanset) {
-			//1: DreameLevel, 2: DreameSetWaterVolume, 3: DreameRepeat, 4: DreameRoomNumber, 5: DreameCleaningMode, 6: Route
-                for (var iCHroomID in CheckArrayRooms) {
+  async DH_GetSetRoomCleanSettings() {
+    const PromDreameCleanset = await this.getStateAsync(DH_Did + '.mqtt.cleanset');
+    const ArrDreameCleanset = (PromDreameCleanset !== null && typeof PromDreameCleanset === 'object') ? JSON.parse(PromDreameCleanset.val) : 'undefined';
+
+    if (ArrDreameCleanset !== 'undefined') {
+      if (LogData) {
+			    this.log.info('ArrDreameCleanset ' +  JSON.stringify(ArrDreameCleanset));
+			    this.log.info('CheckArrayRooms ' +  JSON.stringify(CheckArrayRooms));
+      }
+
+      for (const r in ArrDreameCleanset) {
+        //1: DreameLevel, 2: DreameSetWaterVolume, 3: DreameRepeat, 4: DreameRoomNumber, 5: DreameCleaningMode, 6: Route
+        for (const iCHroomID in CheckArrayRooms) {
 				    if (CheckArrayRooms[iCHroomID].Id == r) {
-						this.log.info("Get " + CheckArrayRooms[iCHroomID].Name + " Settings = " +
-				        " Number: " + r +
-				        " Repeat: " + ArrDreameCleanset[r][2] +
-				        " Level: " +  ArrDreameCleanset[r][0] +
-						" Water: " +  ArrDreameCleanset[r][1] +
-				        " Order: " + ArrDreameCleanset[r][3] +
-				        " Mode: " +  ArrDreameCleanset[r][4] +
-				        " Route: " +  ArrDreameCleanset[r][5]
-						)
-					    await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".SuctionLevel", ArrDreameCleanset[r][0]);
-                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".WaterVolume", ArrDreameCleanset[r][1]);
-                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".Repeat", ArrDreameCleanset[r][2]);
-                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleaningMode", ArrDreameCleanset[r][4]);
-                        await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CleaningRoute", ArrDreameCleanset[r][5]);
-						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".Cleaning", 2);
-						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetRepetition", ArrDreameCleanset[r][2]);
-						await this.DH_GSRCS(DH_Did + ".map." + DH_CurMap + "." + CheckArrayRooms[iCHroomID].Name + ".CarpetSuctionLevel", ArrDreameCleanset[r][0]);
+            this.log.info('Get ' + CheckArrayRooms[iCHroomID].Name + ' Settings = ' +
+				        ' Number: ' + r +
+				        ' Repeat: ' + ArrDreameCleanset[r][2] +
+				        ' Level: ' +  ArrDreameCleanset[r][0] +
+						' Water: ' +  ArrDreameCleanset[r][1] +
+				        ' Order: ' + ArrDreameCleanset[r][3] +
+				        ' Mode: ' +  ArrDreameCleanset[r][4] +
+				        ' Route: ' +  ArrDreameCleanset[r][5]
+            );
+					    await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.SuctionLevel', ArrDreameCleanset[r][0]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.WaterVolume', ArrDreameCleanset[r][1]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.Repeat', ArrDreameCleanset[r][2]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.CleaningMode', ArrDreameCleanset[r][4]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.CleaningRoute', ArrDreameCleanset[r][5]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.Cleaning', 2);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.CarpetRepetition', ArrDreameCleanset[r][2]);
+            await this.DH_GSRCS(DH_Did + '.map.' + DH_CurMap + '.' + CheckArrayRooms[iCHroomID].Name + '.CarpetSuctionLevel', ArrDreameCleanset[r][0]);
 					    break;
 				    }
 			    }
-            }
-        }
+      }
     }
+  }
 
 
-	async DH_GSRCS(GSRCSObj, GSRCSVal) {
-		if ((GSRCSObj.split(/[\s.]/).pop() == "CarpetRepetition") || (GSRCSObj.split(/[\s.]/).pop() == "CarpetSuctionLevel")) {
-			const TmpObstates = await this.getStatesAsync(GSRCSObj + '*');
-			if (TmpObstates) {
-				for (var iObN in TmpObstates) {
-					this.log.info("The carpet name " + iObN.split(/[\s.]/).pop() + " has been found, setting the " + GSRCSObj.split(/[\s.]/).pop().replace("Carpet", "") + " status to " + GSRCSVal );
-					await this.DH_GSRCS(iObN, GSRCSVal);
-				}
-			}
-			return;
-		}
-        let iGSRCSObj = await this.getStateAsync(GSRCSObj);
-		var iGSRCSVal = (iGSRCSObj !== null) ? iGSRCSObj.val : "undefined";
-        if ((iGSRCSVal == "undefined") || (iGSRCSVal == "-1")) {
-			if (LogData) {
-			    this.log.info("Set " + GSRCSObj + " to " + GSRCSVal);
+  async DH_GSRCS(GSRCSObj, GSRCSVal) {
+    if ((GSRCSObj.split(/[\s.]/).pop() == 'CarpetRepetition') || (GSRCSObj.split(/[\s.]/).pop() == 'CarpetSuctionLevel')) {
+      const TmpObstates = await this.getStatesAsync(GSRCSObj + '*');
+      if (TmpObstates) {
+        for (const iObN in TmpObstates) {
+          this.log.info('The carpet name ' + iObN.split(/[\s.]/).pop() + ' has been found, setting the ' + GSRCSObj.split(/[\s.]/).pop().replace('Carpet', '') + ' status to ' + GSRCSVal );
+          await this.DH_GSRCS(iObN, GSRCSVal);
+        }
+      }
+      return;
+    }
+    const iGSRCSObj = await this.getStateAsync(GSRCSObj);
+    const iGSRCSVal = (iGSRCSObj !== null) ? iGSRCSObj.val : 'undefined';
+    if ((iGSRCSVal == 'undefined') || (iGSRCSVal == '-1')) {
+      if (LogData) {
+			    this.log.info('Set ' + GSRCSObj + ' to ' + GSRCSVal);
 		    }
-			await this.setState(GSRCSObj, GSRCSVal, true);
-        }
-
-
-    }
-
-	async DH_CleanZonePoint(ClPZType, ClPZones, ClPZRepeat, ClPZSucLevel, ClPZWatVol) {
-		if (!(typeof ClPZRepeat === "number" && ClPZRepeat > -1)) {  return false; }
-		if (!(typeof ClPZSucLevel === "number" && ClPZSucLevel > -1)) {  return false; }
-		if (!(typeof ClPZWatVol === "number" && ClPZWatVol > -1)) {  return false; }
-        var SetClPZType = (ClPZType === 1) ? "areas" : "points";
-        var ClPZRet = {};
-        var ClPZAction = [];
-        for (let ClPZone of ClPZones) {
-            if ((!Array.isArray(ClPZone) || ClPZone.length !== 4) && (SetClPZType == "areas")) {
-                this.log.warn("Invalid zone coordinates: " + ClPZone);
-                return false;
-                break;
-            }
-            if ((!Array.isArray(ClPZone) || ClPZone.length !== 2) && (SetClPZType == "points")) {
-                this.log.warn("Invalid points coordinates: " + ClPZone);
-                return false;
-                break;
-            }
-            if (SetClPZType == "areas") {
-                let X_Cor = [ClPZone[0], ClPZone[2]].sort((a, b) => a - b);
-                let Y_Cor = [ClPZone[1], ClPZone[3]].sort((a, b) => a - b);
-                let W_Cor = (X_Cor[1] - X_Cor[0]);
-                let H_Cor = (Y_Cor[1] - Y_Cor[0]);
-				if (LogData) {
-                    this.log.info("Send Clean-Zone action | X " + X_Cor + " Y " + Y_Cor + " W " + W_Cor + " H " + H_Cor + " Repeat " + ClPZRepeat + " SuctionLevel " + ClPZSucLevel + " WaterVolume " + ClPZWatVol);
-                }
-                ClPZAction.push([
-                    Math.round(ClPZone[0]),
-                    Math.round(ClPZone[1]),
-                    Math.round(ClPZone[2]),
-                    Math.round(ClPZone[3]),
-                    Math.max(1, ClPZRepeat),
-                    ClPZSucLevel,
-                    ClPZWatVol,
-                ]);
-            } else if (SetClPZType == "points") {
-				if (LogData) {
-                    this.log.info("Send Clean-Points action | X " + ClPZone[0] + " Y " + ClPZone[1] + " Repeat " + ClPZRepeat + " SuctionLevel " + ClPZSucLevel + " WaterVolume " + ClPZWatVol);
-                }
-                ClPZAction.push([
-                    Math.round(ClPZone[0]),
-                    Math.round(ClPZone[1]),
-                    Math.max(1, ClPZRepeat),
-                    ClPZSucLevel,
-                    ClPZWatVol,
-                ]);
-            }
-
-        }
-        ClPZRet[SetClPZType] = ClPZAction;
-        return JSON.stringify(ClPZRet);
-    }
-
-	async DH_SendActionCleanCarpet(CarpetAction) {
-        const requestId = Math.floor(Math.random() * 9000) + 1000;
-        var AiidAction = [{
-            "piid": 1,
-            "value": 19
-        }, {
-            "piid": 10,
-            "value": CarpetAction
-        }];
-        var SETURLData = {
-            did: DH_Did,
-            id: requestId,
-            data: {
-                did: DH_Did,
-                id: requestId,
-                method: 'action',
-                params: {
-                    did: DH_Did,
-                    siid: 4,
-                    aiid: 1,
-                    in: AiidAction
-                },
-            },
-
-        };
-        try {
-            await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
-        } catch (err) {
-            this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
-        }
-
-    }
-
-    async DH_refreshToken() {
-
-        await this.DH_requestClient({
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: DH_URLTK,
-            headers: {
-                "Accept": "*/*",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept-Language": "en-US;q=0.8",
-                "Accept-Encoding": "gzip, deflate",
-                "User-Agent": DH_URLUSA,
-                "Dreame-Rlc": DH_URLDRLC,
-                "Authorization": DH_URLAUTH,
-                "Tenant-Id": DH_Tenant,
-            },
-            data: {
-                grant_type: 'password',
-                scope: 'all',
-                platform: 'IOS',
-                type: 'account',
-                username: this.config.username,
-                password: crypto.createHash('md5').update(this.config.password + 'RAylYC%fmSKp7%Tq').digest('hex'),
-            },
-        }).then(async (response) => {
-            const responseData = response.data;
-            if (LogData) {
-                this.log.info('Refresh Token response: ' + JSON.stringify(response.data));
-            }
-            var RetObject = JSON.parse(JSON.stringify(responseData));
-
-            await this.DH_PropObject(RetObject, "login.", "Refresh Token: ");
-
-            DH_Auth = responseData["access_token"];
-            DH_AuthRef = responseData["refresh_token"];
-            DH_Expires = responseData["expires_in"];
-            DH_Tenant = responseData["tenant_id"];
-            DH_Country = responseData["country"];
-            DH_Uid = responseData["uid"];
-            DH_Lang = responseData["lang"];
-            DH_Region = responseData["region"];
-            DH_Islogged = true;
-            this.DH_connectMqtt();
-            this.setState('info.connection', true, true);
-        }).catch((error) => {
-            this.log.warn('Refresh Token error: ' + JSON.stringify(error));
-            error.response && this.log.error('Refresh Token error response: ' + JSON.stringify(error.response.data));
-            this.setState('info.connection', false, true);
-        });
+      await this.setState(GSRCSObj, GSRCSVal, true);
     }
 
 
-    async DH_AlexasuctionLevel(language, levelName) {
-        const normalizedLevel = suctionSynonyms[language]?.[levelName.toLowerCase()] || levelName;
+  }
 
-        for (const [number, name] of Object.entries(DreameSuctionLevel[language])) {
-            if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
-                return number;
-            }
+  async DH_CleanZonePoint(ClPZType, ClPZones, ClPZRepeat, ClPZSucLevel, ClPZWatVol) {
+    if (!(typeof ClPZRepeat === 'number' && ClPZRepeat > -1)) {  return false; }
+    if (!(typeof ClPZSucLevel === 'number' && ClPZSucLevel > -1)) {  return false; }
+    if (!(typeof ClPZWatVol === 'number' && ClPZWatVol > -1)) {  return false; }
+    const SetClPZType = (ClPZType === 1) ? 'areas' : 'points';
+    const ClPZRet = {};
+    const ClPZAction = [];
+    for (const ClPZone of ClPZones) {
+      if ((!Array.isArray(ClPZone) || ClPZone.length !== 4) && (SetClPZType == 'areas')) {
+        this.log.warn('Invalid zone coordinates: ' + ClPZone);
+        return false;
+
+      }
+      if ((!Array.isArray(ClPZone) || ClPZone.length !== 2) && (SetClPZType == 'points')) {
+        this.log.warn('Invalid points coordinates: ' + ClPZone);
+        return false;
+
+      }
+      if (SetClPZType == 'areas') {
+        const X_Cor = [ClPZone[0], ClPZone[2]].sort((a, b) => a - b);
+        const Y_Cor = [ClPZone[1], ClPZone[3]].sort((a, b) => a - b);
+        const W_Cor = (X_Cor[1] - X_Cor[0]);
+        const H_Cor = (Y_Cor[1] - Y_Cor[0]);
+        if (LogData) {
+          this.log.info('Send Clean-Zone action | X ' + X_Cor + ' Y ' + Y_Cor + ' W ' + W_Cor + ' H ' + H_Cor + ' Repeat ' + ClPZRepeat + ' SuctionLevel ' + ClPZSucLevel + ' WaterVolume ' + ClPZWatVol);
         }
-        return -1;
+        ClPZAction.push([
+          Math.round(ClPZone[0]),
+          Math.round(ClPZone[1]),
+          Math.round(ClPZone[2]),
+          Math.round(ClPZone[3]),
+          Math.max(1, ClPZRepeat),
+          ClPZSucLevel,
+          ClPZWatVol,
+        ]);
+      } else if (SetClPZType == 'points') {
+        if (LogData) {
+          this.log.info('Send Clean-Points action | X ' + ClPZone[0] + ' Y ' + ClPZone[1] + ' Repeat ' + ClPZRepeat + ' SuctionLevel ' + ClPZSucLevel + ' WaterVolume ' + ClPZWatVol);
+        }
+        ClPZAction.push([
+          Math.round(ClPZone[0]),
+          Math.round(ClPZone[1]),
+          Math.max(1, ClPZRepeat),
+          ClPZSucLevel,
+          ClPZWatVol,
+        ]);
+      }
+
     }
+    ClPZRet[SetClPZType] = ClPZAction;
+    return JSON.stringify(ClPZRet);
+  }
 
+  async DH_SendActionCleanCarpet(CarpetAction, SPvalue) {
+    const requestId = Math.floor(Math.random() * 9000) + 1000;
+    const AiidAction = [{
+      'piid': 1,
+      'value': 19
+    }, {
+      'piid': 10,
+      'value': CarpetAction
+    }];
+    const SETURLData = {
+      did: DH_Did,
+      id: requestId,
+      data: {
+        did: DH_Did,
+        id: requestId,
+        method: 'action',
+        params: {
+          did: DH_Did,
+          siid: 4,
+          aiid: 1,
+          in: AiidAction
+        },
+      },
 
-    async DH_AlexamoppingLevel(language, levelName) {
-        const normalizedLevel = moppingSynonyms[language]?.[levelName.toLowerCase()] || levelName;
-
-        for (const [number, name] of Object.entries(DreameWaterVolume[language])) {
-            if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
-                return number;
-            }
-        }
-        return -1;
-    }
-
-    // Process the command by splitting it into words and checking each word for synonyms
-	async normalizeAlexaRoomsNameSynonyms(synonyms) {
-        const normalizedRooms = {};
-        Object.keys(synonyms).forEach(language => {
-            normalizedRooms[language] = {};
-            Object.keys(synonyms[language]).forEach(synonym => {
-                const normalizedRoomName = synonyms[language][synonym].toLowerCase();
-                normalizedRooms[language][synonym.toLowerCase()] = normalizedRoomName;
-            });
-        });
-        return normalizedRooms;
-    }
-
-    async processCommand(command, language) {
-        // Normalize synonyms for room names
-        const normalizedSynonyms = await this.normalizeAlexaRoomsNameSynonyms(AlexaRoomsNameSynonyms);
-
-        let roomCommands = ""; // Store the final processed command
-        let currentCommand = ''; // Temporary variable to store the current command being processed
-        let words = command.split(' '); // Split the input command into words
-
-        // Define the separator word ("und" for German, "and" for English)
-        const separator = language === "DE" ? "und" : "and";
-
-        // Iterate over each word in the command
-        for (let i = 0; i < words.length; i++) {
-            let word = words[i].toLowerCase(); // Convert to lowercase
-
-            // Check if the word has a synonym for a room name (considering the normalized synonyms)
-            let isRoomName = false;
-
-            // Check if the word is a synonym, and if so, use the normalized synonym
-            if (normalizedSynonyms[language] && normalizedSynonyms[language][word]) {
-                word = normalizedSynonyms[language][word].toLowerCase(); // Replace with normalized synonym
-				words[i] = normalizedSynonyms[language][word]; // Replace with normalized synonym
-                isRoomName = Alexarooms.some(room => room.RM.toLowerCase() === word); // Check if the synonym matches a room
-            } else {
-                // If no synonym, check if it's a direct room name
-                isRoomName = Alexarooms.some(room => room.RM.toLowerCase() === word);
-            }
-
-            // Check if the word is "und" or "and" and it's followed by a room name
-            if ((words[i].toLowerCase() === 'und' && isRoomName) || (words[i].toLowerCase() === 'and' && isRoomName)) {
-                // If there's an existing command, add it to the final result
-                if (currentCommand) {
-                    roomCommands += currentCommand.trim(); // Trim spaces and add the current command
-                }
-                // Start a new command with the "und" or "and" as the separator
-                currentCommand = words[i]; // This will begin a new segment of the command
-            } else {
-                // If the word is a room name, add the separator ('und' or 'and') if it's not the first part of the command
-                if (isRoomName && currentCommand) {
-                    currentCommand += " " + separator; // Add 'und' or 'and' between commands
-                }
-                // Add the word to the current command, except for "und" or "and"
-                currentCommand += (words[i].toLowerCase() === 'und' || words[i].toLowerCase() === 'and' ? '' : ' ' + words[i]);
-            }
-        }
-
-        // Add the last command segment if it exists
-        if (currentCommand.trim()) {
-            roomCommands += currentCommand.trim();
-        }
-
-        return roomCommands; // Return the final processed command
-    }
-
-	async determineCleaningSettings(cleanMode, suctionVal, moppingVal) {
-        let suctionLevel = -1,
-            moppingLevel = -1,
-            alexaUserSettings = 0;
-
-        switch (cleanMode) {
-            case 1: // Custom room cleaning
-            case 5120: // Sweeping and mopping
-                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
-                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
-                alexaUserSettings = 3;
-                break;
-            case 5121: // Mopping
-                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
-                alexaUserSettings = 2;
-                break;
-            case 5122: // Sweeping
-                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
-                alexaUserSettings = 1;
-                break;
-            case 5123: // Mopping after sweeping
-                suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
-                moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
-                alexaUserSettings = 3;
-                break;
-        }
-        return {
-            suctionLevel,
-            moppingLevel,
-            alexaUserSettings
-        };
     };
-
-    async applyCleaningSettings(alexaUserSettings, suctionLevel, moppingLevel) {
-        if (alexaUserSettings === 1 || alexaUserSettings === 3) {
-            await this.wait(waitingvalue);
-            await this.setStateAsync(DH_Did + ".control.SuctionLevel", suctionLevel, false);
-            this.log.info("Change Suction Level to " + suctionLevel);
-        }
-        if (alexaUserSettings === 2 || alexaUserSettings === 3) {
-            await this.wait(waitingvalue);
-            await this.setStateAsync(DH_Did + ".control.WaterVolume", moppingLevel, false);
-            this.log.info("Change Water Volume to " + moppingLevel);
-        }
-    };
-
-	async setCleaningModeWithRetry(robot, roomAction, AlexaID, maxRetries = 5, delay = 500) {
-        let attempt = 0;
-        let success = false;
-        let lastValidMode = null;
-
-        while (attempt < maxRetries && !success) {
-            attempt++;
-            this.log.info(AlexaInfo[UserLang][12](attempt, roomAction.cleaningModes));
-
-            // Set cleaning mode
-            await this.setStateAsync(`${robot}.control.CleaningMode`, roomAction.cleaningModes);
-            await this.wait(delay); // Wait a moment before checking the status
-
-            // Get status and check if setting was successful
-            let currentMode = await this.getStateAsync(`${robot}.state.CleaningMode`);
-
-            if (currentMode) {
-                this.log.info(`Current CleaningMode: ${currentMode.val}`);
-            }
-
-			// Convert the expected mode to its string representation
-            let expectedModeStr = AlexacleanModes[UserLang][roomAction.cleaningModes];
-
-            if (currentMode && currentMode.val === expectedModeStr) {
-                this.log.info(AlexaInfo[UserLang][15](expectedModeStr));
-                success = true;
-            } else {
-                this.log.warn(AlexaInfo[UserLang][16](attempt));
-				lastValidMode = currentMode.val;
-            }
-        }
-
-        // If after all attempts the mode is still wrong -> correct and set CleaningMode to the last valid value
-        if (!success) {
-            this.log.error(AlexaInfo[UserLang][17](roomAction.cleaningModes, maxRetries, lastValidMode));
-            await this.speakToAlexa(AlexaInfo[UserLang][17](roomAction.cleaningModes, maxRetries, lastValidMode), AlexaID);
-            //await this.setStateAsync(`${robot}.control.CleaningMode`, lastValidMode);
-        }
+    try {
+      await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
+    } catch (err) {
+      this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
     }
 
-	// Checks the cleaning status and waits for completion or an error
-    async checkCleaningStatus(robot, roomNumber, roomName, cleaningStatusKey, errorStatusKey, PausedStatusKey, AlexaID, callback) {
-        const checkInterval = 5000; // Check every 5 seconds
-        let errorStartTime = null; // Store the time of the first error
-		let pausedStartTime = null; // Store the time of the first pause
+  }
 
-        const checkStatus = async () => {
-            try {
-				// If the abort command was received, stop monitoring
-				if (isAbortCommandReceived) {
+  async DH_refreshToken() {
+
+    await this.DH_requestClient({
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: DH_URLTK,
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept-Language': 'en-US;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'User-Agent': DH_URLUSA,
+        'Dreame-Rlc': DH_URLDRLC,
+        'Authorization': DH_URLAUTH,
+        'Tenant-Id': DH_Tenant,
+      },
+      data: {
+        grant_type: 'password',
+        scope: 'all',
+        platform: 'IOS',
+        type: 'account',
+        username: this.config.username,
+        password: crypto.createHash('md5').update(this.config.password + 'RAylYC%fmSKp7%Tq').digest('hex'),
+      },
+    }).then(async (response) => {
+      const responseData = response.data;
+      if (LogData) {
+        this.log.info('Refresh Token response: ' + JSON.stringify(response.data));
+      }
+      const RetObject = JSON.parse(JSON.stringify(responseData));
+
+      await this.DH_PropObject(RetObject, 'login.', 'Refresh Token: ');
+
+      DH_Auth = responseData['access_token'];
+      DH_AuthRef = responseData['refresh_token'];
+      DH_Expires = responseData['expires_in'];
+      DH_Tenant = responseData['tenant_id'];
+      DH_Country = responseData['country'];
+      DH_Uid = responseData['uid'];
+      DH_Lang = responseData['lang'];
+      DH_Region = responseData['region'];
+      DH_Islogged = true;
+      this.DH_connectMqtt();
+      this.setState('info.connection', true, true);
+    }).catch((error) => {
+      this.log.warn('Refresh Token error: ' + JSON.stringify(error));
+      error.response && this.log.error('Refresh Token error response: ' + JSON.stringify(error.response.data));
+      this.setState('info.connection', false, true);
+    });
+  }
+
+
+  async DH_AlexasuctionLevel(language, levelName) {
+    const normalizedLevel = suctionSynonyms[language]?.[levelName.toLowerCase()] || levelName;
+
+    for (const [number, name] of Object.entries(DreameSuctionLevel[language])) {
+      if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
+        return number;
+      }
+    }
+    return -1;
+  }
+
+
+  async DH_AlexamoppingLevel(language, levelName) {
+    const normalizedLevel = moppingSynonyms[language]?.[levelName.toLowerCase()] || levelName;
+
+    for (const [number, name] of Object.entries(DreameWaterVolume[language])) {
+      if (name.toLowerCase() === normalizedLevel.toLowerCase()) {
+        return number;
+      }
+    }
+    return -1;
+  }
+
+  // Process the command by splitting it into words and checking each word for synonyms
+  async normalizeAlexaRoomsNameSynonyms(synonyms) {
+    const normalizedRooms = {};
+    Object.keys(synonyms).forEach(language => {
+      normalizedRooms[language] = {};
+      Object.keys(synonyms[language]).forEach(synonym => {
+        const normalizedRoomName = synonyms[language][synonym].toLowerCase();
+        normalizedRooms[language][synonym.toLowerCase()] = normalizedRoomName;
+      });
+    });
+    return normalizedRooms;
+  }
+
+  async processCommand(command, language) {
+    // Normalize synonyms for room names
+    const normalizedSynonyms = await this.normalizeAlexaRoomsNameSynonyms(AlexaRoomsNameSynonyms);
+
+    let roomCommands = ''; // Store the final processed command
+    let currentCommand = ''; // Temporary variable to store the current command being processed
+    const words = command.split(' '); // Split the input command into words
+
+    // Define the separator word ("und" for German, "and" for English)
+    const separator = language === 'DE' ? 'und' : 'and';
+
+    // Iterate over each word in the command
+    for (let i = 0; i < words.length; i++) {
+      let word = words[i].toLowerCase(); // Convert to lowercase
+
+      // Check if the word has a synonym for a room name (considering the normalized synonyms)
+      let isRoomName = false;
+
+      // Check if the word is a synonym, and if so, use the normalized synonym
+      if (normalizedSynonyms[language] && normalizedSynonyms[language][word]) {
+        word = normalizedSynonyms[language][word].toLowerCase(); // Replace with normalized synonym
+        words[i] = normalizedSynonyms[language][word]; // Replace with normalized synonym
+        isRoomName = Alexarooms.some(room => room.RM.toLowerCase() === word); // Check if the synonym matches a room
+      } else {
+        // If no synonym, check if it's a direct room name
+        isRoomName = Alexarooms.some(room => room.RM.toLowerCase() === word);
+      }
+
+      // Check if the word is "und" or "and" and it's followed by a room name
+      if ((words[i].toLowerCase() === 'und' && isRoomName) || (words[i].toLowerCase() === 'and' && isRoomName)) {
+        // If there's an existing command, add it to the final result
+        if (currentCommand) {
+          roomCommands += currentCommand.trim(); // Trim spaces and add the current command
+        }
+        // Start a new command with the "und" or "and" as the separator
+        currentCommand = words[i]; // This will begin a new segment of the command
+      } else {
+        // If the word is a room name, add the separator ('und' or 'and') if it's not the first part of the command
+        if (isRoomName && currentCommand) {
+          currentCommand += ' ' + separator; // Add 'und' or 'and' between commands
+        }
+        // Add the word to the current command, except for "und" or "and"
+        currentCommand += (words[i].toLowerCase() === 'und' || words[i].toLowerCase() === 'and' ? '' : ' ' + words[i]);
+      }
+    }
+
+    // Add the last command segment if it exists
+    if (currentCommand.trim()) {
+      roomCommands += currentCommand.trim();
+    }
+
+    return roomCommands; // Return the final processed command
+  }
+
+  async determineCleaningSettings(cleanMode, suctionVal, moppingVal) {
+    let suctionLevel = -1,
+      moppingLevel = -1,
+      alexaUserSettings = 0;
+
+    switch (cleanMode) {
+      case 1: // Custom room cleaning
+      case 5120: // Sweeping and mopping
+        suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
+        moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
+        alexaUserSettings = 3;
+        break;
+      case 5121: // Mopping
+        moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
+        alexaUserSettings = 2;
+        break;
+      case 5122: // Sweeping
+        suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
+        alexaUserSettings = 1;
+        break;
+      case 5123: // Mopping after sweeping
+        suctionLevel = await this.DH_AlexasuctionLevel(UserLang, suctionVal);
+        moppingLevel = await this.DH_AlexamoppingLevel(UserLang, moppingVal);
+        alexaUserSettings = 3;
+        break;
+    }
+    return {
+      suctionLevel,
+      moppingLevel,
+      alexaUserSettings
+    };
+  };
+
+  async applyCleaningSettings(alexaUserSettings, suctionLevel, moppingLevel) {
+    if (alexaUserSettings === 1 || alexaUserSettings === 3) {
+      await this.wait(waitingvalue);
+      await this.setStateAsync(DH_Did + '.control.SuctionLevel', suctionLevel, false);
+      this.log.info('Change Suction Level to ' + suctionLevel);
+    }
+    if (alexaUserSettings === 2 || alexaUserSettings === 3) {
+      await this.wait(waitingvalue);
+      await this.setStateAsync(DH_Did + '.control.WaterVolume', moppingLevel, false);
+      this.log.info('Change Water Volume to ' + moppingLevel);
+    }
+  };
+
+  async setCleaningModeWithRetry(robot, roomAction, AlexaID, maxRetries = 5, delay = 500) {
+    let attempt = 0;
+    let success = false;
+    let lastValidMode = null;
+
+    while (attempt < maxRetries && !success) {
+      attempt++;
+      this.log.info(AlexaInfo[UserLang][12](attempt, roomAction.cleaningModes));
+
+      // Set cleaning mode
+      await this.setStateAsync(`${robot}.control.CleaningMode`, roomAction.cleaningModes);
+      await this.wait(delay); // Wait a moment before checking the status
+
+      // Get status and check if setting was successful
+      const currentMode = await this.getStateAsync(`${robot}.state.CleaningMode`);
+
+      if (currentMode) {
+        this.log.info(`Current CleaningMode: ${currentMode.val}`);
+      }
+
+      // Convert the expected mode to its string representation
+      const expectedModeStr = AlexacleanModes[UserLang][roomAction.cleaningModes];
+
+      if (currentMode && currentMode.val === expectedModeStr) {
+        this.log.info(AlexaInfo[UserLang][15](expectedModeStr));
+        success = true;
+      } else {
+        this.log.warn(AlexaInfo[UserLang][16](attempt));
+        lastValidMode = currentMode.val;
+      }
+    }
+
+    // If after all attempts the mode is still wrong -> correct and set CleaningMode to the last valid value
+    if (!success) {
+      this.log.error(AlexaInfo[UserLang][17](roomAction.cleaningModes, maxRetries, lastValidMode));
+      await this.speakToAlexa(AlexaInfo[UserLang][17](roomAction.cleaningModes, maxRetries, lastValidMode), AlexaID);
+      //await this.setStateAsync(`${robot}.control.CleaningMode`, lastValidMode);
+    }
+  }
+
+  // Checks the cleaning status and waits for completion or an error
+  async checkCleaningStatus(robot, roomNumber, roomName, cleaningStatusKey, errorStatusKey, PausedStatusKey, AlexaID, callback) {
+    const checkInterval = 5000; // Check every 5 seconds
+    let errorStartTime = null; // Store the time of the first error
+    let pausedStartTime = null; // Store the time of the first pause
+
+    const checkStatus = async () => {
+      try {
+        // If the abort command was received, stop monitoring
+        if (isAbortCommandReceived) {
 			        isMonitorCleaningState = false; // Reset the Monitor for cleaning status
 			        isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
 			        callback(true); // Abort cleaning
-                    return; // Exit the loop and stop further processing
-                }
-                // Retrieve the cleaning status
-                const cleaningState = await this.getStateAsync(`${cleaningStatusKey}`);
-				//this.log.info('Cleaning State:', cleaningState);
+          return; // Exit the loop and stop further processing
+        }
+        // Retrieve the cleaning status
+        const cleaningState = await this.getStateAsync(`${cleaningStatusKey}`);
+        //this.log.info('Cleaning State:', cleaningState);
 
-                // Retrieve the error status
-                const errorState = await this.getStateAsync(`${errorStatusKey}`);
+        // Retrieve the error status
+        const errorState = await this.getStateAsync(`${errorStatusKey}`);
 
-                // Check if the cleaning status exists
-                if (!cleaningState || cleaningState.val === undefined) {
-                    this.log.error(AlexaInfo[UserLang][18]); // Error retrieving cleaning status
-                    this.speakToAlexa(AlexaInfo[UserLang][18], AlexaID);
-					//throw new Error(`Cleaning state for ${cleaningStatusKey} is null or undefined`);
-                    return;
-                }
+        // Check if the cleaning status exists
+        if (!cleaningState || cleaningState.val === undefined) {
+          this.log.error(AlexaInfo[UserLang][18]); // Error retrieving cleaning status
+          this.speakToAlexa(AlexaInfo[UserLang][18], AlexaID);
+          //throw new Error(`Cleaning state for ${cleaningStatusKey} is null or undefined`);
+          return;
+        }
 
-				// Check if the cleaning is paused for more than 5 minutes
-                const cleaningPaused = await this.getStateAsync(`${PausedStatusKey}`);
-				if (cleaningPaused && cleaningPaused.val === 1) {
-                    if (!pausedStartTime) {
-                        pausedStartTime = Date.now(); // Store the pause timestamp
-                    }
+        // Check if the cleaning is paused for more than 5 minutes
+        const cleaningPaused = await this.getStateAsync(`${PausedStatusKey}`);
+        if (cleaningPaused && cleaningPaused.val === 1) {
+          if (!pausedStartTime) {
+            pausedStartTime = Date.now(); // Store the pause timestamp
+          }
 
-                    // If the pause lasts more than 5 minutes, cancel cleaning
-                    if (Date.now() - pausedStartTime > 300000) { // 300,000ms = 5 minutes
-                        this.log.info(AlexaInfo[UserLang][24](roomNumber)); // Log cleaning pause timeout
-                        this.speakToAlexa(AlexaInfo[UserLang][24](roomNumber), AlexaID);
-						isMonitorCleaningState = false; // Reset the Monitor for cleaning status
+          // If the pause lasts more than 5 minutes, cancel cleaning
+          if (Date.now() - pausedStartTime > 300000) { // 300,000ms = 5 minutes
+            this.log.info(AlexaInfo[UserLang][24](roomNumber)); // Log cleaning pause timeout
+            this.speakToAlexa(AlexaInfo[UserLang][24](roomNumber), AlexaID);
+            isMonitorCleaningState = false; // Reset the Monitor for cleaning status
 			            isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
-                        callback(true); // Abort cleaning
-                        return;
-                    }
-                } else {
-                    // If the cleaning is no longer paused, reset the timer
-                    if (pausedStartTime) {
-                        this.log.info(AlexaInfo[UserLang][23](roomNumber)); // Cleaning resumed
-                        this.speakToAlexa(AlexaInfo[UserLang][23](roomNumber), AlexaID);
-                        pausedStartTime = null; // Reset the timer
-                    }
-                }
-
-                // Check if an error has occurred
-                if (errorState && errorState.val !== 0) {
-                    if (!errorStartTime) {
-                        errorStartTime = Date.now(); // Store the error timestamp
-                        this.log.info(AlexaInfo[UserLang][19](roomNumber)); // Log error
-                        this.speakToAlexa(AlexaInfo[UserLang][19](roomNumber), AlexaID);
-                    }
-
-                    // If the error persists for more than 5 minutes, cancel cleaning
-                    if (Date.now() - errorStartTime > 300000) { // 300,000ms = 5 minutes
-                        this.log.info(AlexaInfo[UserLang][20](roomNumber)); // Log error
-                        this.speakToAlexa(AlexaInfo[UserLang][20](roomNumber), AlexaID);
-						isMonitorCleaningState = false; // Reset the Monitor for cleaning status
-			            isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
-                        callback(true); // Abort cleaning
-                        return;
-                    }
-                } else {
-                    // If the error is resolved, reset the timer
-                    if (errorStartTime) {
-                        this.log.info(AlexaInfo[UserLang][21](roomNumber)); // Error fixed
-                        this.speakToAlexa(AlexaInfo[UserLang][21](roomNumber), AlexaID);
-                        errorStartTime = null; // Reset the timer
-                    }
-                }
-
-                // Check if cleaning is complete
-                if (cleaningState.val === 100) {
-                    this.log.info(AlexaInfo[UserLang][22](roomNumber)); // Cleaning completed
-                    this.speakToAlexa(AlexaInfo[UserLang][22](roomNumber), AlexaID);
-                    callback(false); // Success, start next room
-                } else {
-                    // If cleaning is not complete, check again
-                    setTimeout(checkStatus, checkInterval);
-                    this.log.info(`Checking cleaning status => Room: ${roomName} (${roomNumber}) => ${cleaningState.val}`);
-                }
-            } catch (error) {
-                this.log.error(`Error in checkCleaningStatus: ${error}`); // Log error
-            }
-        };
-
-        checkStatus(); // Start the first check
-    }
-
-    // Starts cleaning a room based on `selectedRooms` & `roomActions`
-    async startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex, AlexaID) {
-        // If all rooms have been cleaned, log a message and notify Alexa, then exit
-        if (currentIndex >= selectedRooms.length) {
-            this.log.info(AlexaInfo[UserLang][11]); // "All rooms cleaned"
-            this.speakToAlexa(AlexaInfo[UserLang][11]);
-			isMonitorCleaningState = false; // Reset the Monitor for cleaning status
-			isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
+            callback(true); // Abort cleaning
             return;
+          }
+        } else {
+          // If the cleaning is no longer paused, reset the timer
+          if (pausedStartTime) {
+            this.log.info(AlexaInfo[UserLang][23](roomNumber)); // Cleaning resumed
+            this.speakToAlexa(AlexaInfo[UserLang][23](roomNumber), AlexaID);
+            pausedStartTime = null; // Reset the timer
+          }
         }
 
-        // Retrieve the current room number and its associated cleaning settings
-        const roomNumber = selectedRooms[currentIndex];
-        const roomAction = roomActions[roomNumber];
+        // Check if an error has occurred
+        if (errorState && errorState.val !== 0) {
+          if (!errorStartTime) {
+            errorStartTime = Date.now(); // Store the error timestamp
+            this.log.info(AlexaInfo[UserLang][19](roomNumber)); // Log error
+            this.speakToAlexa(AlexaInfo[UserLang][19](roomNumber), AlexaID);
+          }
 
-        // Set the "CleanGenius" mode before starting the cleaning
-        await this.wait(waitingvalue);
-        await this.setStateAsync(`${robot}.control.CleanGenius`, roomAction.cleanGenius);
-
-        // Set the cleaning mode (e.g., Sweeping, mopping, Sweeping and mopping, etc.)
-        await this.wait(waitingvalue);
-		await this.setCleaningModeWithRetry(robot, roomAction, AlexaID, 5, 600);
-
-        // Log the current cleaning action and notify Alexa
-        const cleaningModeText = AlexacleanModes[UserLang][roomAction.cleaningModes] || roomAction.cleaningModes;
-        const message = AlexaInfo[UserLang][13](roomNumber, roomAction.name, cleaningModeText); // Start cleaning the room ${roomNumber} (${roomAction.name}) with mode ${cleaningModeText}
-        this.log.info(message);
-        this.speakToAlexa(message, AlexaID);
-
-        // Determine and apply additional cleaning settings (suction level, mopping intensity, etc.)
-        await this.wait(waitingvalue);
-        const {
-            suctionLevel,
-            moppingLevel,
-            alexaUserSettings
-        } = await this.determineCleaningSettings(
-            roomAction.cleaningModes,
-            roomAction.suction,
-            roomAction.mopping
-        );
-
-        await this.applyCleaningSettings(alexaUserSettings, suctionLevel, moppingLevel);
-
-        // Start the cleaning process with custom commands if necessary
-        await this.wait(waitingvalue);
-        await this.setStateAsync(`${robot}.control.StartCustom`, JSON.stringify(roomAction.customCommand));
-
-        // Monitor the cleaning status to handle errors or completion
-        this.checkCleaningStatus(robot, roomNumber, roomAction.name,
-            `${robot}.state.CleaningCompleted`, // Status key indicating cleaning completion
-            `${robot}.state.Faults`, // Status key for error detection
-            `${robot}.state.CleaningPaused`, // Status key for paused state
-            AlexaID,
-            (errorOccurred) => {
-                if (errorOccurred) {
-                    // If an error occurs and cleaning cannot continue, log it and notify Alexa
-                    this.log.info(AlexaInfo[UserLang][14](roomNumber, roomAction.name)); // Cleaning of room ${roomNumber} (${roomAction.name}) was aborted due to an error.
-                    this.speakToAlexa(AlexaInfo[UserLang][14](roomNumber, roomAction.name), AlexaID);
-                } else {
-                    // If cleaning was successful, proceed to the next room
-                    this.startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex + 1, AlexaID);
-                }
-            }
-        );
-    }
-
-    // Starts the entire cleaning process for all rooms in `selectedRooms`
-    async startCleaning(robot, selectedRooms, roomActions, AlexaID) {
-		isMonitorCleaningState = true;
-        this.startNextRoomCleaning(robot, selectedRooms, roomActions, 0, AlexaID);
-    }
-
-    async speakToAlexa(message, AlexaID) {
-        if (AlexaID) {
-            this.log.info("Speak: " + message);
-            await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${AlexaID}.Commands.speak`, message);
+          // If the error persists for more than 5 minutes, cancel cleaning
+          if (Date.now() - errorStartTime > 300000) { // 300,000ms = 5 minutes
+            this.log.info(AlexaInfo[UserLang][20](roomNumber)); // Log error
+            this.speakToAlexa(AlexaInfo[UserLang][20](roomNumber), AlexaID);
+            isMonitorCleaningState = false; // Reset the Monitor for cleaning status
+			            isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
+            callback(true); // Abort cleaning
+            return;
+          }
+        } else {
+          // If the error is resolved, reset the timer
+          if (errorStartTime) {
+            this.log.info(AlexaInfo[UserLang][21](roomNumber)); // Error fixed
+            this.speakToAlexa(AlexaInfo[UserLang][21](roomNumber), AlexaID);
+            errorStartTime = null; // Reset the timer
+          }
         }
+
+        // Check if cleaning is complete
+        if (cleaningState.val === 100) {
+          this.log.info(AlexaInfo[UserLang][22](roomNumber)); // Cleaning completed
+          this.speakToAlexa(AlexaInfo[UserLang][22](roomNumber), AlexaID);
+          callback(false); // Success, start next room
+        } else {
+          // If cleaning is not complete, check again
+          setTimeout(checkStatus, checkInterval);
+          this.log.info(`Checking cleaning status => Room: ${roomName} (${roomNumber}) => ${cleaningState.val}`);
+        }
+      } catch (error) {
+        this.log.error(`Error in checkCleaningStatus: ${error}`); // Log error
+      }
     };
 
-    async wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    };
+    checkStatus(); // Start the first check
+  }
 
-    /**
+  // Starts cleaning a room based on `selectedRooms` & `roomActions`
+  async startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex, AlexaID) {
+    // If all rooms have been cleaned, log a message and notify Alexa, then exit
+    if (currentIndex >= selectedRooms.length) {
+      this.log.info(AlexaInfo[UserLang][11]); // "All rooms cleaned"
+      this.speakToAlexa(AlexaInfo[UserLang][11]);
+      isMonitorCleaningState = false; // Reset the Monitor for cleaning status
+      isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
+      return;
+    }
+
+    // Retrieve the current room number and its associated cleaning settings
+    const roomNumber = selectedRooms[currentIndex];
+    const roomAction = roomActions[roomNumber];
+
+    // Set the "CleanGenius" mode before starting the cleaning
+    await this.wait(waitingvalue);
+    await this.setStateAsync(`${robot}.control.CleanGenius`, roomAction.cleanGenius);
+
+    // Set the cleaning mode (e.g., Sweeping, mopping, Sweeping and mopping, etc.)
+    await this.wait(waitingvalue);
+    await this.setCleaningModeWithRetry(robot, roomAction, AlexaID, 5, 600);
+
+    // Log the current cleaning action and notify Alexa
+    const cleaningModeText = AlexacleanModes[UserLang][roomAction.cleaningModes] || roomAction.cleaningModes;
+    const message = AlexaInfo[UserLang][13](roomNumber, roomAction.name, cleaningModeText); // Start cleaning the room ${roomNumber} (${roomAction.name}) with mode ${cleaningModeText}
+    this.log.info(message);
+    this.speakToAlexa(message, AlexaID);
+
+    // Determine and apply additional cleaning settings (suction level, mopping intensity, etc.)
+    await this.wait(waitingvalue);
+    const {
+      suctionLevel,
+      moppingLevel,
+      alexaUserSettings
+    } = await this.determineCleaningSettings(
+      roomAction.cleaningModes,
+      roomAction.suction,
+      roomAction.mopping
+    );
+
+    await this.applyCleaningSettings(alexaUserSettings, suctionLevel, moppingLevel);
+
+    // Start the cleaning process with custom commands if necessary
+    await this.wait(waitingvalue);
+    await this.setStateAsync(`${robot}.control.StartCustom`, JSON.stringify(roomAction.customCommand));
+
+    // Monitor the cleaning status to handle errors or completion
+    this.checkCleaningStatus(robot, roomNumber, roomAction.name,
+      `${robot}.state.CleaningCompleted`, // Status key indicating cleaning completion
+      `${robot}.state.Faults`, // Status key for error detection
+      `${robot}.state.CleaningPaused`, // Status key for paused state
+      AlexaID,
+      (errorOccurred) => {
+        if (errorOccurred) {
+          // If an error occurs and cleaning cannot continue, log it and notify Alexa
+          this.log.info(AlexaInfo[UserLang][14](roomNumber, roomAction.name)); // Cleaning of room ${roomNumber} (${roomAction.name}) was aborted due to an error.
+          this.speakToAlexa(AlexaInfo[UserLang][14](roomNumber, roomAction.name), AlexaID);
+        } else {
+          // If cleaning was successful, proceed to the next room
+          this.startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex + 1, AlexaID);
+        }
+      }
+    );
+  }
+
+  // Starts the entire cleaning process for all rooms in `selectedRooms`
+  async startCleaning(robot, selectedRooms, roomActions, AlexaID) {
+    isMonitorCleaningState = true;
+    this.startNextRoomCleaning(robot, selectedRooms, roomActions, 0, AlexaID);
+  }
+
+  async speakToAlexa(message, AlexaID) {
+    if (AlexaID) {
+      this.log.info('Speak: ' + message);
+      await this.setForeignStateAsync(`alexa2.0.Echo-Devices.${AlexaID}.Commands.speak`, message);
+    }
+  };
+
+  async wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  };
+
+  /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      * @param {() => void} callback
      */
-    onUnload(callback) {
-        try {
-			this.log.info("cleaned everything up...");
-			this.DH_Clean();
-            callback();
-        } catch (e) {
-            callback();
-        }
+  onUnload(callback) {
+    try {
+      this.log.info('cleaned everything up...');
+      this.DH_Clean();
+      callback();
+    } catch (e) {
+      callback();
     }
-    /**
+  }
+  /**
      * Is called if a subscribed state changes
      * @param {string} id
      * @param {ioBroker.State | null | undefined} state
      */
-    async onStateChange(id, state) {
-        if (state) {
-            if (!state.ack) {
-                const deviceId = id.split('.')[2];
-                const folder = id.split('.')[3];
-                let command = id.split('.')[4];
-				if (LogData) {
-                    this.log.info("Receive command: " + command + " | Device: " + deviceId + " | folder: " + folder + " | value " + state.val);
-                }
-                if (id.indexOf(".NewMap") !== -1) {
-                    this.log.info("Generate Map");
-                    await this.DH_GenerateMap();
-					this.setStateAsync(id, false, true);
-					return;
-                }
-				if (id.toString().indexOf('.map.MapNumber') != -1) {
-                    if (DH_Auth !== "") {
-                        await this.DH_RequestNewMap();
-                        await this.DH_GetSetRooms();
-                    }
-                }
-				if (id.toString().indexOf('.CleanCarpet') != -1) {
-					if (state.val) {
+  async onStateChange(id, state) {
+    if (state) {
+      if (!state.ack) {
+        const deviceId = id.split('.')[2];
+        const folder = id.split('.')[3];
+        const command = id.split('.')[4];
+        if (LogData) {
+          this.log.info('Receive command: ' + command + ' | Device: ' + deviceId + ' | folder: ' + folder + ' | value ' + state.val);
+        }
+        if (id.indexOf('.NewMap') !== -1) {
+          this.log.info('Generate Map');
+          await this.DH_GenerateMap();
+          this.setStateAsync(id, false, true);
+          return;
+        }
+        if (id.toString().indexOf('.map.MapNumber') != -1) {
+          if (DH_Auth !== '') {
+            await this.DH_RequestNewMap();
+            await this.DH_GetSetRooms();
+          }
+        }
+        if (id.toString().indexOf('.CleanCarpet') != -1) {
+          if (state.val) {
 					    const stateObj = await this.getObjectAsync(id);
 				        if (stateObj && stateObj.native.Cord) {
-						    let SCarpetCrdAction = [];
-						    SCarpetCrdAction.push(stateObj.native.Cord)
-							var stateObjCR = await this.getStateAsync(id.replace(".CleanCarpet", ".CarpetRepetition"));
-							var stateCR = (stateObjCR !== null && typeof stateObjCR === 'object') ? stateObjCR.val : 1;
-							var stateObjCSV = await this.getStateAsync(id.replace(".CleanCarpet", ".CarpetSuctionLevel"));
-							var stateCSV = (stateObjCSV !== null && typeof stateObjCSV === 'object') ? stateObjCSV.val : 0;
-				            let RetCom = await this.DH_CleanZonePoint(1, SCarpetCrdAction, stateCR, stateCSV, 0);
-							if (RetCom) {
-								await this.DH_SendActionCleanCarpet(RetCom);
-						        this.log.info("Clean Carpet: " + stateObj.common.name + " | Coordinates: " + JSON.stringify(stateObj.native.Cord) + " | Repetition: " + stateCR + " | Suction Level: " + stateCSV);
+						    const SCarpetCrdAction = [];
+						    SCarpetCrdAction.push(stateObj.native.Cord);
+              const stateObjCR = await this.getStateAsync(id.replace('.CleanCarpet', '.CarpetRepetition'));
+              const stateCR = (stateObjCR !== null && typeof stateObjCR === 'object') ? stateObjCR.val : 1;
+              const stateObjCSV = await this.getStateAsync(id.replace('.CleanCarpet', '.CarpetSuctionLevel'));
+              const stateCSV = (stateObjCSV !== null && typeof stateObjCSV === 'object') ? stateObjCSV.val : 0;
+				            const RetCom = await this.DH_CleanZonePoint(1, SCarpetCrdAction, stateCR, stateCSV, 0);
+              if (RetCom) {
+                await this.DH_SendActionCleanCarpet(RetCom, stateObj.common.name);
+						        this.log.info('Clean Carpet: ' + stateObj.common.name + ' | Coordinates: ' + JSON.stringify(stateObj.native.Cord) + ' | Repetition: ' + stateCR + ' | Suction Level: ' + stateCSV);
 				            }
 
-							}
+            }
 				    }
 			    }
 
-				if (id.toString().indexOf('.Start-Clean') != -1) {
-					if (state.val) {
-						/*try
+        if (id.toString().indexOf('.Start-Clean') != -1) {
+          if (state.val) {
+            /*try
 							{
 								var GetRoomIdOb, GetCleaningModeOb, GetCleaningRouteOb, GetRepeatOb, GetSuctionLevelOb, GetWaterVolumeOb;
 								let GetCleanRoomState = await this.getStatesAsync('*.' + DH_CurMap + '.*.Cleaning');
@@ -5583,489 +5718,488 @@ class Dreamehome extends utils.Adapter {
 							}
                         */
 				    }
-				}
+        }
 
-				if (id.toString().indexOf('.control.') != -1) {
-					var SETURLData;
-                    for (var [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
-                        var ControlObject = SPvalue.replace(/\w\S*/g, function(SPName) {
-                            return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                        }).replace(/\s/g, '');
-                        if (id.split('.').pop() == ControlObject) {
-							var PropertiesMethod = false;
-                            const requestId = Math.floor(Math.random() * 9000) + 1000;
-                            this.log.info("Send Command: " + SPvalue);
-                            var GetSIID = parseInt((SPkey.split("S")[1] || "").split("A")[0]);
-                            var GetAIID = '';
-							if (SPkey.indexOf("C") !== -1) {
-                                GetAIID = parseInt((SPkey.split("A")[1] || "").split("C")[0]);
-							} else {
-							    GetAIID = parseInt(SPkey.replace("S" + GetSIID + "A", ""));
-							}
-							if (SPkey.indexOf("P") !== -1) {
-				                GetAIID = parseInt((SPkey.split("P")[1] || "").split("C")[0]);
-								PropertiesMethod = true
+        if (id.toString().indexOf('.control.') != -1) {
+          let SETURLData;
+          for (const [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
+            const ControlObject = SPvalue.replace(/\w\S*/g, function(SPName) {
+              return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+            }).replace(/\s/g, '');
+            if (id.split('.').pop() == ControlObject) {
+              let PropertiesMethod = false;
+              const requestId = Math.floor(Math.random() * 9000) + 1000;
+              this.log.info('Send Command: ' + SPvalue);
+              const GetSIID = parseInt((SPkey.split('S')[1] || '').split('A')[0]);
+              let GetAIID = '';
+              if (SPkey.indexOf('C') !== -1) {
+                GetAIID = parseInt((SPkey.split('A')[1] || '').split('C')[0]);
+              } else {
+							    GetAIID = parseInt(SPkey.replace('S' + GetSIID + 'A', ''));
+              }
+              if (SPkey.indexOf('P') !== -1) {
+				                GetAIID = parseInt((SPkey.split('P')[1] || '').split('C')[0]);
+                PropertiesMethod = true;
 			                }
 
-							var PiidAction = '[1]'
-							if (DreameActionParams[SPkey] !== "false") {
-								PiidAction = state.val;
-								if (Object.prototype.toString.call(PiidAction).match(/\s([\w]+)/)[1].toLowerCase() !== 'boolean') {
-									try {
-										PiidAction = JSON.parse(PiidAction);
-                                    } catch (errJS) {
+              let PiidAction = '[1]';
+              if (DreameActionParams[SPkey] !== 'false') {
+                PiidAction = state.val;
+                if (Object.prototype.toString.call(PiidAction).match(/\s([\w]+)/)[1].toLowerCase() !== 'boolean') {
+                  try {
+                    PiidAction = JSON.parse(PiidAction);
+                  } catch (errJS) {
 									   this.log.warn('Error! ' + PiidAction + ' value is not json');
-									}
+                  }
 							    }
 
-								if (SPkey.indexOf("E") !== -1) {
-								    PropertiesMethod = true
+                if (SPkey.indexOf('E') !== -1) {
+								    PropertiesMethod = true;
 								    const stateObj = await this.getObjectAsync(id);
-									if (stateObj && stateObj.native.value) {
+                  if (stateObj && stateObj.native.value) {
 									    let PiidActionValue = state.val;
-										try {
-										    let PiidActionTmpValue = JSON.parse(stateObj.native.value);
-											PiidActionTmpValue["v"] = state.val;
-											PiidActionValue = JSON.stringify(PiidActionTmpValue);
-										} catch (errUS) {
+                    try {
+										    const PiidActionTmpValue = JSON.parse(stateObj.native.value);
+                      PiidActionTmpValue['v'] = state.val;
+                      PiidActionValue = JSON.stringify(PiidActionTmpValue);
+                    } catch (errUS) {
 									        //this.log.warn('Error! Update ' + SPvalue + ' value is not json');
 									    }
-										let TSSIID = parseInt(stateObj.native.siid);
-										let TSPIID = parseInt(stateObj.native.piid);
-										if ((SPkey == "S4P23E1") && (PiidActionValue == 1)) {
-											TSSIID = 4; TSPIID = 26;
-										} else if ((SPkey == "S4P23E1") && (PiidActionValue !== 1)) { // Change Costum Mode to 0
-											var CMSETURLData = {
-												did: DH_Did,
-                                                id: requestId,
+                    let TSSIID = parseInt(stateObj.native.siid);
+                    let TSPIID = parseInt(stateObj.native.piid);
+                    if ((SPkey == 'S4P23E1') && (PiidActionValue == 1)) {
+                      TSSIID = 4; TSPIID = 26;
+                    } else if ((SPkey == 'S4P23E1') && (PiidActionValue !== 1)) { // Change Costum Mode to 0
+                      const CMSETURLData = {
+                        did: DH_Did,
+                        id: requestId,
 									            data: {
 										            did: DH_Did,
-													id: requestId,
-                                                    method: 'set_properties',
+                          id: requestId,
+                          method: 'set_properties',
 										            params: {},
 									            },
-                                            };
-											CMSETURLData.data.params.did = DH_Did;
-								            CMSETURLData.data.params = [{siid: 4, piid: 26, "value": 0}];
-											this.log.info("Send Extended Command: " + JSON.stringify(CMSETURLData));
-											try {
-												await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, CMSETURLData);
-											} catch (err) {
-                                                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
-                                            }
-										}
-										PiidAction = [{siid: TSSIID,
+                      };
+                      CMSETURLData.data.params.did = DH_Did;
+								            CMSETURLData.data.params = [{siid: 4, piid: 26, 'value': 0}];
+                      this.log.info('Send Extended Command: ' + JSON.stringify(CMSETURLData));
+                      try {
+                        await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, CMSETURLData);
+                      } catch (err) {
+                        this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+                      }
+                    }
+                    PiidAction = [{siid: TSSIID,
 													   piid: TSPIID,
-											          "value": PiidActionValue
+											          'value': PiidActionValue
 											         }];
-										this.log.info("Send Extended Command: " + JSON.stringify(PiidAction));
+                    this.log.info('Send Extended Command: ' + JSON.stringify(PiidAction));
 						            }
 							    }
-                            }
+              }
 
-							if (PropertiesMethod) {
-								SETURLData = {
-									did: DH_Did,
-                                    id: requestId,
-									data: {
-										did: DH_Did,
-                                        id: requestId,
-                                        method: 'set_properties',
-										params: {},
-									},
-                                };
-								SETURLData.data.params.did = DH_Did;
-								SETURLData.data.params = PiidAction;
-                            } else {
-								SETURLData = {
-                                    did: DH_Did,
-                                    id: requestId,
-									data: {
-										did: DH_Did,
-                                        id: requestId,
-                                        method: 'action',
-                                        params: {
-                                            did: DH_Did,
-                                            siid: GetSIID,
-                                            aiid: GetAIID,
-                                            in: PiidAction
-                                        },
-                                    },
+              if (PropertiesMethod) {
+                SETURLData = {
+                  did: DH_Did,
+                  id: requestId,
+                  data: {
+                    did: DH_Did,
+                    id: requestId,
+                    method: 'set_properties',
+                    params: {},
+                  },
+                };
+                SETURLData.data.params.did = DH_Did;
+                SETURLData.data.params = PiidAction;
+              } else {
+                SETURLData = {
+                  did: DH_Did,
+                  id: requestId,
+                  data: {
+                    did: DH_Did,
+                    id: requestId,
+                    method: 'action',
+                    params: {
+                      did: DH_Did,
+                      siid: GetSIID,
+                      aiid: GetAIID,
+                      in: PiidAction
+                    },
+                  },
 
-                                };
-							}
-                            try {
-								if ((SPkey == "S4A1") || (SPkey == "S4A1C1") || (SPkey == "S4A1C2") || (SPkey == "S18A1C1")) {
-									PiidAction = [{siid: 4,piid: 50, "value": "{\"k\":\"SmartHost\",\"v\":0}"}];
-									var RESETCData = {
+                };
+              }
+              try {
+                if ((SPkey == 'S4A1') || (SPkey == 'S4A1C1') || (SPkey == 'S4A1C2') || (SPkey == 'S18A1C1')) {
+                  PiidAction = [{siid: 4,piid: 50, 'value': '{"k":"SmartHost","v":0}'}];
+                  const RESETCData = {
 									    did: DH_Did,
-                                        id: requestId,
+                    id: requestId,
 									    data: {
 										    did: DH_Did,
-                                            id: requestId,
-                                            method: 'set_properties',
+                      id: requestId,
+                      method: 'set_properties',
 										    params: {},
 									    },
-                                    };
-									RESETCData.data.params.did = DH_Did;
+                  };
+                  RESETCData.data.params.did = DH_Did;
 								    RESETCData.data.params = PiidAction;
-									await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, RESETCData);
-								}
-                                var GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
-                                let path = DH_Did + ".control." + SPvalue.replace(/\w\S*/g, function(SPName) {
-                                    return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                                }).replace(/\s/g, '');
-								var GetobjTypeC = await this.getObjectAsync(path);
-								if (GetobjTypeC.common.type == "boolean") {
-                                   await this.setState(path, false, true);
-								}
-                            } catch (err) {
-                                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
-                            }
-                            break;
-                            return;
-                        }
-                    }
+                  await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, RESETCData);
                 }
-                if (id.indexOf(".showlog") !== -1) {
-                    LogData = state.val;
-                    if (LogData) {
-                        this.log.info("Show log has been activated");
-                    } else {
-                        this.log.info("Show log has been disabled");
-                    }
-                    return;
+                const GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
+                const path = DH_Did + '.control.' + SPvalue.replace(/\w\S*/g, function(SPName) {
+                  return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                }).replace(/\s/g, '');
+                const GetobjTypeC = await this.getObjectAsync(path);
+                if (GetobjTypeC.common.type == 'boolean') {
+                  await this.setState(path, false, true);
                 }
+              } catch (err) {
+                this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+              }
+              return;
+            }
+          }
+        }
+        if (id.indexOf('.showlog') !== -1) {
+          LogData = state.val;
+          if (LogData) {
+            this.log.info('Show log has been activated');
+          } else {
+            this.log.info('Show log has been disabled');
+          }
+          return;
+        }
 
 
+      }
+
+      if ((id.indexOf('.summary') !== -1) && AlexaIsPresent) {
+        const command = state.val;
+
+        if (command == '') { //Check if the event is triggered only when the state actually changes and is not empty
+          return;
+        }
+        currentTime = Date.now();
+        timeDiff = currentTime - lastCommandTime;  // Calculate the time difference
+        if (timeDiff < 3000) { // If the command is received within 3 seconds
+          this.log.info('Command ignored: Repeated command within 3 seconds');
+          return;
+        }
+
+        lastCommandTime = currentTime; // Store the new timestamp => Proceed with command processing if the time difference is >= 3 seconds
+        const processedCommands = await this.processCommand(command, UserLang);
+
+        const selectedRooms = [];
+        const roomActions = {}; // Stores actions per room
+        const readableLog = [];
+        let cleaningMode = 1; // Default mode set to 1 (Saugen und Wischen / Vacuum and Mop)
+        let cleanGeniusValue = 1; // Default value for CleanGenius
+        let isCleaningCommand = false;
+        let roomFound = false;
+        let ambiguousCommand = false; // Flag to track ambiguous commands
+        const roomsWithCommands = {}; // Object to track rooms with commands
+        let currentRoom = null;
+        let singleRoomName = '';
+        const missingCleaningModeRooms = [];
+
+
+        // Split the command into parts based on 'and', 'und', or commas
+        const commandParts = processedCommands.split(/and|und|,/); //command.split(/\b(?:and|und|,)\b/i).map(p => p.trim());
+
+        // Check if the command includes any cancel-related keywords
+        if (isMonitorCleaningState) {
+          // Check if the command contains any cancel-related keywords
+          const cancelCommandGiven = AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword));
+          if (cancelCommandGiven) {
+            isAbortCommandReceived = true; // Set abort flag
+            this.log.info(AlexaInfo[UserLang][3]); // Abort command received. Stopping the loop and halting the process.
+            await this.setStateAsync(`${DH_Did}.control.Stop`, true); // Stop the robot
+            await this.setStateAsync(`${DH_Did}.control.Charge`, true); // Send the robot to charging station
+            this.speakToAlexa(AlexaInfo[UserLang][3]); // Notify Alexa that cleaning was aborted
+          }
+        }
+
+        // Iterate through command parts asynchronously
+        for (const part of commandParts) {
+          let roomNumber = null;
+          let foundInThisPart = false;
+
+          // Check if each part has a room name
+          for (const Alexaroom of Alexarooms) {
+            if (part.toLowerCase().includes(Alexaroom.RM.toLowerCase())) {
+              roomNumber = Alexaroom.RN;
+              currentRoom = Alexaroom.RN; // Found room
+              singleRoomName = Alexaroom.RM;
+              selectedRooms.push(roomNumber);
+              roomActions[roomNumber] = {
+                name: Alexaroom.RM,
+                suction: null,
+                mopping: null,
+                repetitions: 1,
+                cleaningModes: 1,
+                cleanGenius: 0,
+                customCommand: '',
+                AlexaSpeakSentence: ''
+              };
+
+              foundInThisPart = true;
+              break; // Exit once the room is found
+            }
+          }
+
+          if (foundInThisPart) roomFound = true; //Only set it if this part has actually found something
+          if (!foundInThisPart) continue; //If no room is found in this part, move on to the next part
+
+          if (!roomNumber && currentRoom) {
+            roomNumber = currentRoom;
+          }
+
+          if (currentRoom) {
+
+            if (part.toLowerCase().includes('saugen') || part.toLowerCase().includes('staubsaugen') || part.toLowerCase().includes('sweeping')) {
+              suctionLevels[UserLang].forEach(level => {
+                if (part.toLowerCase().includes(level)) {
+                  roomActions[roomNumber].suction = level;
+                  isCleaningCommand = true;
+                }
+              });
+              for (const [synonym, mappedLevel] of Object.entries(suctionSynonyms[UserLang])) {
+                if (part.toLowerCase().includes(synonym)) {
+                  roomActions[roomNumber].suction = mappedLevel;
+                  isCleaningCommand = true;
+                  break;
+                }
+              }
             }
 
-            if ((id.indexOf(".summary") !== -1) && AlexaIsPresent) {
-                let command = state.val;
-
-                if (command == '') { //Check if the event is triggered only when the state actually changes and is not empty
-                    return;
+            if (part.toLowerCase().includes('wischen') || part.toLowerCase().includes('mopping')) {
+              moppingLevels[UserLang].forEach(level => {
+                if (part.toLowerCase().includes(level)) {
+                  roomActions[roomNumber].mopping = level;
+                  isCleaningCommand = true;
                 }
-				currentTime = Date.now();
-                timeDiff = currentTime - lastCommandTime;  // Calculate the time difference
-                if (timeDiff < 3000) { // If the command is received within 3 seconds
-                    this.log.info("Command ignored: Repeated command within 3 seconds");
-                    return;
+              });
+
+              for (const [synonym, mappedLevel] of Object.entries(moppingSynonyms[UserLang])) {
+                if (part.toLowerCase().includes(synonym)) {
+                  roomActions[roomNumber].mopping = mappedLevel;
+                  isCleaningCommand = true;
+                  break;
                 }
+              }
+            }
 
-				lastCommandTime = currentTime; // Store the new timestamp => Proceed with command processing if the time difference is >= 3 seconds
-                let processedCommands = await this.processCommand(command, UserLang);
+            const repetitionMatch = part.match(/\b(one|two|three|ein|zwei|drei)\s*(times|mal)\b/i);
+            if (repetitionMatch) {
+              roomActions[roomNumber].repetitions = Alexanumbers[repetitionMatch[1]] || 1;
+            }
 
-                let selectedRooms = [];
-                let roomActions = {}; // Stores actions per room
-                let readableLog = [];
-                let cleaningMode = 1; // Default mode set to 1 (Saugen und Wischen / Vacuum and Mop)
-                let cleanGeniusValue = 1; // Default value for CleanGenius
-                let isCleaningCommand = false;
-                let roomFound = false;
-                let ambiguousCommand = false; // Flag to track ambiguous commands
-                let roomsWithCommands = {}; // Object to track rooms with commands
-                let currentRoom = null;
-                let singleRoomName = "";
-				let missingCleaningModeRooms = [];
+            // Check if any cleaning mode keywords are mentioned
+            if (part.toLowerCase().includes('saugen') || part.toLowerCase().includes('staubsaugen') || part.toLowerCase().includes('sweeping')) {
+              cleaningMode = 5122;
+              cleanGeniusValue = 0;
+              isCleaningCommand = true;
+            }
+            if (part.toLowerCase().includes('wischen') || part.toLowerCase().includes('mopping')) {
+              cleaningMode = 5121;
+              cleanGeniusValue = 0;
+              isCleaningCommand = true;
+            }
 
+            if ((part.toLowerCase().includes('saugen') || part.toLowerCase().includes('staubsaugen') || part.toLowerCase().includes('sweeping')) &&
+                            (part.toLowerCase().includes('wischen') || part.toLowerCase().includes('mopping'))) {
+              cleaningMode = 5120;
+              cleanGeniusValue = 0;
+              isCleaningCommand = true;
+            }
+            if (part.toLowerCase().includes('wischen nach saugen') || part.toLowerCase().includes('mopping after sweeping')) {
+              cleaningMode = 5123;
+              cleanGeniusValue = 0;
+              isCleaningCommand = true;
+            }
 
-                // Split the command into parts based on 'and', 'und', or commas
-                let commandParts = processedCommands.split(/and|und|,/); //command.split(/\b(?:and|und|,)\b/i).map(p => p.trim());
+            roomActions[roomNumber].cleaningModes = cleaningMode;
+            roomActions[roomNumber].cleanGenius = cleanGeniusValue;
+            roomsWithCommands[roomNumber] = roomActions[roomNumber].cleaningModes; // Store cleaning modes for the room
 
-				// Check if the command includes any cancel-related keywords
-				if (isMonitorCleaningState) {
-					// Check if the command contains any cancel-related keywords
-					let cancelCommandGiven = AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword));
-					if (cancelCommandGiven) {
-						isAbortCommandReceived = true; // Set abort flag
-						this.log.info(AlexaInfo[UserLang][3]); // Abort command received. Stopping the loop and halting the process.
-                        await this.setStateAsync(`${DH_Did}.control.Stop`, true); // Stop the robot
-                        await this.setStateAsync(`${DH_Did}.control.Charge`, true); // Send the robot to charging station
-						this.speakToAlexa(AlexaInfo[UserLang][3]); // Notify Alexa that cleaning was aborted
-					}
-				}
+            const roomSentence = `${roomActions[roomNumber].name} ${roomActions[roomNumber].suction ? roomActions[roomNumber].suction + AlexaInfo[UserLang][6] : ''}
+						${roomActions[roomNumber].mopping ? roomActions[roomNumber].mopping + AlexaInfo[UserLang][7] : ''} ${roomActions[roomNumber].repetitions} ${AlexaInfo[UserLang][10]}`;
+            roomActions[roomNumber].AlexaSpeakSentence = roomSentence;
+          }
+        }
 
-                // Iterate through command parts asynchronously
-                for (const part of commandParts) {
-                    let roomNumber = null;
-                    let foundInThisPart = false;
+        // If no room was found, exit early
+        if ((!roomFound) || (!isCleaningCommand)) {
+          this.log.info('No rooms detected, no cleaning process started.');
+          return;
+        }
+        //Reset alexa2.0.History.summary
+        await this.setForeignStateAsync(id, '');
 
-                    // Check if each part has a room name
-                    for (const Alexaroom of Alexarooms) {
-                        if (part.toLowerCase().includes(Alexaroom.RM.toLowerCase())) {
-                            roomNumber = Alexaroom.RN;
-                            currentRoom = Alexaroom.RN; // Found room
-                            singleRoomName = Alexaroom.RM;
-                            selectedRooms.push(roomNumber);
-                            roomActions[roomNumber] = {
-                                name: Alexaroom.RM,
-                                suction: null,
-                                mopping: null,
-                                repetitions: 1,
-                                cleaningModes: 1,
-								cleanGenius: 0,
-								customCommand: "",
-								AlexaSpeakSentence: ""
-                            };
+        const LastAlexa = await this.getForeignStateAsync('alexa2.0.History.serialNumber');
+        let LastAlexaID = '';
+        if (LastAlexa) {
+          LastAlexaID = LastAlexa.val;
+        }
 
-                            foundInThisPart = true;
-                            break; // Exit once the room is found
-                        }
-                    }
+        // Check for missing suction or mopping levels based on the selected cleaning mode
+        for (const room of selectedRooms) {
+          if (roomActions[room] && roomActions[room].cleaningModes) {
+            const mode = roomActions[room].cleaningModes;
+            const missingAttributes = [];
 
-                    if (foundInThisPart) roomFound = true; //Only set it if this part has actually found something
-                    if (!foundInThisPart) continue; //If no room is found in this part, move on to the next part
+            // If the cleaning mode requires mopping but the mopping level is missing
+            if ((mode === 5121 || mode === 5123 || mode === 5120) && !roomActions[room].mopping) {
+              missingAttributes.push(AlexamissingMessages[UserLang].mopping);
+            }
 
-                    if (!roomNumber && currentRoom) {
-                        roomNumber = currentRoom;
-                    }
+            // If the cleaning mode requires suction but the suction level is missing
+            if ((mode === 5122 || mode === 5123 || mode === 5120) && !roomActions[room].suction) {
+              missingAttributes.push(AlexamissingMessages[UserLang].suction);
+            }
 
-                    if (currentRoom) {
+            // If any required attributes are missing, mark the command as ambiguous
+            if (missingAttributes.length > 0) {
+              ambiguousCommand = true;
+              missingCleaningModeRooms.push({
+                name: roomActions[room].name,
+                missing: missingAttributes.join(AlexamissingMessages[UserLang].and) // "Suction Level and Mopping Level"
+              });
+            }
+          }
+        }
 
-						if (part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) {
-                            suctionLevels[UserLang].forEach(level => {
-                                if (part.toLowerCase().includes(level)) {
-                                    roomActions[roomNumber].suction = level;
-                                    isCleaningCommand = true;
-                                }
-                            });
-                            for (const [synonym, mappedLevel] of Object.entries(suctionSynonyms[UserLang])) {
-                                if (part.toLowerCase().includes(synonym)) {
-                                    roomActions[roomNumber].suction = mappedLevel;
-                                    isCleaningCommand = true;
-                                    break;
-                                }
-                            }
-                        }
+        // If ambiguity is detected, ask for clarification
+        if (ambiguousCommand) {
+          if (LastAlexaID) {
+            if (missingCleaningModeRooms.length === 1) {
+              const {
+                name,
+                missing
+              } = missingCleaningModeRooms[0];
+              const clarificationMessage = AlexaInfo[UserLang][25](name, missing);
+              this.log.info('Speak: ' + clarificationMessage);
+              await this.speakToAlexa(clarificationMessage, LastAlexaID);
+            } else {
+              const roomMessages = missingCleaningModeRooms.map(room => `${room.name}: ${room.missing}`).join('; ');
+              const clarificationMessage = AlexaInfo[UserLang][26](roomMessages);
+              this.log.info('Speak: ' + clarificationMessage);
+              await this.speakToAlexa(clarificationMessage, LastAlexaID);
+            }
+          }
+          return; // Exit early if ambiguity is found
+        }
 
-                        if (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping")) {
-                            moppingLevels[UserLang].forEach(level => {
-                                if (part.toLowerCase().includes(level)) {
-                                    roomActions[roomNumber].mopping = level;
-                                    isCleaningCommand = true;
-                                }
-                            });
+        // If no mode was explicitly set, keep it 1 (Saugen und Wischen / Vacuum and Mop)
+        if (cleaningMode === 1 && !commandParts.some(part => part.toLowerCase().includes('saugen') || part.toLowerCase().includes('wischen') || part.toLowerCase().includes('sweeping') || part.toLowerCase().includes('mopping'))) {
+          cleanGeniusValue = 1; // If no specific cleaning mode is mentioned, CleanGenius should be true
+        }
 
-                            for (const [synonym, mappedLevel] of Object.entries(moppingSynonyms[UserLang])) {
-                                if (part.toLowerCase().includes(synonym)) {
-                                    roomActions[roomNumber].mopping = mappedLevel;
-                                    isCleaningCommand = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        const repetitionMatch = part.match(/\b(one|two|three|ein|zwei|drei)\s*(times|mal)\b/i);
-                        if (repetitionMatch) {
-                            roomActions[roomNumber].repetitions = Alexanumbers[repetitionMatch[1]] || 1;
-                        }
-
-                        // Check if any cleaning mode keywords are mentioned
-                        if (part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) {
-                            cleaningMode = 5122;
-                            cleanGeniusValue = 0;
-                            isCleaningCommand = true;
-                        }
-                        if (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping")) {
-                            cleaningMode = 5121;
-                            cleanGeniusValue = 0;
-                            isCleaningCommand = true;
-                        }
-
-                        if ((part.toLowerCase().includes("saugen") || part.toLowerCase().includes("staubsaugen") || part.toLowerCase().includes("sweeping")) &&
-                            (part.toLowerCase().includes("wischen") || part.toLowerCase().includes("mopping"))) {
-                            cleaningMode = 5120;
-                            cleanGeniusValue = 0;
-                            isCleaningCommand = true;
-                        }
-                        if (part.toLowerCase().includes("wischen nach saugen") || part.toLowerCase().includes("mopping after sweeping")) {
-                            cleaningMode = 5123;
-                            cleanGeniusValue = 0;
-                            isCleaningCommand = true;
-                        }
-
-						roomActions[roomNumber].cleaningModes = cleaningMode;
-						roomActions[roomNumber].cleanGenius = cleanGeniusValue;
-                        roomsWithCommands[roomNumber] = roomActions[roomNumber].cleaningModes; // Store cleaning modes for the room
-
-						let roomSentence = `${roomActions[roomNumber].name} ${roomActions[roomNumber].suction ? roomActions[roomNumber].suction + AlexaInfo[UserLang][6] : ""}
-						${roomActions[roomNumber].mopping ? roomActions[roomNumber].mopping + AlexaInfo[UserLang][7] : ""} ${roomActions[roomNumber].repetitions} ${AlexaInfo[UserLang][10]}`;
-						roomActions[roomNumber].AlexaSpeakSentence = roomSentence;
-                    }
-                }
-
-                // If no room was found, exit early
-                if ((!roomFound) || (!isCleaningCommand)) {
-                    this.log.info("No rooms detected, no cleaning process started.");
-                    return;
-                }
-				//Reset alexa2.0.History.summary
-				await this.setForeignStateAsync(id, "");
-
-                let LastAlexa = await this.getForeignStateAsync("alexa2.0.History.serialNumber");
-                let LastAlexaID = "";
-                if (LastAlexa) {
-                    LastAlexaID = LastAlexa.val;
-                }
-
-				// Check for missing suction or mopping levels based on the selected cleaning mode
-                for (const room of selectedRooms) {
-                    if (roomActions[room] && roomActions[room].cleaningModes) {
-                        let mode = roomActions[room].cleaningModes;
-                        let missingAttributes = [];
-
-                        // If the cleaning mode requires mopping but the mopping level is missing
-                        if ((mode === 5121 || mode === 5123 || mode === 5120) && !roomActions[room].mopping) {
-                            missingAttributes.push(AlexamissingMessages[UserLang].mopping);
-                        }
-
-                        // If the cleaning mode requires suction but the suction level is missing
-                        if ((mode === 5122 || mode === 5123 || mode === 5120) && !roomActions[room].suction) {
-                            missingAttributes.push(AlexamissingMessages[UserLang].suction);
-                        }
-
-                        // If any required attributes are missing, mark the command as ambiguous
-                        if (missingAttributes.length > 0) {
-                            ambiguousCommand = true;
-                            missingCleaningModeRooms.push({
-                                name: roomActions[room].name,
-                                missing: missingAttributes.join(AlexamissingMessages[UserLang].and) // "Suction Level and Mopping Level"
-                            });
-                        }
-                    }
-                }
-
-                // If ambiguity is detected, ask for clarification
-                if (ambiguousCommand) {
-                    if (LastAlexaID) {
-                        if (missingCleaningModeRooms.length === 1) {
-                            let {
-                                name,
-                                missing
-                            } = missingCleaningModeRooms[0];
-                            let clarificationMessage = AlexaInfo[UserLang][25](name, missing);
-                            this.log.info("Speak: " + clarificationMessage);
-                            await this.speakToAlexa(clarificationMessage, LastAlexaID);
-                        } else {
-                            let roomMessages = missingCleaningModeRooms.map(room => `${room.name}: ${room.missing}`).join("; ");
-                            let clarificationMessage = AlexaInfo[UserLang][26](roomMessages);
-                            this.log.info("Speak: " + clarificationMessage);
-                            await this.speakToAlexa(clarificationMessage, LastAlexaID);
-                        }
-                    }
-                    return; // Exit early if ambiguity is found
-                }
-
-                // If no mode was explicitly set, keep it 1 (Saugen und Wischen / Vacuum and Mop)
-                if (cleaningMode === 1 && !commandParts.some(part => part.toLowerCase().includes("saugen") || part.toLowerCase().includes("wischen") || part.toLowerCase().includes("sweeping") || part.toLowerCase().includes("mopping"))) {
-                    cleanGeniusValue = 1; // If no specific cleaning mode is mentioned, CleanGenius should be true
-                }
-
-                this.log.info(`Get command: ${command} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)} |
+        this.log.info(`Get command: ${command} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)} |
                 roomFound: ${roomFound}, isCleaningCommand: ${isCleaningCommand} | cleaning mode: ${JSON.stringify(roomsWithCommands)} |
-                Cleaning mode set to: ${cleaningMode} (${AlexacleanModes[UserLang][cleaningMode]}) | CleanGenius set to: ${cleanGeniusValue ? "On" : "Off"}
+                Cleaning mode set to: ${cleaningMode} (${AlexacleanModes[UserLang][cleaningMode]}) | CleanGenius set to: ${cleanGeniusValue ? 'On' : 'Off'}
                 `);
 
-                // Ensure valid suction and mopping values are set
-                selectedRooms.forEach(roomNumber => {
-                    const roomAction = roomActions[roomNumber];
-                    if (!roomAction.suction) roomAction.suction = suctionLevels[UserLang][0]; // Set to minimum suction level
-                    if (!roomAction.mopping) roomAction.mopping = moppingLevels[UserLang][0]; // Set to minimum mopping level
-                });
+        // Ensure valid suction and mopping values are set
+        selectedRooms.forEach(roomNumber => {
+          const roomAction = roomActions[roomNumber];
+          if (!roomAction.suction) roomAction.suction = suctionLevels[UserLang][0]; // Set to minimum suction level
+          if (!roomAction.mopping) roomAction.mopping = moppingLevels[UserLang][0]; // Set to minimum mopping level
+        });
 
-                let selectsArray = [];
-                let multiRoomId = 1;
+        const selectsArray = [];
+        let multiRoomId = 1;
 
-                // Prepared StartClean data structure
-                let startClean = [{
-                        "piid": 1,
-                        "value": 18
-                    },
-                    {
-                        "piid": 10,
-                        "value": ""
-                    } // Value will be set later
-                ];
+        // Prepared StartClean data structure
+        const startClean = [{
+          'piid': 1,
+          'value': 18
+        },
+        {
+          'piid': 10,
+          'value': ''
+        } // Value will be set later
+        ];
 
-                // Prepare actions for each room
-                for (const roomNumber of selectedRooms) {
-                    const roomAction = roomActions[roomNumber];
-                    const repetitions = roomAction.repetitions || 1;
+        // Prepare actions for each room
+        for (const roomNumber of selectedRooms) {
+          const roomAction = roomActions[roomNumber];
+          const repetitions = roomAction.repetitions || 1;
 
-                    // Ensure valid suction and mopping values are selected
-                    const suctionValue = suctionLevels[UserLang].indexOf(roomAction.suction) >= 0 ? suctionLevels[UserLang].indexOf(roomAction.suction) : 0;
-                    const moppingValue = moppingLevels[UserLang].indexOf(roomAction.mopping) >= 0 ? moppingLevels[UserLang].indexOf(roomAction.mopping) : 0;
+          // Ensure valid suction and mopping values are selected
+          const suctionValue = suctionLevels[UserLang].indexOf(roomAction.suction) >= 0 ? suctionLevels[UserLang].indexOf(roomAction.suction) : 0;
+          const moppingValue = moppingLevels[UserLang].indexOf(roomAction.mopping) >= 0 ? moppingLevels[UserLang].indexOf(roomAction.mopping) : 0;
 
-                    // Prepare action array for each room
-                    selectsArray.push([roomNumber, repetitions, suctionValue, moppingValue, multiRoomId]);
+          // Prepare action array for each room
+          selectsArray.push([roomNumber, repetitions, suctionValue, moppingValue, multiRoomId]);
 
-                    let logEntry = `${roomAction.name} ${roomAction.suction ? roomAction.suction +  AlexaInfo[UserLang][6] : ""} ${roomAction.mopping ? roomAction.mopping +  AlexaInfo[UserLang][7] : ""} ${repetitions}  ${AlexaInfo[UserLang][10]}`;
-                    readableLog.push(logEntry.trim());
+          const logEntry = `${roomAction.name} ${roomAction.suction ? roomAction.suction +  AlexaInfo[UserLang][6] : ''} ${roomAction.mopping ? roomAction.mopping +  AlexaInfo[UserLang][7] : ''} ${repetitions}  ${AlexaInfo[UserLang][10]}`;
+          readableLog.push(logEntry.trim());
 
-                    multiRoomId++;
-					roomAction.customCommand = [{"piid": 1, "value": 18}, {"piid": 10,"value": JSON.stringify({selects: [[roomNumber, repetitions, suctionValue, moppingValue, 1]]})}];
-                    //this.log.info("============Set Custom Command: " + roomAction.customCommand);
-				}
+          multiRoomId++;
+          roomAction.customCommand = [{'piid': 1, 'value': 18}, {'piid': 10,'value': JSON.stringify({selects: [[roomNumber, repetitions, suctionValue, moppingValue, 1]]})}];
+          //this.log.info("============Set Custom Command: " + roomAction.customCommand);
+        }
 
-                // Final action for all rooms
-                startClean[1].value = JSON.stringify({selects: selectsArray});
-
-
-                // Check if cleaning is active or paused and if we should interrupt
-                let cleaningCompleted = await this.getStateAsync(DH_Did + ".state.CleaningCompleted");
-                let cleaningPaused = await this.getStateAsync(DH_Did + ".state.CleaningPaused");
-
-                let isCleaningActive = (cleaningCompleted.val > 0 && cleaningCompleted.val !== null) || cleaningPaused.val === 1;
-                let cancelCommandGiven = AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword));
-
-                if (isCleaningActive) {
-					if (cancelCommandGiven) {
-						await this.speakToAlexa(AlexaInfo[UserLang][2] + " " + readableLog, LastAlexaID);
-						// Stop the current cleaning
-						await this.setStateAsync(DH_Did + ".control.Stop", true);
-
-						await this.wait(waitingvalue);
+        // Final action for all rooms
+        startClean[1].value = JSON.stringify({selects: selectsArray});
 
 
-						// Prevent starting a new cleaning if `isMonitorCleaningState` is true
-						if (!isMonitorCleaningState) {
+        // Check if cleaning is active or paused and if we should interrupt
+        const cleaningCompleted = await this.getStateAsync(DH_Did + '.state.CleaningCompleted');
+        const cleaningPaused = await this.getStateAsync(DH_Did + '.state.CleaningPaused');
+
+        const isCleaningActive = (cleaningCompleted.val > 0 && cleaningCompleted.val !== null) || cleaningPaused.val === 1;
+        const cancelCommandGiven = AlexacancelKeywords[UserLang]?.some(keyword => processedCommands.toLowerCase().includes(keyword));
+
+        if (isCleaningActive) {
+          if (cancelCommandGiven) {
+            await this.speakToAlexa(AlexaInfo[UserLang][2] + ' ' + readableLog, LastAlexaID);
+            // Stop the current cleaning
+            await this.setStateAsync(DH_Did + '.control.Stop', true);
+
+            await this.wait(waitingvalue);
+
+
+            // Prevent starting a new cleaning if `isMonitorCleaningState` is true
+            if (!isMonitorCleaningState) {
 						    this.startCleaning(DH_Did, selectedRooms, roomActions, LastAlexaID);
-							this.log.info("Cleaning stopped and a new cleaning process started.");
-						} else {
-                            this.log.info(AlexaInfo[UserLang][2]); //Cannot start a new cleaning process as a cleaning process is being monitored.
-							await this.speakToAlexa(AlexaInfo[UserLang][27], LastAlexaID);
-                        }
-					} else {
-						await this.speakToAlexa(AlexaInfo[UserLang][2], LastAlexaID);
-						this.log.info("Cleaning is active, waiting for user to cancel the cleaning.");
-					}
-				} else {
-					// Prevent starting a new cleaning if `isMonitorCleaningState` is true
-					if (!isMonitorCleaningState) {
+              this.log.info('Cleaning stopped and a new cleaning process started.');
+            } else {
+              this.log.info(AlexaInfo[UserLang][2]); //Cannot start a new cleaning process as a cleaning process is being monitored.
+              await this.speakToAlexa(AlexaInfo[UserLang][27], LastAlexaID);
+            }
+          } else {
+            await this.speakToAlexa(AlexaInfo[UserLang][2], LastAlexaID);
+            this.log.info('Cleaning is active, waiting for user to cancel the cleaning.');
+          }
+        } else {
+          // Prevent starting a new cleaning if `isMonitorCleaningState` is true
+          if (!isMonitorCleaningState) {
 					    await this.speakToAlexa(readableLog, LastAlexaID);
 					    this.startCleaning(DH_Did, selectedRooms, roomActions, LastAlexaID);
-					    this.log.info("Started a new cleaning process without checking for cancel command.");
-					} else {
-                        this.log.info(AlexaInfo[UserLang][2]); //Cannot start a new cleaning process as a cleaning process is being monitored.
-						await this.speakToAlexa(AlexaInfo[UserLang][27], LastAlexaID);
-                    }
-				}
-
-
-            }
-
+					    this.log.info('Started a new cleaning process without checking for cancel command.');
+          } else {
+            this.log.info(AlexaInfo[UserLang][2]); //Cannot start a new cleaning process as a cleaning process is being monitored.
+            await this.speakToAlexa(AlexaInfo[UserLang][27], LastAlexaID);
+          }
         }
+
+
+      }
+
     }
+  }
 }
 
 if (require.main !== module) {
-    // Export the constructor in compact mode
-    /**
+  // Export the constructor in compact mode
+  /**
      * @param {Partial<utils.AdapterOptions>} [options={}]
      */
-    module.exports = (options) => new Dreamehome(options);
+  module.exports = (options) => new Dreamehome(options);
 } else {
-    // otherwise start the instance directly
-    new Dreamehome();
+  // otherwise start the instance directly
+  new Dreamehome();
 }
