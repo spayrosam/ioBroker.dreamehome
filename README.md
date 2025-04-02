@@ -6,8 +6,9 @@
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 ![Number of Installations](https://iobroker.live/badges/dreamehome-installed.svg)
 
+[![NPM](https://nodei.co/npm/iobroker.dreamehome.png?downloads=true)](https://nodei.co/npm/iobroker.dreamehome/)
 
-**Tests:** ![Test and Release](https://github.com/Spayrosam/ioBroker.dreamehome/workflows/Test%20and%20Release/badge.svg)
+**Tests:** ![Test and Release](https://github.com/spayrosam/ioBroker.dreamehome/workflows/Test%20and%20Release/badge.svg)
 
 ## dreamehome adapter for ioBroker
 
