@@ -3,7 +3,10 @@
     "name": "dreamehome",
     "version": "0.1.0",
     "news": {
-      "0.0.5": {
+      "0.1.0": {
+        "en": "New Features"
+      },
+      "0.0.1": {
         "en": "initial release",
         "de": "Erstveröffentlichung",
         "ru": "Начальная версия",
@@ -54,7 +57,7 @@
     "main": "main.js",
     "icon": "dreamehome.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/Spayrosam/ioBroker.dreamehome/main/admin/dreamehome.png",
+    "extIcon": "https://raw.githubusercontent.com/spayrosam/ioBroker.dreamehome/main/admin/dreamehome.png",
     "readme": "https://github.com/Spayrosam/ioBroker.dreamehome/blob/main/README.md",
     "loglevel": "info",
     "tier": 3,
@@ -68,13 +71,13 @@
     },
     "dependencies": [
       {
-        "js-controller": ">=5.0.0"
+        "js-controller": ">=5.0.19"
       }
     ],
      "installedFrom": "https://github.com/spayrosam/ioBroker.dreamehome",
     "globalDependencies": [
       {
-        "admin": ">=5.1.13"
+        "admin": ">=6.17.14"
       }
     ]
   },
