@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Adapter for dreame home devices",
   "author": "Spayrosam <spayrosam@gmail.com>",
-  "homepage": "https://github.com/Spayrosam/ioBroker.dreamehome",
+  "homepage": "https://github.com/spayrosam/ioBroker.dreamehome",
   "license": "MIT",
   "keywords": [
     "ioBroker",
@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Spayrosam/ioBroker.dreamehome.git"
+    "url": "git+https://github.com/spayrosam/ioBroker.dreamehome.git"
   },
   "engines": {
     "node": ">= 18"
