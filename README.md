@@ -20,6 +20,9 @@ Adapter for dreame home devices
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 0.1.1 (02.04.2025) 
+- The code has been mostly refactored
+  
 ### 0.1.0 (30.03.2025) 
 
 New Features:
