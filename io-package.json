@@ -4,7 +4,17 @@
     "version": "0.1.0",
     "news": {
       "0.1.0": {
-        "en": "New Features"
+        "en": "New Features",
+        "de": "Neue Features",
+        "ru": "Новые особенности",
+        "pt": "Novos recursos",
+        "nl": "Nieuwe functies",
+        "fr": "Nouvelles fonctionnalités",
+        "it": "Nuove funzionalità",
+        "es": "Nuevas características",
+        "pl": "Nowe funkcje",
+        "uk": "Нові можливості",
+        "zh-cn": "新特性"
       },
       "0.0.1": {
         "en": "initial release",
@@ -77,7 +87,7 @@
      "installedFrom": "https://github.com/spayrosam/ioBroker.dreamehome",
     "globalDependencies": [
       {
-        "admin": ">=6.17.14"
+        "admin": ">=7.4.10"
       }
     ]
   },
