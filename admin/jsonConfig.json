@@ -17,7 +17,8 @@
         "zh-cn": "åº”ç”¨ç”µå­é‚®ä»¶"
       },
       "newLine": true,
-      "sm": 3
+      "sm": 3,
+      "size": "md"
     },
     "password": {
       "type": "password",
@@ -25,6 +26,7 @@
       "repeat": false,
       "visible": true,
       "sm": 3,
+      "size": "md",
       "label": {
         "en": "App Password",
         "de": "App-Passwort",
@@ -43,6 +45,7 @@
       "type": "checkbox",
       "newLine": true,
       "sm": 3,
+      "size": "md",
       "label": {
         "en": "Get Map",
         "de": "Karte abrufen",
@@ -63,6 +66,7 @@
       "newLine": true,
       "min": 1,
       "sm": 2,
+      "size": "md",
       "label": {
         "en": "Update interval (in minutes)",
         "de": "Aktualisierungsintervall (in Minuten)",
