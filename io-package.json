@@ -3,31 +3,18 @@
     "name": "dreamehome",
     "version": "0.1.1",
     "news": {
-      "0.1.0": {
-        "en": "New Features",
-        "de": "Neue Features",
-        "ru": "Новые особенности",
-        "pt": "Novos recursos",
-        "nl": "Nieuwe functies",
-        "fr": "Nouvelles fonctionnalités",
-        "it": "Nuove funzionalità",
-        "es": "Nuevas características",
-        "pl": "Nowe funkcje",
-        "uk": "Нові можливості",
-        "zh-cn": "新特性"
-      },
-      "0.0.1": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
+      "0.1.1": {
+        "en": "The code has been mostly refactored",
+        "de": "Der Code wurde meist refactored",
+        "ru": "Код в основном рефакторирован",
+        "pt": "O código foi principalmente refactored",
+        "nl": "De code is grotendeels gerefactoreerd",
+        "fr": "Le code a été pour la plupart refacturé",
+        "it": "Il codice è stato per lo più rifatto",
+        "es": "El código ha sido refactorizado en su mayoría",
+        "pl": "Kod został w większości zmieniony",
+        "uk": "Код переважно рефакторований",
+        "zh-cn": "密码大多是重构的"
       }
     },
     "title": "dreamehome",
@@ -84,7 +71,6 @@
         "js-controller": ">=5.0.19"
       }
     ],
-     "installedFrom": "https://github.com/spayrosam/ioBroker.dreamehome",
     "globalDependencies": [
       {
         "admin": ">=7.4.10"
