@@ -20,6 +20,96 @@ Adapter for dreame home devices
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 0.1.2 (06.04.2025) 
+
+New Features & Enhancements:
+- Component Control & Status Reporting:
+  - Added support for controlling and checking the status of the following components:
+    - Main Brush, Side Brush, Filter, Mop Pad, Silver Ion, Detergent, Pure Water Tank, Dirty Water Tank
+  - Ability to reset individual components or all components.
+  - Status reporting for components like Time Left (e.g., Mop Pad Time Left, Main Brush Time Left).
+
+- Flexible Command Recognition:
+  - Commands like emptying (`empty`, `auto empty`, `clean bin`, etc.) and mop cleaning (`wash`, `auto wash`, `clean mop`, etc.) are now recognized and trigger the respective actions.
+  - Support for resetting components (individual or all) with commands like reset main brush, reset all, etc.
+  - Component-specific status requests via flexible synonyms like "Check Main Brush Status" or "Check Mop Pad".
+
+Improved Command Flexibility:
+  - Dynamic Command Parsing: The command parser now recognizes various synonyms for robot-related commands (`robot`, `vacuum`, `dreame`, etc.), emptying (`empty`, `auto empty`, etc.), washing (`wash`, `mop cleaning`, etc.), and resetting components (`reset main brush`, `reset all`, etc.).
+  - Language-Specific Synonyms: Commands are dynamically matched based on language (EN/DE), ensuring accurate recognition regardless of phrasing.
+
+---
+🇺🇸 Example Scenarios (Voice Commands)
+To make your voice command work, always say a word like 'robot', 'dreame', 'vacuum', 'vacuum cleaner'
+Scenario 1: General Status Check
+
+   "Alexa, check robot status."
+
+     📌 The system will provide a complete status report of your Dreame robot, including:
+    - Battery level  
+    - Current room (if cleaning)  
+    - Status and remaining life of components like the mop pad, main brush, side brush, filter, water tanks, detergent, silver ion unit, and sensors  
+
+Scenario 2: Clean the Mop
+
+   "Alexa, clean the mop."
+
+     📌 The robot will return to the station and start the mop cleaning process. This ensures that the mop pad is rinsed and ready for further cleaning.
+
+Scenario 3: Reset a Single Component
+
+   "Alexa, reset filter."
+
+     📌 The system detects that you're referring to the filter and resets its usage timer. This is useful after you've cleaned or replaced it.
+
+Scenario 4: Empty the Dustbin
+
+   "Alexa, empty the dustbin."
+
+     📌 The robot will go to the station and start the auto-empty process, removing dust and debris from the bin automatically.
+
+Scenario 5: Reset All Components
+
+   "Alexa, reset all components."
+
+     📌 This command will reset the usage time of all components (brushes, filter, mop pad, detergent, silver ion, sensors, etc.) at once נperfect after a full service or replacement.
+
+---
+🇩🇪 Beispiel-Szenarien (Sprachbefehle)
+Damit dein Sprachbefehl funktioniert, sag immer ein Wort wie 'roboter', 'dreame', 'staubsauger', 'saugroboter'
+Szenario 1: Allgemeiner Statusbericht
+
+   „Alexa, Roboterstatus prüfen.“
+
+     📌 Das System gibt einen vollständigen Statusbericht deines Dreame Saugroboters aus, inklusive:
+    - Batteriestand  
+    - Aktueller Raum (falls Reinigung läuft)  
+    - Zustand und verbleibende Lebensdauer aller Komponenten wie Mopp-Pad, Hauptbürste, Seitenbürste, Filter, Wassertanks, Reinigungsmittel, Silberioneneinheit und Sensoren  
+
+Szenario 2: Mopp reinigen
+
+   „Alexa, Roboter Mopp reinigen.“
+
+     📌 Der Roboter kehrt zur Station zurück und startet die Mopp-Reinigung. Das Mopp-Pad wird dabei gespült und für die nächste Reinigung vorbereitet.
+
+Szenario 3: Einzelne Komponente zurücksetzen
+
+   „Alexa, Roboter Filter zurücksetzen.“
+
+     📌 Das System erkennt, dass du den Filter meinst, und setzt die Nutzungsanzeige zurück – ideal nach einer Reinigung oder einem Austausch.
+
+Szenario 4: Staubbehälter entleeren
+
+   „Alexa, Roboter Staubbehälter leeren.“
+
+     📌 Der Roboter fährt zur Station und startet den Auto-Entleerungsvorgang. Der Staubbehälter wird automatisch geleert.
+
+Szenario 5: Alle Komponenten zurücksetzen
+
+   „Alexa, Roboter alle komponenten zurücksetzen.“
+
+     📌 Mit diesem Befehl setzt das System die Nutzungszeit aller Komponenten (Bürsten, Filter, Mopp-Pad, Reinigungsmittel, Silberionen, Sensoren usw.) gleichzeitig zurück – ideal nach einer Wartung oder einem Kompletttausch.
+
 ### 0.1.1 (02.04.2025) 
 - The code has been mostly refactored
   
