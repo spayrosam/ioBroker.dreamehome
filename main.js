@@ -244,9 +244,9 @@ const DreameVacuumErrorCode = {
     0: 'Kein Fehler',
     1: 'Tropfen',
     2: 'Klippe',
-    3: 'Sto�stange',
+    3: 'Stoßstange',
     4: 'Geste',
-    5: 'Sto�stange wiederholen',
+    5: 'Stoßstange wiederholen',
     6: 'Fallwiederholung',
     7: 'Optischer Fluss',
     8: 'Box',
@@ -290,7 +290,7 @@ const DreameVacuumErrorCode = {
     46: 'Kamera im Leerlauf',
     47: 'Blockiert',
     48: 'Lds-Fehler',
-    49: 'Lds-Sto�stange',
+    49: 'Lds-Stoßstange',
     50: 'Wasserpumpe 2',
     51: 'Filter blockiert',
     54: 'Rand',
@@ -1114,6 +1114,9 @@ let currentTime = Date.now();
 let timeDiff = currentTime - lastCommandTime;  // Calculate the time difference
 let isAbortCommandReceived = false; // Flag to track if the abort command has been received
 let isMonitorCleaningState = false; // Monitor the cleaning status
+let isComponentsSayState = false; // Monitor the components status
+let isComponentsResetAllState = false; // Monitor whether all reset components are active
+let isComponentsResetOneState = false; // Monitor whether a reset component is active
 const Alexarooms = [];
 const Alexanumbers = {
   'one': 1,
@@ -1167,12 +1170,12 @@ const suctionSynonyms = {
     'sanft': 'leicht',
     'eco': 'leicht',
     'schonend': 'leicht',
-    'fl�sterleise': 'leicht',
+    'flüsterleise': 'leicht',
 
     'mittel': 'mittel',
     'normal': 'mittel',
     'standard': 'mittel',
-    'regul�r': 'mittel',
+    'regulär': 'mittel',
     'default': 'mittel',
 
     'stark': 'stark',
@@ -1187,7 +1190,7 @@ const suctionSynonyms = {
     'max': 'maximal',
     'voll': 'maximal',
     'ultra': 'maximal',
-    'h�chste': 'maximal'
+    'höchste': 'maximal'
   }
 };
 
@@ -1232,12 +1235,12 @@ const moppingSynonyms = {
     'mittel': 'halbnass',
     'feucht': 'halbnass',
     'leicht feucht': 'halbnass',
-    'm��ig nass': 'halbnass',
+    'mäßig nass': 'halbnass',
 
     'nass': 'nass',
     'hoch': 'nass',
     'max': 'nass',
-    'durchn�sst': 'nass',
+    'durchnässt': 'nass',
     'sehr nass': 'nass',
     'tiefenreinigung': 'nass',
     'intensiv': 'nass'
@@ -1269,10 +1272,10 @@ const AlexaRoomsName = {
     'Wohnzimmer',
     'Hauptschlafzimmer',
     'Schlafzimmer',
-    'G�stezimmer',
+    'Gästezimmer',
     'Kinderzimmer',
     'Arbeitszimmer',
-    'K�che',
+    'Küche',
     'Esszimmer',
     'Badezimmer',
     'Balkon',
@@ -1281,7 +1284,7 @@ const AlexaRoomsName = {
     'Hauswirtschaftsraum',
     'Abstellraum',
     'Besprechungsraum',
-    'B�ro',
+    'Büro',
     'Fitnessraum',
     'Freizeitraum'
   ]
@@ -1374,9 +1377,9 @@ const AlexaRoomsNameSynonyms = {
     'schlafzimmer': 'Schlafzimmer',
     'schlafraum': 'Schlafzimmer',
 
-    'g�stezimmer': 'G�stezimmer',
-    'besucherzimmer': 'G�stezimmer',
-    'zus�tzliches schlafzimmer': 'G�stezimmer',
+    'gästezimmer': 'Gästezimmer',
+    'besucherzimmer': 'Gästezimmer',
+    'zusätzliches schlafzimmer': 'Gästezimmer',
 
     'kinderzimmer': 'Kinderzimmer',
     'babyzimmer': 'Kinderzimmer',
@@ -1384,12 +1387,12 @@ const AlexaRoomsNameSynonyms = {
     'jugendzimmer': 'Kinderzimmer',
 
     'arbeitszimmer': 'Arbeitszimmer',
-    'b�ro': 'Arbeitszimmer',
+    'büro': 'Arbeitszimmer',
     'studierzimmer': 'Arbeitszimmer',
     'homeoffice': 'Arbeitszimmer',
 
-    'k�che': 'K�che',
-    'kochnische': 'K�che',
+    'küche': 'Küche',
+    'kochnische': 'Küche',
 
     'esszimmer': 'Esszimmer',
     'speisezimmer': 'Esszimmer',
@@ -1424,7 +1427,7 @@ const AlexaRoomsNameSynonyms = {
     'tagungsraum': 'Besprechungsraum',
 
 
-    'arbeitsraum': 'B�ro',
+    'arbeitsraum': 'Büro',
 
     'fitnessraum': 'Fitnessraum',
     'gym': 'Fitnessraum',
@@ -1484,6 +1487,366 @@ const AlexamissingMessages = {
   }
 };
 
+const robotKeywords = {
+  'EN': ['robot', 'dreame', 'vacuum', 'vacuum cleaner'],
+  'DE': ['roboter', 'dreame', 'staubsauger', 'saugroboter']
+};
+
+const emptyActionWords = {
+  'EN': ['empty', 'auto empty', 'clean bin', 'empty bin', 'empty dustbin'],
+  'DE': ['leeren', 'entleeren', 'staubbehälter leeren', 'behälter leeren']
+};
+
+const washActionWords = {
+  'EN': ['wash', 'auto wash', 'clean mop', 'wash mop', 'mop cleaning'],
+  'DE': ['waschen', 'mopp reinigen', 'moppreinigung', 'wischmodul reinigen']
+};
+
+const statusCheckWords = {
+  'EN': ['robot status', 'check robot', 'status robot', 'robot condition', 'check', 'condition'],
+  'DE': ['roboter status', 'status roboter', 'roboter zustand', 'roboter prüfen', 'status', 'status prüfen', 'zustand', 'prüfen']
+};
+
+const resetComponentWords = {
+  'EN': {
+    'MainBrush': ['main brush'],
+    'SideBrush': ['side brush'],
+    'Filter': ['filter'],
+    'SensorDirty': ['sensor'],
+    'MopPad': ['mop pad'],
+    'SilverIon': ['silver ion'],
+    'Detergent': ['detergent'],
+    'PureWaterTank': ['pure water tank', 'clean water'],
+    'DirtyWaterTank': ['dirty water tank']
+  },
+  'DE': {
+    'MainBrush': ['hauptbürste'],
+    'SideBrush': ['seitenbürste'],
+    'Filter': ['filter'],
+    'SensorDirty': ['sensor'],
+    'MopPad': ['wischpad', 'moppad'],
+    'SilverIon': ['silberionen'],
+    'Detergent': ['reinigungsmittel'],
+    'PureWaterTank': ['frischwassertank', 'sauberer wassertank'],
+    'DirtyWaterTank': ['schmutzwassertank']
+  }
+};
+
+const resetAllKeywords = {
+  'EN': ['reset all', 'reset everything', 'reset all components'],
+  'DE': ['alles zurücksetzen', 'alle komponenten zurücksetzen']
+};
+
+const resetOneKeywords = {
+  'EN': ['reset', 'clear'],
+  'DE': ['zurücksetzen', 'löschen']
+};
+
+
+const components = {
+  'MainBrush': {
+    id: 'MainBrush',
+    label: {
+      'EN': 'Main Brush',
+      'DE': 'Hauptbürste',
+    }
+  },
+  'SideBrush': {
+    id: 'SideBrush',
+    label: {
+      'EN': 'Side Brush',
+      'DE': 'Seitenbürste',
+    }
+  },
+  'Filter': {
+    id: 'Filter',
+    label: {
+      'EN': 'Filter',
+      'DE': 'Filter',
+    }
+  },
+  'MopPad': {
+    id: 'MopPad',
+    label: {
+      'EN': 'Mop Pad',
+      'DE': 'Mopp-Pad',
+    }
+  },
+  'SilverIon': {
+    id: 'SilverIon',
+    label: {
+      'EN': 'Silver Ion',
+      'DE': 'Silberionen',
+    }
+  },
+  'Detergent': {
+    id: 'Detergent',
+    label: {
+      'EN': 'Detergent',
+      'DE': 'Reinigungsmittel',
+    }
+  },
+  'PureWaterTank': {
+    id: 'PureWaterTank',
+    label: {
+      'EN': 'Pure Water Tank',
+      'DE': 'Reines Wasser Tank',
+    }
+  },
+  'DirtyWaterTank': {
+    id: 'DirtyWaterTank',
+    label: {
+      'EN': 'Dirty Water Tank',
+      'DE': 'Schmutzwasser Tank',
+    }
+  },
+  'Error': {
+    id: 'Error',
+    label: {
+      'EN': 'Error message',
+      'DE': 'Fehlermeldung',
+    }
+  },
+  'CurrentRoomCleaningName': {
+    id: 'CurrentRoomCleaningName',
+    label: {
+      'EN': 'The vacuum is currently in the',
+      'DE': 'Der Saugroboter befindet sich derzeit im',
+    }
+  },
+  'State': {
+    id: 'State',
+    label: {
+      'EN': 'Vacuum status',
+      'DE': 'Saugroboter-Status',
+    }
+  },
+  'BatteryLevel': {
+    id: 'BatteryLevel',
+    label: {
+      'EN': 'Battery level',
+      'DE': 'Batteriestand',
+    }
+  },
+
+  'SensorLeft': {
+    id: 'SensorLeft',
+    label: {
+      'EN': 'Left Sensor',
+      'DE': 'Linker Sensor',
+    }
+  },
+  'SensorRight': {
+    id: 'SensorRight',
+    label: {
+      'EN': 'Right Sensor',
+      'DE': 'Rechter Sensor',
+    }
+  },
+  'SensorTimeLeft': {
+    id: 'SensorTimeLeft',
+    label: {
+      'EN': 'Sensor Time Left',
+      'DE': 'Sensor verbleibende Zeit',
+    }
+  },
+  'MopPadLeft': {
+    id: 'MopPadLeft',
+    label: {
+      'EN': 'Mop Pad Left',
+      'DE': 'Mopp-Pad verbleibend',
+    }
+  },
+  'MopPadTimeLeft': {
+    id: 'MopPadTimeLeft',
+    label: {
+      'EN': 'Mop Pad Time Left',
+      'DE': 'Mopp-Pad verbleibende Zeit',
+    }
+  },
+  'SilverIonLeft': {
+    id: 'SilverIonLeft',
+    label: {
+      'EN': 'Silver Ion Left',
+      'DE': 'Silberionen verbleibend',
+    }
+  },
+  'SilverIonTimeLeft': {
+    id: 'SilverIonTimeLeft',
+    label: {
+      'EN': 'Silver Ion Time Left',
+      'DE': 'Silberionen verbleibende Zeit',
+    }
+  },
+  'DetergentLeft': {
+    id: 'DetergentLeft',
+    label: {
+      'EN': 'Detergent Left',
+      'DE': 'Reinigungsmittel verbleibend',
+    }
+  },
+  'DetergentTimeLeft': {
+    id: 'DetergentTimeLeft',
+    label: {
+      'EN': 'Detergent Time Left',
+      'DE': 'Reinigungsmittel verbleibende Zeit',
+    }
+  },
+  'FilterLeft': {
+    id: 'FilterLeft',
+    label: {
+      'EN': 'Filter Left',
+      'DE': 'Filter verbleibend',
+    }
+  },
+  'FilterTimeLeft': {
+    id: 'FilterTimeLeft',
+    label: {
+      'EN': 'Filter Time Left',
+      'DE': 'Filter verbleibende Zeit',
+    }
+  },
+  'MainBrushLeft': {
+    id: 'MainBrushLeft',
+    label: {
+      'EN': 'Main Brush Left',
+      'DE': 'Hauptbürste verbleibend',
+    }
+  },
+  'MainBrushTimeLeft': {
+    id: 'MainBrushTimeLeft',
+    label: {
+      'EN': 'Main Brush Time Left',
+      'DE': 'Hauptbürste verbleibende Zeit',
+    }
+  },
+  'SideBrushLeft': {
+    id: 'SideBrushLeft',
+    label: {
+      'EN': 'Side Brush Left',
+      'DE': 'Seitenbürste verbleibend',
+    }
+  },
+  'SideBrushTimeLeft': {
+    id: 'SideBrushTimeLeft',
+    label: {
+      'EN': 'Side Brush Time Left',
+      'DE': 'Seitenbürste verbleibende Zeit',
+    }
+  }
+};
+
+const knownComponentSynonyms = {
+  'EN': {
+    'MainBrush': ['main brush', 'brush', 'mainbristle'],
+    'SideBrush': ['side brush', 'sidebristle'],
+    'Filter': ['filter', 'dust filter'],
+    'MopPad': ['mop', 'mop pad', 'cloth'],
+    'SilverIon': ['silver ion', 'ion', 'silver'],
+    'Detergent': ['detergent', 'cleaning liquid', 'soap', 'cleaner'],
+    'PureWaterTank': ['pure water tank', 'clean water', 'water tank'],
+    'DirtyWaterTank': ['dirty water tank', 'waste water', 'used water'],
+    'BatteryLevel': ['battery', 'battery level', 'charge'],
+    'Error': ['error', 'error message', 'problem'],
+    'State': ['status', 'current state'],
+    'CurrentRoomCleaningName': ['current room', 'room', 'cleaning room'],
+    'SensorLeft': ['left sensor', 'sensor left'],
+    'SensorRight': ['right sensor', 'sensor right'],
+    'SensorTimeLeft': ['sensor time', 'sensor time left'],
+    'MopPadLeft': ['mop left', 'mop remaining'],
+    'MopPadTimeLeft': ['mop time left', 'mop pad time'],
+    'SilverIonLeft': ['silver ion left', 'ion left'],
+    'SilverIonTimeLeft': ['silver ion time left', 'ion time'],
+    'DetergentLeft': ['detergent left', 'soap left'],
+    'DetergentTimeLeft': ['detergent time left', 'soap time'],
+    'FilterLeft': ['filter left', 'dust filter left'],
+    'FilterTimeLeft': ['filter time left'],
+    'MainBrushLeft': ['main brush left', 'brush left'],
+    'MainBrushTimeLeft': ['main brush time left', 'brush time'],
+    'SideBrushLeft': ['side brush left'],
+    'SideBrushTimeLeft': ['side brush time left']
+  },
+  'DE': {
+    'MainBrush': ['hauptbürste', 'bürste', 'hauptbuerste'],
+    'SideBrush': ['seitenbürste', 'seitenbuerste'],
+    'Filter': ['filter', 'staubfilter'],
+    'MopPad': ['mopp', 'mopp-pad', 'wischtuch'],
+    'SilverIon': ['silberionen', 'ionen', 'silber'],
+    'Detergent': ['reinigungsmittel', 'seife', 'reiniger', 'putzmittel'],
+    'PureWaterTank': ['frischwassertank', 'reines wasser', 'wassertank'],
+    'DirtyWaterTank': ['schmutzwassertank', 'dreckwasser', 'gebrauchtes wasser'],
+    'BatteryLevel': ['akku', 'batterie', 'batteriestand'],
+    'Error': ['fehler', 'fehlermeldung', 'problem'],
+    'State': ['zustand', 'aktueller stand'],
+    'CurrentRoomCleaningName': ['raum', 'aktueller raum', 'gereinigter raum'],
+    'SensorLeft': ['linker sensor', 'sensor links'],
+    'SensorRight': ['rechter sensor', 'sensor rechts'],
+    'SensorTimeLeft': ['sensorzeit', 'sensor verbleibende zeit'],
+    'MopPadLeft': ['mopp verbleibend', 'wischtuch übrig'],
+    'MopPadTimeLeft': ['mopp zeit', 'wischtuchzeit'],
+    'SilverIonLeft': ['silberionen verbleibend'],
+    'SilverIonTimeLeft': ['silberionen zeit'],
+    'DetergentLeft': ['reinigungsmittel übrig', 'seife verbleibend'],
+    'DetergentTimeLeft': ['reinigungsmittel zeit'],
+    'FilterLeft': ['filter verbleibend', 'staubfilter übrig'],
+    'FilterTimeLeft': ['filter zeit'],
+    'MainBrushLeft': ['hauptbürste übrig'],
+    'MainBrushTimeLeft': ['hauptbürstenzeit'],
+    'SideBrushLeft': ['seitenbürste übrig'],
+    'SideBrushTimeLeft': ['seitenbürstenzeit']
+  }
+};
+
+// List of all recognizable component names per language
+const componentKeywords = {
+  'DE': Object.values(components).map(c => c.label?.DE.toLowerCase()),
+  'EN': Object.values(components).map(c => c.label?.EN.toLowerCase()),
+};
+
+// Define known abbreviations and speech characteristics per language
+const knownAbbreviations = {
+  EN: {
+    baseCharSpeed: 16,
+    numberSpeedPerDigit: 250,
+    numberSpeakTime: [500, 800, 1100, 1400],
+    abbreviations: ['e.g.', 'i.e.', 'Mr.', 'Mrs.', 'Dr.', 'etc.', 'vs.', 'approx.'],
+    units: {
+      hours: 'hours',
+      percent: '%'
+    }
+  },
+  DE: {
+    baseCharSpeed: 18,
+    numberSpeedPerDigit: 270,
+    numberSpeakTime: [600, 900, 1200, 1500],
+    abbreviations: ['z.B.', 'u.a.', 'bzw.', 'd.h.', 'ca.', 'Dr.', 'Hr.', 'Fr.', 'Nr.', 'min.', 'max.'],
+    units: {
+      hours: 'Stunden',
+      percent: '%'
+    }
+  },
+  FR: {
+    baseCharSpeed: 15,
+    numberSpeedPerDigit: 260,
+    numberSpeakTime: [550, 850, 1150, 1450],
+    abbreviations: ['p. ex.', 'env.', 'Mme.', 'M.', 'Dr.'],
+    units: {
+      hours: 'heures',
+      percent: '%'
+    }
+  },
+  IT: {
+    baseCharSpeed: 15,
+    numberSpeedPerDigit: 250,
+    numberSpeakTime: [550, 850, 1150, 1450],
+    abbreviations: ['es.', 'sig.', 'sig.ra', 'dott.', 'ecc.'],
+    units: {
+      hours: 'ore',
+      percent: '%'
+    }
+  }
+};
+
 const AlexaInfo = {
   'EN': {
     0: 'Alexa is active, and the robot accepts voice commands. You can simply say: "Alexa, vacuum the living room twice on high," or "Alexa, mop the living room once," or "Alexa, vacuum and mop the living room three times turbo and damp," or "Alexa, vacuum then mop the living room light and wet." The robot will then clean the living room as requested.',
@@ -1513,7 +1876,24 @@ const AlexaInfo = {
     24: (RoomTOPause) => `The pause in room ${RoomTOPause} has been going on for over 5 minutes. Cleaning is aborted.`,
     25: (Roomname, Roommissing) => `For ${Roomname}, the following is missing: ${Roommissing}. Please specify the missing level.`,
     26: (RoomMessages) => `For the following rooms, information is missing: ${RoomMessages}. Please specify the missing values.`,
-    27: "A new cleaning process cannot be started because a cleaning process is being monitored. Please give your command with 'Cancel cleaning'"
+    27: "A new cleaning process cannot be started because a cleaning process is being monitored. Please give your command with 'Cancel cleaning'",
+    28: 'The robot is emptying the dustbin.',
+    29: 'Dustbin emptying completed.',
+    30: 'The robot is washing the mop.',
+    31: 'Mop washing completed.',
+    32: 'Cleaning is paused. Executing resume.',
+    33: 'Resume not possible',
+    34: (RoomcompId) => `${RoomcompId} reset triggered.`,
+    35: (RoomcompId) => `Reset failed for ${RoomcompId}.`,
+    36: 'All components have been reset.',
+    37: 'No reset action found for this component.',
+    38: (RoomcompId) => `${RoomcompId} has been reset.`,
+    39: (RoomcompId) => `Reset not available for ${RoomcompId}.`,
+    40: 'Here is the status of the robot components: ',
+    41: 'Suggest reset',
+    42: 'All components with value 0 have been reset.',
+    43: 'at'
+
 
   },
   'DE': {
@@ -1544,7 +1924,23 @@ const AlexaInfo = {
     24: (RoomTOPause) => `Pause in Raum ${RoomTOPause} besteht seit über 5 Minuten. Reinigung wird abgebrochen.`,
     25: (Roomname, Roommissing) => `Für ${Roomname} fehlt: ${Roommissing}. Bitte gib das fehlende Level an.`,
     26: (RoomMessages) => `Für folgende Räume fehlen Angaben: ${RoomMessages}. Bitte definiere die fehlenden Werte.`,
-    27: "Ein neuer Reinigungsvorgang kann nicht gestartet werden, da ein Reinigungsvorgang überwacht wird, bitte gebe deinen Befehl mit 'Reinigung abbrechen'"
+    27: "Ein neuer Reinigungsvorgang kann nicht gestartet werden, da ein Reinigungsvorgang überwacht wird, bitte gebe deinen Befehl mit 'Reinigung abbrechen'",
+    28: 'Der Roboter entleert den Staubbehälter.',
+    29: 'Entleerung abgeschlossen.',
+    30: 'Der Roboter wäscht den Mopp.',
+    31: 'Wischmopp-Wäsche abgeschlossen.',
+    32: 'Die Reinigung ist angehalten. Fortsetzung wird ausgeführt.',
+    33: 'Fortsetzen nicht möglich.',
+    34: (RoomcompId) => `${RoomcompId} zurückgesetzt.`,
+    35: (RoomcompId) => `Zurücksetzen für ${RoomcompId} fehlgeschlagen.`,
+    36: 'Alle Komponenten wurden zurückgesetzt.',
+    37: 'Für diese Komponente wurde keine Zurücksetz-Aktion gefunden.',
+    38: (RoomcompId) => `${RoomcompId} wurde zurückgesetzt.`,
+    39: (RoomcompId) => `Zurücksetzen für ${RoomcompId} nicht verfügbar.`,
+    40: 'Hier ist der Status der Roboterkomponenten: ',
+    41: 'Vorschlag zum Zurücksetzen',
+    42: 'Alle Komponenten mit dem Wert 0 wurden zurückgesetzt.',
+    43: 'bei'
   }
 };
 
@@ -2359,7 +2755,7 @@ class Dreamehome extends utils.Adapter {
     if (DH_Map) {
       const Mrooms = DH_Map[DH_CurMap]?.['walls_info']?.storeys?.[0]?.rooms;
       if (Mrooms) {
-        this.processRooms(Mrooms, DH_Map[DH_CurMap]);  // customMapData �bergeben
+        this.processRooms(Mrooms, DH_Map[DH_CurMap]);  // customMapData
         return; // Exit function if DH_Map contains valid data
       } else {
         this.log.warn('No rooms found in DH_Map.');
@@ -5611,6 +6007,414 @@ class Dreamehome extends utils.Adapter {
     this.startNextRoomCleaning(robot, selectedRooms, roomActions, 0, AlexaID);
   }
 
+  // Function to handle Auto-Empty process
+  async startAutoEmpty(AlexaID) {
+    // Start Auto-Emptying command
+    await this.setStateAsync(`${DH_Did}.control.StartAutoEmpty`, true);
+    this.log.info('Robot sent for auto-emptying.');
+    await this.speakToAlexa(AlexaInfo[UserLang][28], AlexaID); // Notify Alexa
+
+    // Wait for the robot to start returning to dock (or until the robot is docked)
+    await this.waitUntilDocked();
+
+    // Wait until Auto-Empty process starts (status changes to "Active")
+    let autoEmptyStatus;
+    do {
+      await this.wait(2000);  // Check every 2 seconds
+      autoEmptyStatus = (await this.getStateAsync(`${DH_Did}.state.AutoEmptyStatus`))?.val;
+      this.log.info(`Current Auto-Empty Status: ${autoEmptyStatus}`);  // Add logging to monitor status changes
+    } while (autoEmptyStatus !== DreameAutoEmptyStatus[UserLang][1]); // Wait for "Active"
+
+    // Wait until Auto-Empty process is completed (status changes to "Idle")
+    do {
+      await this.wait(2000);  // Check every 2 seconds
+      autoEmptyStatus = (await this.getStateAsync(`${DH_Did}.state.AutoEmptyStatus`))?.val;
+      this.log.info(`Current Auto-Empty Status: ${autoEmptyStatus}`);  // Add logging to monitor status changes
+    } while (autoEmptyStatus === DreameAutoEmptyStatus[UserLang][1]); // Wait until it's not "Active" anymore (i.e., "Idle")
+
+    // Now, once auto-emptying is done, resume cleaning
+    this.log.info(AlexaInfo[UserLang][29]); //Auto-emptying completed. Resuming cleaning
+    await this.speakToAlexa(AlexaInfo[UserLang][29], AlexaID); // Notify Alexa
+
+    // Safely try to resume cleaning
+    await this.tryResumeCleaning(AlexaID);
+  }
+
+  async tryResumeCleaning(AlexaID) {
+    const statePath = `${DH_Did}.state.State`;
+    const pausedPath = `${DH_Did}.state.CleaningPaused`;
+
+    const state = (await this.getStateAsync(statePath))?.val;
+    const paused = (await this.getStateAsync(pausedPath))?.val;
+
+    const readableState = DreameStatus[UserLang]?.[state] ?? 'Unbekannt';
+
+    // Only resume cleaning if the robot is paused
+    if (state === DreameStatus[UserLang][1] || paused !== 0) {
+      this.log.info(AlexaInfo[UserLang][32]);
+      await this.setStateAsync(`${DH_Did}.control.Start`, true);
+      //await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][32]}.`, AlexaID);
+    } else {
+      this.log.warn(`Resume aborted: current status is '${readableState}' (${state}).`);
+      //await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][33]}.`, AlexaID);
+    }
+  }
+
+  // Function to handle Auto-Wash process
+  async startAutoWash(AlexaID) {
+  // Send robot to wash the mop
+    await this.setStateAsync(`${DH_Did}.control.StartWashing`, true);
+    this.log.info('Robot sent for mop washing.');
+    await this.speakToAlexa(AlexaInfo[UserLang][30], AlexaID); // Notify Alexa
+
+    // Wait until the robot is docked
+    await this.waitUntilDocked();
+
+    // Wait until washing starts: status is "Washing", "Clean Add Water" oder "Adding Water"
+    const activeWashStatuses = [
+      DreameSelfWashBaseStatus[UserLang][1], // "Washing"
+      DreameSelfWashBaseStatus[UserLang][5], // "Clean Add Water"
+      DreameSelfWashBaseStatus[UserLang][6]  // "Adding Water"
+    ];
+
+    // Wait until washing process starts ("Washing", "Clean Add Water" oder "Adding Water")
+    let washStatus;
+    do {
+      await this.wait(2000);
+      washStatus = (await this.getStateAsync(`${DH_Did}.state.SelfWashBaseStatus`))?.val;
+	  this.log.info(`Current Self-Wash-Base Status: ${washStatus}`);  // Add logging to monitor status changes
+    } while (!activeWashStatuses.includes(washStatus));
+
+    // Wait until washing process is complete (status is NOT "Washing", "Clean Add Water" oder "Adding Water" anymore)
+    do {
+      await this.wait(2000);
+      washStatus = (await this.getStateAsync(`${DH_Did}.state.SelfWashBaseStatus`))?.val;
+	  this.log.info(`Current Self-Wash-Base Status: ${washStatus}`);  // Add logging to monitor status changes
+    } while (activeWashStatuses.includes(washStatus)); // Still "Washing"
+
+    this.log.info(AlexaInfo[UserLang][31], AlexaID); // Mop washing completed. Resuming cleaning
+    await this.speakToAlexa(AlexaInfo[UserLang][31], AlexaID); // Notify Alexa
+
+    // Safely try to resume cleaning
+    await this.tryResumeCleaning(AlexaID);
+  }
+
+  // Helper function to wait until robot is docked (either during cleaning or after returning)
+  async waitUntilDocked() {
+    const dockedStates = [
+      DreameChargingStatus[UserLang][1], // Charging
+      DreameChargingStatus[UserLang][3]  // Charging completed
+    ];
+
+    const returnToChargeState = DreameChargingStatus[UserLang][5]; // "Return to charge"
+    let chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+
+    // If the robot isn't docked yet, wait for it to return and dock
+    if (!dockedStates.includes(chargingStatus)) {
+      // Wait until robot starts returning to charge
+      do {
+        await this.wait(2000);
+        chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+      } while (chargingStatus !== returnToChargeState);
+
+      // Wait until robot is actually docked
+      do {
+        await this.wait(2000);
+        chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+      } while (!dockedStates.includes(chargingStatus));
+    }
+  }
+
+  async checkSingleComponentStatus(componentKey, AlexaID) {
+    const lang = knownAbbreviations[UserLang] ? UserLang : 'EN';
+    const units = knownAbbreviations[lang]?.units || { hours: 'h', percent: '%' };
+
+    const comp = components[componentKey];
+    if (!comp) return;
+
+    const label = comp.label?.[lang] || componentKey;
+    const valueParts = [];
+
+    // Read base value from state (e.g. 100 or 'OK')
+    const stateID = `${DH_Did}.state.${componentKey}`;
+    const val = (await this.getStateAsync(stateID))?.val;
+
+    if (val !== undefined && val !== null) {
+      if (typeof val === 'number') {
+        const unit = componentKey.toLowerCase().includes('time') ? units.hours : units.percent;
+        valueParts.push(`${val}${unit}`);
+      } else {
+        valueParts.push(val.toString());
+      }
+
+      // Suggest reset if value is 0
+      if (val === 0) {
+        const resetHint = AlexaInfo[UserLang][41].replace('{component}', label);
+        valueParts.push(`(${resetHint})`);
+      }
+    }
+
+    // Add time left and percent left from sub states if available
+    const timeVal = (await this.getStateAsync(`${DH_Did}.state.${componentKey}TimeLeft`))?.val;
+    const percentVal = (await this.getStateAsync(`${DH_Did}.state.${componentKey}Left`))?.val;
+
+    if (percentVal !== undefined) valueParts.push(`${percentVal}${units.percent}`);
+    if (timeVal !== undefined) valueParts.push(`${timeVal} ${units.hours}`);
+
+    // Build final spoken report
+    const report = `${label}: ${valueParts.join(` ${AlexaInfo[UserLang][43]} `)}`.trim();
+
+    this.log.info('[SingleComponentStatus] ' + report);
+    await this.speakStatusInParts(report, AlexaID);
+    isComponentsSayState = false;
+  }
+
+  // Return: Component or null
+  async matchComponentBySynonym(input, Lang = 'EN') {
+    const synonyms = knownComponentSynonyms[Lang];
+    input = input.toLowerCase();
+
+    for (const [key, values] of Object.entries(synonyms)) {
+      for (const synonym of values) {
+        if (input.includes(synonym.toLowerCase())) {
+          return key; // e.g. "MainBrush"
+        }
+      }
+    }
+
+    return null; // no match
+  }
+
+  // Function to check robot status and speak it
+  async checkRobotStatus(command, AlexaID) {
+    const report = AlexaInfo[UserLang][40] + '\n'; // Intro text for the component status report
+    const lang = knownAbbreviations[UserLang] ? UserLang : 'EN'; // Fallback to 'EN' if UserLang is invalid
+    const units = knownAbbreviations[lang]?.units || { hours: 'h', percent: '%' };
+
+    // Iterate through components
+    const tempData = {};
+
+    for (const comp of Object.values(components)) {
+      const stateID = `${DH_Did}.state.${comp.id}`; // Create state ID dynamically
+      const state = (await this.getStateAsync(stateID))?.val;
+
+      if (state === undefined || state === null) continue; // Skip if no state is found
+
+      const label = comp.label?.[lang] || comp.id || 'Unknown'; // Fallback to 'Unknown' if label is undefined
+
+      const isTime = comp.id.toLowerCase().includes('time');
+      if (isTime && state === 0) continue; // Skip Time if state = 0
+
+      let valueText = '';
+
+      if (typeof state === 'number') {
+        if (isTime) {
+          valueText = `${state} ${units.hours}`;
+        } else {
+          valueText = `${state}${units.percent}`;
+        }
+
+      } else {
+        valueText = state.toString();
+      }
+
+      // If value is 0, append reset suggestion in parentheses
+      if (state === 0) {
+        const resetHint = AlexaInfo[UserLang][41].replace('{component}', label);
+        valueText += ` (${resetHint})`;
+      }
+
+      // Check if the component is part of a group (e.g. MainBrush and MainBrushTimeLeft)
+      if (comp.id.endsWith('TimeLeft') || comp.id.endsWith('Left')) {
+      // Find the main component name (e.g. MainBrush for MainBrushTimeLeft or MainBrushLeft)
+        const mainComp = components[comp.id.replace(/(TimeLeft|Left)$/, '')];
+
+        // Add the value to the main component in tempData
+        if (mainComp) {
+          const mainLabel = mainComp.label?.[lang] || mainComp.id || 'Unknown';
+          if (tempData[mainLabel]) {
+            tempData[mainLabel] += ` ${AlexaInfo[UserLang][43]} ${valueText}`;  // Combine time and percent values
+          } else {
+            tempData[mainLabel] = valueText;
+          }
+        }
+      } else {
+      // Add regular components directly
+        if (tempData[label]) {
+          tempData[label] += ` ${AlexaInfo[UserLang][43]} ${valueText}`;  // Combine time and percent values
+        } else {
+          tempData[label] = valueText;
+        }
+      }
+    }
+
+    // Create the final report
+    let finalReport = '';
+    for (const name in tempData) {
+      finalReport += `${name}: ${tempData[name]}\n`;
+    }
+
+    this.log.info('[RobotStatus Final Report]\n' + finalReport.trim());
+
+    // Speak the report in multiple parts
+    await this.speakStatusInParts(finalReport, AlexaID);
+    isComponentsSayState = false; // Reset or update the flag after speaking
+  }
+
+
+  // Function to speak the report in parts with waiting time in between
+  async speakStatusInParts(report, AlexaID) {
+    const parts = report.split('\n'); // Split the report into parts by lines
+
+    // Loop through each part and speak it one by one
+    for (const part of parts) {
+      if (part.trim()) { // Skip empty lines
+        await this.speakToAlexa(part, AlexaID); // Speak the part
+        const waitTime = await this.estimateWaitTime(part); // Await the estimated time
+        await this.wait(waitTime); // Wait for the estimated time before continuing
+      }
+    }
+  }
+
+
+  // Function to estimate wait time based on the length of the text
+  async estimateWaitTime(text) {
+    const langConfig = knownAbbreviations[UserLang] || knownAbbreviations['EN'];
+    const {
+      baseCharSpeed,
+      numberSpeedPerDigit,
+      numberSpeakTime,
+      abbreviations,
+      units
+    } = langConfig;
+
+    let totalTime = 0;
+    let processedText = text;
+
+    // === 1. Replace abbreviations with placeholders ===
+    const abbrPlaceholders = [];
+    abbreviations.forEach((abbr, index) => {
+      const placeholder = `__ABBR${index}__`;
+      const regex = new RegExp(abbr.replace('.', '\\.'), 'g');
+      processedText = processedText.replace(regex, placeholder);
+      abbrPlaceholders.push(placeholder);
+    });
+
+    // === 2. Count and calculate numeric durations ===
+    const numberRegex = /\b\d+([.,]\d+)?\b/g;
+    const numbers = processedText.match(numberRegex) || [];
+    let numberTime = 0;
+    numbers.forEach(num => {
+      const digitCount = num.replace(/[^\d]/g, '').length;
+      const time = numberSpeakTime?.[digitCount - 1] ?? digitCount * numberSpeedPerDigit;
+      numberTime += time;
+      totalTime += time;
+    });
+
+    // === 3. Count punctuation marks ===
+    const periodCount = (processedText.match(/[.!?]/g) || []).length;
+    const commaCount = (processedText.match(/[,;:]/g) || []).length;
+    const lineBreaks = (processedText.match(/\n/g) || []).length;
+    const punctuationTime = periodCount * 800 + commaCount * 350 + lineBreaks * 200;
+    totalTime += punctuationTime;
+
+    // === 4. Count units ===
+    const unitPatterns = Object.values(units).map(u => u.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+    const unitRegex = new RegExp(`\\b(${unitPatterns.join('|')})\\b`, 'gi');
+    const unitCount = (processedText.match(unitRegex) || []).length;
+    const unitTime = unitCount * 200;
+    totalTime += unitTime;
+
+    // === 5. Add time for abbreviations ===
+    const abbrTime = abbrPlaceholders.length * 300;
+    totalTime += abbrTime;
+
+    // === 6. Calculate base time for remaining characters ===
+    const cleanText = processedText
+      .replace(numberRegex, '')
+      .replace(unitRegex, '')
+      .replace(/\s+/g, ' ')
+      .replace(/[.,!?]/g, '')
+      .replace(/\n/g, '')
+      .trim();
+    const charCount = cleanText.length;
+    const baseTextTime = charCount * baseCharSpeed;
+    totalTime += baseTextTime;
+
+    // === 7. Clamp total time ===
+    const minTime = 1500;
+    const maxTime = 15000;
+    const finalTime = Math.max(minTime, Math.min(totalTime, maxTime));
+
+    // === 8. Detailed debug output ===
+    const debugDetails = {
+      text,
+      language: UserLang,
+      baseCharSpeed,
+      charCount,
+      baseTextTime,
+      numbers,
+      numberTime,
+      periodCount,
+      commaCount,
+      lineBreaks,
+      punctuationTime,
+      unitCount,
+      unitTime,
+      abbreviationCount: abbrPlaceholders.length,
+      abbrTime,
+      totalUnclamped: totalTime,
+      totalClamped: finalTime
+    };
+
+    this.log?.debug?.(`[estimateWaitTime] Detailed calculation:\n${JSON.stringify(debugDetails, null, 2)}`);
+    return finalTime;
+  }
+
+
+
+  // Function to reset a single component
+  async resetSingleComponent(compId, AlexaID) {
+    const resetId = `${DH_Did}.control.Reset${compId}`; // Component ID for reset
+    //this.log.info(`ID Reset${compId} => Path ${resetId}`);
+    const exists = await this.getObjectAsync(resetId); // Check if reset command exists for this component getObjectAsync
+
+    if (exists) {
+      await this.setStateAsync(resetId, true);  // Trigger the reset
+      await this.speakToAlexa(AlexaInfo[UserLang][38](compId), AlexaID); // ${compId} has been reset.
+      this.log.info(AlexaInfo[UserLang][38](compId));
+    } else {
+      await this.speakToAlexa(AlexaInfo[UserLang][39](compId), AlexaID); // Reset not available for ${compId}
+      this.log.info(AlexaInfo[UserLang][39](compId));
+    }
+    isComponentsResetOneState = false;
+  }
+
+  // Function to reset all components and log the action
+  async resetAllComponents(AlexaID) {
+    const allComponents = [
+      'MainBrush',
+      'SideBrush',
+      'Filter',
+      'SensorDirty',
+      'MopPad',
+      'SilverIon',
+      'Detergent',
+      'PureWaterTank',
+      'DirtyWaterTank'
+    ];
+
+    const resetPromises = allComponents.map(comp => {
+      return this.resetSingleComponent(comp, AlexaID);  // Reset each component
+    });
+
+    await Promise.all(resetPromises);  // Wait for all resets to finish
+    // Log and notify Alexa about all components reset
+    this.log.info(AlexaInfo[UserLang][36]);
+    await this.speakToAlexa(AlexaInfo[UserLang][36], AlexaID);
+    isComponentsResetAllState = false;
+  }
+
   async speakToAlexa(message, AlexaID) {
     if (AlexaID) {
       this.log.info('Speak: ' + message);
@@ -5887,8 +6691,93 @@ class Dreamehome extends utils.Adapter {
           return;
         }
 
+        const LastAlexa = await this.getForeignStateAsync('alexa2.0.History.serialNumber');
+        let LastAlexaID = '';
+        if (LastAlexa) {
+          LastAlexaID = LastAlexa.val;
+        }
+
+        const commandLower = command.toLowerCase(); // Convert the command to lowercase for consistent comparison
+        const hasRobotKeyword = robotKeywords[UserLang].some(word => commandLower.includes(word)); // Check if the command includes any robot-related keyword
+        const hasEmptyKeyword = emptyActionWords[UserLang].some(word => commandLower.includes(word)); // Check if the command includes any emptying-related keyword
+        const hasWashKeyword = washActionWords[UserLang].some(word => commandLower.includes(word)); // Check if the command includes any washing-related keyword
+
+        // Trigger auto-empty only if both robot and emptying keywords are present
+        if (hasRobotKeyword && hasEmptyKeyword) {
+          //Reset alexa2.0.History.summary
+          await this.setForeignStateAsync(id, '');
+          await this.startAutoEmpty(LastAlexaID);
+        }
+
+        // Trigger auto-wash only if both robot and washing keywords are present
+        if (hasRobotKeyword && hasWashKeyword) {
+          //Reset alexa2.0.History.summary
+          await this.setForeignStateAsync(id, '');
+          await this.startAutoWash(LastAlexaID);
+        }
+
+        // Trigger Status only if both robot and Status keywords are present
+        const hasStatusKeyword = statusCheckWords[UserLang].some(word => commandLower.includes(word));
+
+        // Try to detect a specific component in the command
+        const componentKey = await this.matchComponentBySynonym(commandLower, UserLang);
+
+        if (hasRobotKeyword && componentKey && hasStatusKeyword && !isComponentsSayState) {
+          isComponentsSayState = true;
+          await this.setForeignStateAsync(id, ''); // Reset spoken text
+          await this.checkSingleComponentStatus(componentKey, LastAlexaID);
+          return;
+        } else if (hasRobotKeyword && hasStatusKeyword && !isComponentsSayState) {
+		  isComponentsSayState = true;
+          await this.setForeignStateAsync(id, ''); // Reset summary
+          await this.checkRobotStatus(commandLower, LastAlexaID);
+        }
+
+
+        // Try to detect reset all command
+        const checkResetAllKeyword = (commandLower, UserLang) => {
+          return resetAllKeywords[UserLang].some(synonym => commandLower.includes(synonym));
+        };
+        // Try to detect reset one command
+        const checkResetKeyword = (commandLower, UserLang) => {
+          return resetOneKeywords[UserLang].some(synonym => commandLower.includes(synonym));
+        };
+
+        // Check if the command is for "Reset All" or "Reset Component"
+        const hasResetAllKeyword = checkResetAllKeyword(commandLower, UserLang);
+        const hasResetKeyword = checkResetKeyword(commandLower, UserLang);
+
+        // If "Reset All" is detected, reset all components
+        if (hasRobotKeyword && hasResetAllKeyword && !isComponentsResetAllState) {
+          isComponentsResetAllState = true;
+          await this.setForeignStateAsync(id, '');  // Confirm the Reset-All command
+          await this.resetAllComponents(LastAlexaID);  // Reset all components
+          this.log.info(AlexaInfo[UserLang][36]);  // Log the command
+        }
+
+        // Trigger Reset-Component only if "Reset All" is not detected
+        if (hasRobotKeyword && !hasResetAllKeyword && hasResetKeyword && !isComponentsResetOneState) {
+          isComponentsResetOneState = true;
+          let matchedComp = null;
+          const langComponents = resetComponentWords[UserLang];
+
+          // Check which component matches the user's command
+          for (const [compKey, synonyms] of Object.entries(langComponents)) {
+            if (synonyms.some(word => commandLower.includes(word))) {
+              matchedComp = compKey;
+              break;
+            }
+          }
+
+          if (matchedComp) {
+            await this.setForeignStateAsync(id, '');  // Confirm the Reset command
+            await this.resetSingleComponent(matchedComp, LastAlexaID);  // Reset the matched component
+          }
+        }
+
+
         lastCommandTime = currentTime; // Store the new timestamp => Proceed with command processing if the time difference is >= 3 seconds
-        const processedCommands = await this.processCommand(command, UserLang);
+        const processedCommands = await this.processCommand(commandLower, UserLang);
 
         const selectedRooms = [];
         const roomActions = {}; // Stores actions per room
@@ -5903,7 +6792,6 @@ class Dreamehome extends utils.Adapter {
         let singleRoomName = '';
         const missingCleaningModeRooms = [];
 
-
         // Split the command into parts based on 'and', 'und', or commas
         const commandParts = processedCommands.split(/and|und|,/); //command.split(/\b(?:and|und|,)\b/i).map(p => p.trim());
 
@@ -5916,7 +6804,7 @@ class Dreamehome extends utils.Adapter {
             this.log.info(AlexaInfo[UserLang][3]); // Abort command received. Stopping the loop and halting the process.
             await this.setStateAsync(`${DH_Did}.control.Stop`, true); // Stop the robot
             await this.setStateAsync(`${DH_Did}.control.Charge`, true); // Send the robot to charging station
-            this.speakToAlexa(AlexaInfo[UserLang][3]); // Notify Alexa that cleaning was aborted
+            this.speakToAlexa(AlexaInfo[UserLang][3], LastAlexaID); // Notify Alexa that cleaning was aborted
           }
         }
 
@@ -6037,12 +6925,6 @@ class Dreamehome extends utils.Adapter {
         //Reset alexa2.0.History.summary
         await this.setForeignStateAsync(id, '');
 
-        const LastAlexa = await this.getForeignStateAsync('alexa2.0.History.serialNumber');
-        let LastAlexaID = '';
-        if (LastAlexa) {
-          LastAlexaID = LastAlexa.val;
-        }
-
         // Check for missing suction or mopping levels based on the selected cleaning mode
         for (const room of selectedRooms) {
           if (roomActions[room] && roomActions[room].cleaningModes) {
@@ -6096,7 +6978,7 @@ class Dreamehome extends utils.Adapter {
           cleanGeniusValue = 1; // If no specific cleaning mode is mentioned, CleanGenius should be true
         }
 
-        this.log.info(`Get command: ${command} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)} |
+        this.log.info(`Get command: ${commandLower} => processed command: ${processedCommands} | Rooms ${JSON.stringify(selectedRooms)} | Found ==> ${JSON.stringify(roomActions)} |
                 roomFound: ${roomFound}, isCleaningCommand: ${isCleaningCommand} | cleaning mode: ${JSON.stringify(roomsWithCommands)} |
                 Cleaning mode set to: ${cleaningMode} (${AlexacleanModes[UserLang][cleaningMode]}) | CleanGenius set to: ${cleanGeniusValue ? 'On' : 'Off'}
                 `);
