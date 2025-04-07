@@ -1510,11 +1510,11 @@ const statusCheckWords = {
 
 const resetComponentWords = {
   'EN': {
-	'Sensor': ['sensor', 'sensors'],
+    'Sensor': ['sensor', 'sensors'],
     'MainBrush': ['main brush', 'main roller', 'brush'],
     'SideBrush': ['side brush', 'side roller'],
     'Filter': ['filter', 'dust filter'],
-	'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
+    'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
     'SensorDirty': ['sensor', 'dirty sensor', 'clean sensor'],
     'MopPad': ['mop pad', 'mopping pad', 'mop', 'cloth'],
     'SilverIon': ['silver ion', 'ion cartridge'],
@@ -1523,11 +1523,11 @@ const resetComponentWords = {
     'DirtyWaterTank': ['dirty water tank', 'waste water', 'used water']
   },
   'DE': {
-	'Sensor': ['sensor', 'sensoren'],
+    'Sensor': ['sensor', 'sensoren'],
     'MainBrush': ['hauptbürste', 'bürste', 'hauptrolle'],
     'SideBrush': ['seitenbürste', 'seitenrolle'],
     'Filter': ['filter', 'staubfilter'],
-	'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
+    'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
     'SensorDirty': ['sensor', 'sensoren', 'verschmutzter sensor'],
     'MopPad': ['wischpad', 'moppad', 'mop', 'wischtuch', 'wischtücher', 'pad'],
     'SilverIon': ['silberionen', 'ionenkartusche'],
@@ -1539,8 +1539,8 @@ const resetComponentWords = {
 
 
 const resetAllKeywords = {
-	'EN': ['reset all', 'reset everything', 'reset all components', 'reset the robot', 'reset all parts', 'reset full maintenance', 'reset maintenance'],
-	'DE': ['alles zurücksetzen', 'alle komponenten zurücksetzen', 'roboter zurücksetzen', 'alle teile zurücksetzen', 'wartung zurücksetzen', 'wartung komplett zurücksetzen', 'alles resetten', 'alle komponenten resetten', 'roboter resetten', 'wartung resetten']
+  'EN': ['reset all', 'reset everything', 'reset all components', 'reset the robot', 'reset all parts', 'reset full maintenance', 'reset maintenance'],
+  'DE': ['alles zurücksetzen', 'alle komponenten zurücksetzen', 'roboter zurücksetzen', 'alle teile zurücksetzen', 'wartung zurücksetzen', 'wartung komplett zurücksetzen', 'alles resetten', 'alle komponenten resetten', 'roboter resetten', 'wartung resetten']
 };
 
 
@@ -1775,11 +1775,11 @@ const components = {
 
 const knownComponentSynonyms = {
   'EN': {
-	'Sensor': ['sensor', 'sensors'],
+    'Sensor': ['sensor', 'sensors'],
     'MainBrush': ['main brush', 'brush', 'mainbristle', 'main roller', 'roller brush'],
     'SideBrush': ['side brush', 'sidebristle', 'side roller'],
     'Filter': ['filter', 'dust filter', 'air filter'],
-	'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
+    'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
     'MopPad': ['mop', 'mop pad', 'cloth', 'mopping pad', 'pad'],
     'SilverIon': ['silver ion', 'ion', 'silver', 'ion cartridge'],
     'Detergent': ['detergent', 'cleaning liquid', 'soap', 'cleaner', 'cleaning solution'],
@@ -1800,19 +1800,19 @@ const knownComponentSynonyms = {
     'DetergentTimeLeft': ['detergent time left', 'soap time', 'detergent duration'],
     'FilterLeft': ['filter left', 'dust filter left', 'remaining filter'],
     'FilterTimeLeft': ['filter time left', 'filter duration'],
-	'SecondaryFilterLeft': ['secondary filter time left', 'secondary filter duration'],
-	'SecondaryFilterTimeLeft': ['secondary filter time left', 'secondary filter duration'],
+    'SecondaryFilterLeft': ['secondary filter time left', 'secondary filter duration'],
+    'SecondaryFilterTimeLeft': ['secondary filter time left', 'secondary filter duration'],
     'MainBrushLeft': ['main brush left', 'brush left', 'remaining main brush'],
     'MainBrushTimeLeft': ['main brush time left', 'brush time', 'main brush duration'],
     'SideBrushLeft': ['side brush left', 'remaining side brush'],
     'SideBrushTimeLeft': ['side brush time left', 'side brush duration']
   },
   'DE': {
-	'Sensor': ['sensor', 'sensoren'],
+    'Sensor': ['sensor', 'sensoren'],
     'MainBrush': ['hauptbürste', 'bürste', 'hauptbuerste', 'hauptrolle', 'bürstenrolle'],
     'SideBrush': ['seitenbürste', 'seitenbuerste', 'seitenrolle'],
     'Filter': ['filter', 'staubfilter', 'luftfilter'],
-	'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
+    'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
     'MopPad': ['mopp', 'mopp-pad', 'wischtuch', 'wischpad', 'pad'],
     'SilverIon': ['silberionen', 'ionen', 'silber', 'ionenkartusche'],
     'Detergent': ['reinigungsmittel', 'seife', 'reiniger', 'putzmittel', 'reinigungslösung'],
@@ -1833,7 +1833,7 @@ const knownComponentSynonyms = {
     'DetergentTimeLeft': ['reinigungsmittel zeit', 'reinigungsmittel restzeit'],
     'FilterLeft': ['filter verbleibend', 'staubfilter übrig', 'filterrest'],
     'FilterTimeLeft': ['filter zeit', 'filter restzeit'],
-	'SecondaryFilterLeft': ['sekundärfilter verbleibend', 'sekundärstaubfilter übrig', 'sekundärfilterrest'],
+    'SecondaryFilterLeft': ['sekundärfilter verbleibend', 'sekundärstaubfilter übrig', 'sekundärfilterrest'],
     'SecondaryFilterTimeLeft': ['sekundärfilter zeit', 'sekundärfilter restzeit'],
     'MainBrushLeft': ['hauptbürste übrig', 'hauptbürstenrest'],
     'MainBrushTimeLeft': ['hauptbürstenzeit', 'hauptbürste restzeit'],
@@ -6790,8 +6790,8 @@ class Dreamehome extends utils.Adapter {
         };
 
         // Check if the command is for "Reset All" or "Reset Component"
-		const hasResetAllKeyword = checkResetAllKeyword(commandLower, UserLang);
-		// Trigger Reset-Component only if "Reset All" is not detected
+        const hasResetAllKeyword = checkResetAllKeyword(commandLower, UserLang);
+        // Trigger Reset-Component only if "Reset All" is not detected
         const hasResetKeyword = hasResetAllKeyword ? false : checkResetKeyword(commandLower, UserLang);
 
 
