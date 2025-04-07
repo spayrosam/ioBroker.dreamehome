@@ -1,20 +1,20 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "news": {
-      "0.1.2": {
-        "en": "Added functionality for controlling various components of the Dreame vacuum robot",
-        "de": "Zusätzliche Funktionalität zur Steuerung verschiedener Komponenten des Dreame Vakuumroboters",
-        "ru": "Добавлена функциональность для управления различными компонентами вакуумного робота Dreame",
-        "pt": "Adicionado funcionalidade para controlar vários componentes do robô de vácuo Dreame",
-        "nl": "Toegevoegde functionaliteit voor het besturen van verschillende componenten van de Dreame vacuümrobot",
-        "fr": "Ajout de fonctionnalités pour contrôler différents composants du robot à vide Dreame",
-        "it": "Aggiunto funzionalità per il controllo di vari componenti del Dreame vuoto robot",
-        "es": "Función agregada para controlar varios componentes del robot de vacío Dreame",
-        "pl": "Dodano funkcjonalność do sterowania różnymi komponentami robota próżniowego Dreame",
-        "uk": "Додано функціональність для контролю різних компонентів вакуумного робота Dreame",
-        "zh-cn": "用于控制 Dreame 真空机器人各个部件的新增功能"
+      "0.1.3": {
+        "en": "Fixed functionality for controlling various components of the Dreame vacuum robot as well as synonym extensions\n\n",
+        "de": "Feste Funktionalität zur Steuerung verschiedener Komponenten des Dreame Vakuumroboters sowie Synonymerweiterungen\n\n",
+        "ru": "Фиксированная функциональность для управления различными компонентами вакуумного робота Dreame, а также расширения синонимов\n\n",
+        "pt": "Funcionalidade fixa para controlar vários componentes do robô de vácuo Dreame, bem como extensões sinônimo\n\n",
+        "nl": "Vaste functionaliteit voor het besturen van diverse componenten van de Dreame vacuümrobot en synoniemextensies\n\n",
+        "fr": "Fonctions fixes pour le contrôle des différents composants du robot à vide Dreame ainsi que des extensions synonymes\n\n",
+        "it": "Funzionalità fissa per il controllo di vari componenti del robot aspirapolvere Dreame così come estensioni sinonimo\n\n",
+        "es": "Función fija para controlar varios componentes del robot de vacío Dreame, así como extensiones de sinónimo\n\n",
+        "pl": "Stała funkcjonalność do sterowania różnymi komponentami robota próżniowego firmy Dream oraz rozszerzenia synonimów\n\n",
+        "uk": "Фіксована функціональність для контролю різних компонентів вакуумного робота Dreame, а також розширення синонімів\n\n",
+        "zh-cn": "用于控制 Dreame 真空机器人各个部件以及同义词扩展的固定功能\n\n"
 }
     },
     "title": "dreamehome",
