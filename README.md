@@ -20,6 +20,11 @@ Adapter for dreame home devices
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+
+### 0.1.3 (07.04.2025) 
+
+Fixed support for status control and validation as well as synonym extensions
+
 ### 0.1.2 (06.04.2025) 
 
 New Features & Enhancements:
