@@ -1,21 +1,21 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "news": {
-      "0.1.1": {
-        "en": "The code has been mostly refactored",
-        "de": "Der Code wurde meist refactored",
-        "ru": "Код в основном рефакторирован",
-        "pt": "O código foi principalmente refactored",
-        "nl": "De code is grotendeels gerefactoreerd",
-        "fr": "Le code a été pour la plupart refacturé",
-        "it": "Il codice è stato per lo più rifatto",
-        "es": "El código ha sido refactorizado en su mayoría",
-        "pl": "Kod został w większości zmieniony",
-        "uk": "Код переважно рефакторований",
-        "zh-cn": "密码大多是重构的"
-      }
+      "0.1.2": {
+        "en": "Added functionality for controlling various components of the Dreame vacuum robot",
+        "de": "Zusätzliche Funktionalität zur Steuerung verschiedener Komponenten des Dreame Vakuumroboters",
+        "ru": "Добавлена функциональность для управления различными компонентами вакуумного робота Dreame",
+        "pt": "Adicionado funcionalidade para controlar vários componentes do robô de vácuo Dreame",
+        "nl": "Toegevoegde functionaliteit voor het besturen van verschillende componenten van de Dreame vacuümrobot",
+        "fr": "Ajout de fonctionnalités pour contrôler différents composants du robot à vide Dreame",
+        "it": "Aggiunto funzionalità per il controllo di vari componenti del Dreame vuoto robot",
+        "es": "Función agregada para controlar varios componentes del robot de vacío Dreame",
+        "pl": "Dodano funkcjonalność do sterowania różnymi komponentami robota próżniowego Dreame",
+        "uk": "Додано функціональність для контролю різних компонентів вакуумного робота Dreame",
+        "zh-cn": "用于控制 Dreame 真空机器人各个部件的新增功能"
+}
     },
     "title": "dreamehome",
     "titleLang": {

@@ -920,8 +920,8 @@ const DreameStateProperties = {
   'S15P2': 'Auto empty frequency',
   'S15P3': 'Dust collection',
   'S15P5': 'Auto empty status',
-  'S16P1': 'Sensor dirty left',
-  'S16P2': 'Sensor dirty time left',
+  'S16P1': 'Sensor left',
+  'S16P2': 'Sensor time left',
   'S18P1': 'Mop pad left',
   'S18P2': 'Mop pad time left',
   'S19P1': 'Silver ion time left',
@@ -1488,9 +1488,10 @@ const AlexamissingMessages = {
 };
 
 const robotKeywords = {
-  'EN': ['robot', 'dreame', 'vacuum', 'vacuum cleaner'],
-  'DE': ['roboter', 'dreame', 'staubsauger', 'saugroboter']
+  'EN': ['robot', 'dreame', 'vacuum', 'vacuum cleaner', 'cleaning robot', 'robot cleaner', 'vacuum bot', 'robovac'],
+  'DE': ['roboter', 'dreame', 'staubsauger', 'saugroboter', 'putzroboter', 'staubi', 'saug-bot', 'reinigungsroboter']
 };
+
 
 const emptyActionWords = {
   'EN': ['empty', 'auto empty', 'clean bin', 'empty bin', 'empty dustbin'],
@@ -1509,41 +1510,55 @@ const statusCheckWords = {
 
 const resetComponentWords = {
   'EN': {
-    'MainBrush': ['main brush'],
-    'SideBrush': ['side brush'],
-    'Filter': ['filter'],
-    'SensorDirty': ['sensor'],
-    'MopPad': ['mop pad'],
-    'SilverIon': ['silver ion'],
-    'Detergent': ['detergent'],
-    'PureWaterTank': ['pure water tank', 'clean water'],
-    'DirtyWaterTank': ['dirty water tank']
+	'Sensor': ['sensor', 'sensors'],
+    'MainBrush': ['main brush', 'main roller', 'brush'],
+    'SideBrush': ['side brush', 'side roller'],
+    'Filter': ['filter', 'dust filter'],
+	'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
+    'SensorDirty': ['sensor', 'dirty sensor', 'clean sensor'],
+    'MopPad': ['mop pad', 'mopping pad', 'mop', 'cloth'],
+    'SilverIon': ['silver ion', 'ion cartridge'],
+    'Detergent': ['detergent', 'cleaning solution', 'soap'],
+    'PureWaterTank': ['pure water tank', 'clean water tank', 'fresh water'],
+    'DirtyWaterTank': ['dirty water tank', 'waste water', 'used water']
   },
   'DE': {
-    'MainBrush': ['hauptbürste'],
-    'SideBrush': ['seitenbürste'],
-    'Filter': ['filter'],
-    'SensorDirty': ['sensor'],
-    'MopPad': ['wischpad', 'moppad'],
-    'SilverIon': ['silberionen'],
-    'Detergent': ['reinigungsmittel'],
-    'PureWaterTank': ['frischwassertank', 'sauberer wassertank'],
-    'DirtyWaterTank': ['schmutzwassertank']
+	'Sensor': ['sensor', 'sensoren'],
+    'MainBrush': ['hauptbürste', 'bürste', 'hauptrolle'],
+    'SideBrush': ['seitenbürste', 'seitenrolle'],
+    'Filter': ['filter', 'staubfilter'],
+	'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
+    'SensorDirty': ['sensor', 'sensoren', 'verschmutzter sensor'],
+    'MopPad': ['wischpad', 'moppad', 'mop', 'wischtuch', 'wischtücher', 'pad'],
+    'SilverIon': ['silberionen', 'ionenkartusche'],
+    'Detergent': ['reinigungsmittel', 'seife', 'putzmittel'],
+    'PureWaterTank': ['frischwassertank', 'sauberer wassertank', 'reines wasser'],
+    'DirtyWaterTank': ['schmutzwassertank', 'abwasser', 'benutztes wasser']
   }
 };
 
+
 const resetAllKeywords = {
-  'EN': ['reset all', 'reset everything', 'reset all components'],
-  'DE': ['alles zurücksetzen', 'alle komponenten zurücksetzen']
+	'EN': ['reset all', 'reset everything', 'reset all components', 'reset the robot', 'reset all parts', 'reset full maintenance', 'reset maintenance'],
+	'DE': ['alles zurücksetzen', 'alle komponenten zurücksetzen', 'roboter zurücksetzen', 'alle teile zurücksetzen', 'wartung zurücksetzen', 'wartung komplett zurücksetzen', 'alles resetten', 'alle komponenten resetten', 'roboter resetten', 'wartung resetten']
 };
 
+
+
 const resetOneKeywords = {
-  'EN': ['reset', 'clear'],
-  'DE': ['zurücksetzen', 'löschen']
+  'EN': ['reset', 'clear', 'restore'],
+  'DE': ['zurücksetzen', 'löschen', 'resetten', 'wiederherstellen']
 };
 
 
 const components = {
+  'Sensor': {
+    id: 'Sensor',
+    label: {
+      'EN': 'Sensor',
+      'DE': 'Sensor',
+    }
+  },
   'MainBrush': {
     id: 'MainBrush',
     label: {
@@ -1563,6 +1578,13 @@ const components = {
     label: {
       'EN': 'Filter',
       'DE': 'Filter',
+    }
+  },
+  'SecondaryFilter': {
+    id: 'SecondaryFilter',
+    label: {
+      'EN': 'Secondary Filter',
+      'DE': 'Sekundärfilter',
     }
   },
   'MopPad': {
@@ -1706,6 +1728,20 @@ const components = {
       'DE': 'Filter verbleibende Zeit',
     }
   },
+  'SecondaryFilterLeft': {
+    id: 'SecondaryFilterLeft',
+    label: {
+      'EN': 'Secondary Filter Left',
+      'DE': 'Sekundärfilter verbleibend',
+    }
+  },
+  'SecondaryFilterTimeLeft': {
+    id: 'SecondaryFilterTimeLeft',
+    label: {
+      'EN': 'Secondary Filter Time Left',
+      'DE': 'Sekundärfilter verbleibende Zeit',
+    }
+  },
   'MainBrushLeft': {
     id: 'MainBrushLeft',
     label: {
@@ -1736,66 +1772,76 @@ const components = {
   }
 };
 
+
 const knownComponentSynonyms = {
   'EN': {
-    'MainBrush': ['main brush', 'brush', 'mainbristle'],
-    'SideBrush': ['side brush', 'sidebristle'],
-    'Filter': ['filter', 'dust filter'],
-    'MopPad': ['mop', 'mop pad', 'cloth'],
-    'SilverIon': ['silver ion', 'ion', 'silver'],
-    'Detergent': ['detergent', 'cleaning liquid', 'soap', 'cleaner'],
-    'PureWaterTank': ['pure water tank', 'clean water', 'water tank'],
-    'DirtyWaterTank': ['dirty water tank', 'waste water', 'used water'],
-    'BatteryLevel': ['battery', 'battery level', 'charge'],
-    'Error': ['error', 'error message', 'problem'],
-    'State': ['status', 'current state'],
-    'CurrentRoomCleaningName': ['current room', 'room', 'cleaning room'],
-    'SensorLeft': ['left sensor', 'sensor left'],
-    'SensorRight': ['right sensor', 'sensor right'],
-    'SensorTimeLeft': ['sensor time', 'sensor time left'],
-    'MopPadLeft': ['mop left', 'mop remaining'],
-    'MopPadTimeLeft': ['mop time left', 'mop pad time'],
-    'SilverIonLeft': ['silver ion left', 'ion left'],
-    'SilverIonTimeLeft': ['silver ion time left', 'ion time'],
-    'DetergentLeft': ['detergent left', 'soap left'],
-    'DetergentTimeLeft': ['detergent time left', 'soap time'],
-    'FilterLeft': ['filter left', 'dust filter left'],
-    'FilterTimeLeft': ['filter time left'],
-    'MainBrushLeft': ['main brush left', 'brush left'],
-    'MainBrushTimeLeft': ['main brush time left', 'brush time'],
-    'SideBrushLeft': ['side brush left'],
-    'SideBrushTimeLeft': ['side brush time left']
+	'Sensor': ['sensor', 'sensors'],
+    'MainBrush': ['main brush', 'brush', 'mainbristle', 'main roller', 'roller brush'],
+    'SideBrush': ['side brush', 'sidebristle', 'side roller'],
+    'Filter': ['filter', 'dust filter', 'air filter'],
+	'SecondaryFilter': ['secondary filter', 'hepa filter', 'extra filter', 'backup filter'],
+    'MopPad': ['mop', 'mop pad', 'cloth', 'mopping pad', 'pad'],
+    'SilverIon': ['silver ion', 'ion', 'silver', 'ion cartridge'],
+    'Detergent': ['detergent', 'cleaning liquid', 'soap', 'cleaner', 'cleaning solution'],
+    'PureWaterTank': ['pure water tank', 'clean water', 'water tank', 'fresh water tank'],
+    'DirtyWaterTank': ['dirty water tank', 'waste water', 'used water', 'dirty tank'],
+    'BatteryLevel': ['battery', 'battery level', 'charge', 'battery status'],
+    'Error': ['error', 'error message', 'problem', 'issue', 'alert'],
+    'State': ['current state'],
+    'CurrentRoomCleaningName': ['current room', 'room', 'cleaning room', 'room being cleaned'],
+    'SensorLeft': ['left sensor', 'sensor left', 'left side sensor'],
+    'SensorRight': ['right sensor', 'sensor right', 'right side sensor'],
+    'SensorTimeLeft': ['sensor time', 'sensor time left', 'remaining sensor time'],
+    'MopPadLeft': ['mop left', 'mop remaining', 'pad remaining'],
+    'MopPadTimeLeft': ['mop time left', 'mop pad time', 'remaining mop time'],
+    'SilverIonLeft': ['silver ion left', 'ion left', 'remaining silver ion'],
+    'SilverIonTimeLeft': ['silver ion time left', 'ion time', 'silver ion duration'],
+    'DetergentLeft': ['detergent left', 'soap left', 'remaining detergent'],
+    'DetergentTimeLeft': ['detergent time left', 'soap time', 'detergent duration'],
+    'FilterLeft': ['filter left', 'dust filter left', 'remaining filter'],
+    'FilterTimeLeft': ['filter time left', 'filter duration'],
+	'SecondaryFilterLeft': ['secondary filter time left', 'secondary filter duration'],
+	'SecondaryFilterTimeLeft': ['secondary filter time left', 'secondary filter duration'],
+    'MainBrushLeft': ['main brush left', 'brush left', 'remaining main brush'],
+    'MainBrushTimeLeft': ['main brush time left', 'brush time', 'main brush duration'],
+    'SideBrushLeft': ['side brush left', 'remaining side brush'],
+    'SideBrushTimeLeft': ['side brush time left', 'side brush duration']
   },
   'DE': {
-    'MainBrush': ['hauptbürste', 'bürste', 'hauptbuerste'],
-    'SideBrush': ['seitenbürste', 'seitenbuerste'],
-    'Filter': ['filter', 'staubfilter'],
-    'MopPad': ['mopp', 'mopp-pad', 'wischtuch'],
-    'SilverIon': ['silberionen', 'ionen', 'silber'],
-    'Detergent': ['reinigungsmittel', 'seife', 'reiniger', 'putzmittel'],
-    'PureWaterTank': ['frischwassertank', 'reines wasser', 'wassertank'],
-    'DirtyWaterTank': ['schmutzwassertank', 'dreckwasser', 'gebrauchtes wasser'],
-    'BatteryLevel': ['akku', 'batterie', 'batteriestand'],
-    'Error': ['fehler', 'fehlermeldung', 'problem'],
-    'State': ['zustand', 'aktueller stand'],
-    'CurrentRoomCleaningName': ['raum', 'aktueller raum', 'gereinigter raum'],
-    'SensorLeft': ['linker sensor', 'sensor links'],
-    'SensorRight': ['rechter sensor', 'sensor rechts'],
-    'SensorTimeLeft': ['sensorzeit', 'sensor verbleibende zeit'],
-    'MopPadLeft': ['mopp verbleibend', 'wischtuch übrig'],
-    'MopPadTimeLeft': ['mopp zeit', 'wischtuchzeit'],
-    'SilverIonLeft': ['silberionen verbleibend'],
-    'SilverIonTimeLeft': ['silberionen zeit'],
-    'DetergentLeft': ['reinigungsmittel übrig', 'seife verbleibend'],
-    'DetergentTimeLeft': ['reinigungsmittel zeit'],
-    'FilterLeft': ['filter verbleibend', 'staubfilter übrig'],
-    'FilterTimeLeft': ['filter zeit'],
-    'MainBrushLeft': ['hauptbürste übrig'],
-    'MainBrushTimeLeft': ['hauptbürstenzeit'],
-    'SideBrushLeft': ['seitenbürste übrig'],
-    'SideBrushTimeLeft': ['seitenbürstenzeit']
+	'Sensor': ['sensor', 'sensoren'],
+    'MainBrush': ['hauptbürste', 'bürste', 'hauptbuerste', 'hauptrolle', 'bürstenrolle'],
+    'SideBrush': ['seitenbürste', 'seitenbuerste', 'seitenrolle'],
+    'Filter': ['filter', 'staubfilter', 'luftfilter'],
+	'SecondaryFilter': ['sekundärfilter', 'hepa-filter', 'zusatzfilter', 'ersatzfilter'],
+    'MopPad': ['mopp', 'mopp-pad', 'wischtuch', 'wischpad', 'pad'],
+    'SilverIon': ['silberionen', 'ionen', 'silber', 'ionenkartusche'],
+    'Detergent': ['reinigungsmittel', 'seife', 'reiniger', 'putzmittel', 'reinigungslösung'],
+    'PureWaterTank': ['frischwassertank', 'reines wasser', 'wassertank', 'sauberwassertank'],
+    'DirtyWaterTank': ['schmutzwassertank', 'dreckwasser', 'gebrauchtes wasser', 'abwassertank'],
+    'BatteryLevel': ['akku', 'batterie', 'batteriestand', 'akkustand'],
+    'Error': ['fehler', 'fehlermeldung', 'problem', 'störung', 'meldung'],
+    'State': ['aktueller stand'],
+    'CurrentRoomCleaningName': ['raum', 'aktueller raum', 'gereinigter raum', 'momentaner raum'],
+    'SensorLeft': ['linker sensor', 'sensor links', 'sensor auf der linken seite'],
+    'SensorRight': ['rechter sensor', 'sensor rechts', 'sensor auf der rechten seite'],
+    'SensorTimeLeft': ['sensorzeit', 'sensor verbleibende zeit', 'sensor restzeit'],
+    'MopPadLeft': ['mopp verbleibend', 'wischtuch übrig', 'wischpad rest'],
+    'MopPadTimeLeft': ['mopp zeit', 'wischtuchzeit', 'pad restzeit'],
+    'SilverIonLeft': ['silberionen verbleibend', 'ionen übrig'],
+    'SilverIonTimeLeft': ['silberionen zeit', 'verbleibende silberionenzeit'],
+    'DetergentLeft': ['reinigungsmittel übrig', 'seife verbleibend', 'mittelrest'],
+    'DetergentTimeLeft': ['reinigungsmittel zeit', 'reinigungsmittel restzeit'],
+    'FilterLeft': ['filter verbleibend', 'staubfilter übrig', 'filterrest'],
+    'FilterTimeLeft': ['filter zeit', 'filter restzeit'],
+	'SecondaryFilterLeft': ['sekundärfilter verbleibend', 'sekundärstaubfilter übrig', 'sekundärfilterrest'],
+    'SecondaryFilterTimeLeft': ['sekundärfilter zeit', 'sekundärfilter restzeit'],
+    'MainBrushLeft': ['hauptbürste übrig', 'hauptbürstenrest'],
+    'MainBrushTimeLeft': ['hauptbürstenzeit', 'hauptbürste restzeit'],
+    'SideBrushLeft': ['seitenbürste übrig', 'seitenbürstenrest'],
+    'SideBrushTimeLeft': ['seitenbürstenzeit', 'seitenbürste restzeit']
   }
 };
+
 
 // List of all recognizable component names per language
 const componentKeywords = {
@@ -6744,8 +6790,10 @@ class Dreamehome extends utils.Adapter {
         };
 
         // Check if the command is for "Reset All" or "Reset Component"
-        const hasResetAllKeyword = checkResetAllKeyword(commandLower, UserLang);
-        const hasResetKeyword = checkResetKeyword(commandLower, UserLang);
+		const hasResetAllKeyword = checkResetAllKeyword(commandLower, UserLang);
+		// Trigger Reset-Component only if "Reset All" is not detected
+        const hasResetKeyword = hasResetAllKeyword ? false : checkResetKeyword(commandLower, UserLang);
+
 
         // If "Reset All" is detected, reset all components
         if (hasRobotKeyword && hasResetAllKeyword && !isComponentsResetAllState) {
@@ -6756,7 +6804,7 @@ class Dreamehome extends utils.Adapter {
         }
 
         // Trigger Reset-Component only if "Reset All" is not detected
-        if (hasRobotKeyword && !hasResetAllKeyword && hasResetKeyword && !isComponentsResetOneState) {
+        if (hasRobotKeyword && hasResetKeyword && !isComponentsResetOneState) {
           isComponentsResetOneState = true;
           let matchedComp = null;
           const langComponents = resetComponentWords[UserLang];
