@@ -1,20 +1,20 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "news": {
-      "0.1.3": {
-        "en": "Fixed functionality for controlling various components of the Dreame vacuum robot as well as synonym extensions\n\n",
-        "de": "Feste Funktionalität zur Steuerung verschiedener Komponenten des Dreame Vakuumroboters sowie Synonymerweiterungen\n\n",
-        "ru": "Фиксированная функциональность для управления различными компонентами вакуумного робота Dreame, а также расширения синонимов\n\n",
-        "pt": "Funcionalidade fixa para controlar vários componentes do robô de vácuo Dreame, bem como extensões sinônimo\n\n",
-        "nl": "Vaste functionaliteit voor het besturen van diverse componenten van de Dreame vacuümrobot en synoniemextensies\n\n",
-        "fr": "Fonctions fixes pour le contrôle des différents composants du robot à vide Dreame ainsi que des extensions synonymes\n\n",
-        "it": "Funzionalità fissa per il controllo di vari componenti del robot aspirapolvere Dreame così come estensioni sinonimo\n\n",
-        "es": "Función fija para controlar varios componentes del robot de vacío Dreame, así como extensiones de sinónimo\n\n",
-        "pl": "Stała funkcjonalność do sterowania różnymi komponentami robota próżniowego firmy Dream oraz rozszerzenia synonimów\n\n",
-        "uk": "Фіксована функціональність для контролю різних компонентів вакуумного робота Dreame, а також розширення синонімів\n\n",
-        "zh-cn": "用于控制 Dreame 真空机器人各个部件以及同义词扩展的固定功能\n\n"
+      "0.1.4": {
+        "en": "Interactive Map - New Features",
+        "de": "Interactive Map - Neue Funktionen",
+        "ru": "Интерактивная карта - новые возможности",
+        "pt": "Mapa interativo - novas características",
+        "nl": "Interactieve kaart - Nieuwe functies",
+        "fr": "Carte interactive - Nouvelles fonctionnalités",
+        "it": "Mappa interattiva - Nuove funzionalità",
+        "es": "Mapa interactivo - Nuevas características",
+        "pl": "Interaktywna mapa - nowe funkcje",
+        "uk": "Інтерактивна карта - нові можливості",
+        "zh-cn": "交互式映射 - 新特性"
 }
     },
     "title": "dreamehome",
