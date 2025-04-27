@@ -22,7 +22,14 @@ Adapter for dreame home devices
 -->
 
 ### 0.1.4 (27.04.2025) 
- 
+![grafik](https://github.com/user-attachments/assets/eb74b8fa-9283-41a0-9870-15738f51bcf1)
+![grafik](https://github.com/user-attachments/assets/5ca82581-e571-4c79-8b06-35661e620167)
+![grafik](https://github.com/user-attachments/assets/c6cf9040-3deb-4c4e-a321-365592ed3581)
+
+
+
+
+
  **Interactive Map - New Features**
  
 ***To display the map, create an HTML widget with a size of 1024x1024 or as needed, and insert the following code: {dreamehome.0.XXXXXX.vis.vishtml1}
