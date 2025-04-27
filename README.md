@@ -21,6 +21,46 @@ Adapter for dreame home devices
     ### **WORK IN PROGRESS**
 -->
 
+### 0.1.4 (27.04.2025) 
+ 
+ **Interactive Map - New Features**
+ 
+***To display the map, create an HTML widget with a size of 1024x1024 or as needed, and insert the following code: {dreamehome.0.XXXXXX.vis.vishtml1}
+Here, XXXXXX is the number of your robot.***
+
+Main Functions:
+- Data Preparation:  
+  Loads robot position history, determines adapter path for state storage, and processes data into the required format.
+  
+- Map Creation:  
+  Generates an HTML document, renders the map based on robot mapping data (rooms, walls, doors, charging station), and implements a 3D view with rotation and zoom.
+
+- Interactive Features:  
+  Real-time robot tracking, clickable room and carpet selection, cleaning progress display, "Map Spectacle" animation modes, and charging station status animations.
+
+- User Interface:  
+  Modern menu system with animations, adjustable rotation, perspective, and zoom settings, plus live display of robot status and cleaning data.
+
+Technical Details:
+- Map rendered as HTML canvas with SVG elements.
+- WebSocket integration for real-time updates.
+- Advanced 3D transformations using CSS.
+
+Special Highlights:
+- 23 unique charging station animations (charging, error, cleaning, etc.).
+- Dynamic room color changes based on cleaning progress.
+- "Map Spectacle" enables cinematic camera movements.
+- Menu system with automatic timeout.
+
+This update delivers a full real-time, interactive visualization of the robot's environment, with detailed animations and dynamic status tracking.
+
+**Fixed**
+**Alexa Voice Control - Improvements**
+
+- Cleaning can now be reliably started via Alexa voice commands. Commands like "vacuum," "mop," or "start mopping" now work as expected — even for specific rooms or using different cleaning modes in different rooms.
+- Resetting components via voice command is now fully functional. Components such as filters, brushes, and sensors can be reset through Alexa, with clear voice feedback indicating whether the reset was successful or necessary.
+- The entire control logic has been revised. Everything now works reliably — including Alexa voice feedback after commands.
+
 ### 0.1.3 (07.04.2025) 
 
 Fixed support for status control and validation as well as synonym extensions
