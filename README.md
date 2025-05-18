@@ -14,6 +14,10 @@
 
 Adapter for dreame home devices
 
+
+***To display the map, create an HTML widget with a size of 1024x1024 or as needed, and insert the following code: {dreamehome.0.XXXXXX.vis.vishtml1}
+Here, XXXXXX is the number of your robot.***
+
 ## Changelog
 
 <!--
@@ -21,19 +25,83 @@ Adapter for dreame home devices
     ### **WORK IN PROGRESS**
 -->
 
+
+
+
+### 0.1.5 (18.05.2025) 
+
+![DreameHome1 5 gif](https://github.com/user-attachments/assets/93bb5f6c-15d1-4a11-8597-503a69a7a51a)
+
+ **New Features**
+
+
+***Dynamic VIS Objects & Map Creation***
+  Integration of dynamic visualization objects for flexible and customizable display.
+
+***Action Dropdown Menu***
+  New control options available: *Pause*, *Clean*, *Charge*, *Stop*.
+
+***General Cleaning Menu (currently disabled)***
+  Prepared function for initiating a full-area cleaning through a centralized control menu.
+
+***New Functional Buttons in Map View***
+  Added actions: *Button Lock*, *Empty Robot*, *Wash Mop*, *Play*, *Pause*, *Clean*, *Charge*, *Selected*.
+
+***Toggleable Cleaning Path & History Path***
+  Current cleaning and history paths can be shown or hidden individually.
+
+***Radial Menu Per Room***
+  Each room now features its own radial menu for individual configuration: *Suction*, *Water Level*, *Repeat*, *Cleaning Mode*, *Route*.
+
+***Animated Icons for Active Cleaning***
+  Rooms currently being cleaned are now highlighted with animated symbols.
+
+***Realistic Robot Icons***
+  Default symbols have been replaced with detailed and realistic robot representations.
+
+---
+
+**Improvements**
+
+***More Efficient Code***
+  Optimized algorithms significantly reduce memory and CPU usage.
+
+***Save & Restore 3D Map Rotation***
+  The current camera position, rotation, as well as selected rooms and carpets are saved and correctly restored after adapter restarts or page reloads.
+
+***Improved Cleaning Status***
+
+  * Fixed issues with loading cleaning status to ensure the history is accurately filled with data.
+  * The progress of ongoing cleaning tasks is now displayed correctly and in real time.
+
+---
+
+**New Cleaning Start Logic**
+
+There are now ***three ways*** to start a cleaning session:
+
+1. ***Full Cleaning via Map Click***
+   Click *Clean* on the map: general cleaning settings from the app will be applied, and cleaning starts immediately.
+
+2. ***Targeted Room Cleaning***
+
+   * Click on individual rooms to select them (they will blink green).
+   * Then press *Clean Selected* – only the selected rooms will be cleaned.
+   * Room-specific settings (*Suction*, *Water Level*, *Repeat*, *Cleaning Mode*, *Route*) can be adjusted via the gear icon in each room label.
+
+3. ***Clean Selected Without Selection***
+   If *Clean Selected* is pressed with no rooms selected, ***all rooms*** will be cleaned according to the individual settings defined under each room label.
+
+    
 ### 0.1.4 (27.04.2025) 
-![grafik](https://github.com/user-attachments/assets/eb74b8fa-9283-41a0-9870-15738f51bcf1)
-![grafik](https://github.com/user-attachments/assets/5ca82581-e571-4c79-8b06-35661e620167)
-![grafik](https://github.com/user-attachments/assets/c6cf9040-3deb-4c4e-a321-365592ed3581)
-
-
-
+<details>
+  <summary>Click to expand</summary>
+<img src=https://github.com/user-attachments/assets/eb74b8fa-9283-41a0-9870-15738f51bcf1/>
+<img src=https://github.com/user-attachments/assets/5ca82581-e571-4c79-8b06-35661e620167/>
+<img src=https://github.com/user-attachments/assets/c6cf9040-3deb-4c4e-a321-365592ed3581/>
 
 
  **Interactive Map - New Features**
- 
-***To display the map, create an HTML widget with a size of 1024x1024 or as needed, and insert the following code: {dreamehome.0.XXXXXX.vis.vishtml1}
-Here, XXXXXX is the number of your robot.***
 
 Main Functions:
 - Data Preparation:  
@@ -67,12 +135,20 @@ This update delivers a full real-time, interactive visualization of the robot's 
 - Cleaning can now be reliably started via Alexa voice commands. Commands like "vacuum," "mop," or "start mopping" now work as expected — even for specific rooms or using different cleaning modes in different rooms.
 - Resetting components via voice command is now fully functional. Components such as filters, brushes, and sensors can be reset through Alexa, with clear voice feedback indicating whether the reset was successful or necessary.
 - The entire control logic has been revised. Everything now works reliably — including Alexa voice feedback after commands.
-
+</details>
+    
 ### 0.1.3 (07.04.2025) 
 
+<details>
+  <summary>Click to expand</summary>
+    
 Fixed support for status control and validation as well as synonym extensions
-
+  </details>
+  
 ### 0.1.2 (06.04.2025) 
+
+<details>
+  <summary>Click to expand</summary>
 
 New Features & Enhancements:
 - Component Control & Status Reporting:
@@ -161,12 +237,21 @@ Szenario 5: Alle Komponenten zurücksetzen
    „Alexa, Roboter alle komponenten zurücksetzen.“
 
      📌 Mit diesem Befehl setzt das System die Nutzungszeit aller Komponenten (Bürsten, Filter, Mopp-Pad, Reinigungsmittel, Silberionen, Sensoren usw.) gleichzeitig zurück – ideal nach einer Wartung oder einem Kompletttausch.
-
+   </details>
+   
 ### 0.1.1 (02.04.2025) 
+
+<details>
+  <summary>Click to expand</summary>
+    
 - The code has been mostly refactored
-  
+   </details>
+   
 ### 0.1.0 (30.03.2025) 
 
+<details>
+  <summary>Click to expand</summary>
+    
 New Features:
 - Increased Flexibility in Cleaning Control:  
   The adapter now allows you to set a different cleaning mode (suction, mopping, or a combination of both) for each room individually. This goes beyond the default limitations of the Dreame robot, which usually accepts only one cleaning mode for all rooms.
@@ -298,9 +383,13 @@ Szenario 6: Beenden der Reinigung, wenn ein Abbruchbefehl gegeben wird
   Aktion: Wenn der Befehl zum Stoppen der Reinigung kommt, wird der Roboter sofort gestoppt und zur Ladestation zurückgeschickt. Falls der Roboter gerade aktiv reinigt, wird der Vorgang abgebrochen.
 
   Antwort von Alexa: „Die Reinigung wurde gestoppt und der Roboter fährt zur Ladestation.“
+</details>
 
 ### 0.9.0 (2025-03-21)
 
+<details>
+  <summary>Click to expand</summary>
+    
 New Features:
 
 - Alexa Command Recognition: The system now recognizes various cleaning commands and supports multiple languages (English and German). It processes different cleaning modes, room names, and suction/mopping levels.  
@@ -348,16 +437,30 @@ Bug Fixes:
 - Enhanced Voice Feedback: The system now provides more detailed and helpful feedback via Alexa, especially when a command is incomplete or unclear.  
   - Example feedback (English): "Cleaning mode: 5122 (Sweeping), Rooms: Living Room, Kitchen."  
     Beispielfeedback (Deutsch): "Reinigungsmodus: 5122 (Staubsaugen), Räume: Wohnzimmer, Küche."
-
+  </details>
+  
 ### 0.0.8
 
+<details>
+  <summary>Click to expand</summary>
+    
 New Features Added: Voice Commands Accepted with Alexa Adapter:
+</details>
 
 ### 0.0.7
+
+<details>
+  <summary>Click to expand</summary>
+    
 - Fix for Command Execution Issues Due to Domain Changes from Dreame
 - New Control Features Added
+</details>
 
 ### 0.0.6
+
+<details>
+  <summary>Click to expand</summary>
+    
 New Control Features Added:
 - Resume Clean Mode: Off/On
 - Child Lock: Off/On
@@ -380,22 +483,36 @@ New Control Features Added:
 Control Adjusted: 
 - Automatic switch off of the Genius Mode when the Custom Mode is activated.
 - The map folder has been optimized, and objects have been prepared for communication with the generated VIS.HTML
+</details>
 
 ### 0.0.5
+
+<details>
+  <summary>Click to expand</summary>
+    
 - The map has been improved and room settings are now visible.
 - Additionally, additional animations have been added to the charging station..
+</details>
 
 ### 0.0.4
 
 ### 0.0.3
+<details>
+  <summary>Click to expand</summary>
+    
 - An animation has been added for the charging station.
 - Additionally, the history of the robot's position on the map has been corrected, and the map has been improved for better accuracy and user experience.
+</details>
 
 ### 0.0.2
+<details>
+  <summary>Click to expand</summary>
+    
 - Fixed the crash after map download.
 - Added carpet cleaning function  *(To start the carpet cleaning, select the repetition under object CarpetRepetitionX and the suction strength under object CarpetSuctionLevelX, then set the object CleanCarpetX to true)*.
 - Added zone cleaning and spot cleaning features.
 - Room names are now visible under the Map.0 or M.01 folder
+</details>
 
 
 ## License
