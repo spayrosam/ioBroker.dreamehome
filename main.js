@@ -4585,6 +4585,7 @@ class Dreamehome extends utils.Adapter {
 				  left: 0;
 				  top: 0;
 				  transform-origin: center;
+				  will-change: transform;
 				}
 
 				.radial-menu.active {
@@ -4624,6 +4625,7 @@ class Dreamehome extends utils.Adapter {
 				  margin-left: -25px;
 				  margin-top: -25px;
 				  transform-origin: center !important;
+				  will-change: transform;
 				}
 
 				.main-option > svg {
@@ -4738,6 +4740,7 @@ class Dreamehome extends utils.Adapter {
 				  height: 100%;
 				  top: 0;
 				  left: 0;
+				  will-change: transform;
 				}
 
 				.sub-options.active {
@@ -5614,7 +5617,7 @@ class Dreamehome extends utils.Adapter {
                     // Clean selected logic
                     // =============================================
 
-					                    async function startCustomCleanSelected() {
+                    async function startCustomCleanSelected() {
                         try {
                             // Check if any rooms are selected
                             if (selectedRooms.length === 0) {
@@ -8132,11 +8135,43 @@ class Dreamehome extends utils.Adapter {
 
                                 const roomId = label.id.replace('room-label-', '').replace('-fixed', '');
                                 const labelRect = label.getBoundingClientRect();
-                                const x = labelRect.left + labelRect.width; // / 2;
-                                const y = labelRect.top + labelRect.height; // / 2;
+                                const x = labelRect.left + (labelRect.width * 1.2); // Adjusting position horizontally
+                                const y = labelRect.top + (labelRect.height * 2); // Adjusting position vertically
 
-                                toggleRadialMenu(x, y, roomId);
+                                const menuSize = 70; // Diameter of the menu
+
+                                // Get the inner layout area of the window
+                                const screenWidth = document.documentElement.clientWidth;  // Width of the inner layout area
+                                const screenHeight = document.documentElement.clientHeight; // Height of the inner layout area
+
+                                // Calculate the theoretical menu boundaries around the click point
+                                const menuLeft = x - (menuSize * 4);
+                                const menuRight = x + menuSize / 2;
+                                const menuTop = y - (menuSize * 4);
+                                const menuBottom = y + menuSize / 2;
+
+                                // Adjusted position (start with the original position)
+                                let adjustedX = x;
+                                let adjustedY = y;
+
+                                // Adjust horizontally if the menu would be too far right or left
+                                if (menuRight > screenWidth) {
+                                    adjustedX = screenWidth - 10; // Right edge padding
+                                } else if (menuLeft < 0) {
+                                    adjustedX = 230; // Left edge padding
+                                }
+
+                                // Adjust vertically if the menu would be too far down or up
+                                if (menuBottom > screenHeight) {
+                                    adjustedY = screenHeight - 10; // Bottom edge padding
+                                } else if (menuTop < 0) {
+                                    adjustedY = 230; // Top edge padding
+                                }
+
+                                // Call the function to toggle the radial menu
+                                toggleRadialMenu(adjustedX, adjustedY, roomId);
                             });
+
                         });
 
                       }).catch(function(error) {
@@ -11343,7 +11378,128 @@ class Dreamehome extends utils.Adapter {
     });
   }
 
+  // Optimized for minimal resource consumption
   async DH_connectMqtt() {
+  // If an MQTT client already exists, close the old connection and remove listeners
+    if (this.mqttClient) {
+      this.mqttClient.removeAllListeners(); // Remove all old listeners
+      this.mqttClient.end(true); // Immediately close the connection and clean up resources
+    }
+
+    // Create a new MQTT client
+    this.mqttClient = mqtt.connect('mqtts://' + DH_BDomain, {
+      clientId: 'p_' + crypto.randomBytes(8).toString('hex'),
+      username: DH_Uid,
+      password: DH_Auth,
+      rejectUnauthorized: false,
+      reconnectPeriod: 10000,
+    });
+
+    // On connection success
+    this.mqttClient.on('connect', () => {
+      this.log.info('Connection to MQTT successfully established');
+      this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
+      this.DH_CheckTaskStatus();
+    });
+
+    // On receiving a message
+    this.mqttClient.on('message', async (topic, message) => {
+    // Message is received as a Buffer, convert it to a string
+      if (LogData) {
+        this.log.info(topic.toString());
+        this.log.info(message.toString());
+      }
+
+      try {
+        message = JSON.parse(message.toString());
+        if (LogData) {
+          this.log.info('Get Message from the device:' + JSON.stringify(message));
+        }
+      } catch (error) {
+        this.log.error(error);
+        return;
+      }
+
+      if (message.data && message.data.method === 'properties_changed') {
+      // Check task status
+        this.DH_CheckTaskStatus();
+
+        for (const element of message.data.params) {
+        // Update map data if necessary
+          if ((JSON.stringify(element.siid) === '6' && JSON.stringify(element.piid) === '1') && DH_UpdateTheMap == true) {
+            if (LogData) {
+              this.log.info('Map data:' + JSON.stringify(element.value));
+            }
+            let encode = JSON.stringify(element.value);
+            const mappath = DH_Did + '.mqtt.';
+            this.DH_uncompress(encode, mappath);
+            encode = null; // Reset the map data buffer to free up memory
+            DH_UpdateTheMap = false;
+          }
+
+          const ObjectPoint = await this.DH_SearchIID('S' + element.siid + 'P' + element.piid);
+          if (ObjectPoint) {
+            const path = DH_Did + '.state.' + ObjectPoint.replace(/\w\S*/g, function(SPName) {
+              return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+            }).replace(/\s/g, '');
+
+            if (path) {
+              let Setvalue = element.value;
+              if (Object.prototype.toString.call(Setvalue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
+                Setvalue = JSON.stringify(Setvalue);
+              }
+
+              if ('S' + element.siid + 'P' + element.piid == 'S2P1') {
+                await this.DH_getType(Setvalue, path.replace('.state.', '.vis.'), 'S' + element.siid + 'P' + element.piid);
+                await this.DH_setState(path.replace('.state.', '.vis.'), Setvalue, true);
+              }
+
+              Setvalue = await this.DH_SetPropSPID('S' + element.siid + 'P' + element.piid, Setvalue);
+              await this.DH_getType(Setvalue, path, 'S' + element.siid + 'P' + element.piid);
+              await this.DH_setState(path, Setvalue, true);
+
+              if (('S' + element.siid + 'P' + element.piid == 'S4P26') && (Setvalue == 1)) {
+                this.log.info('Set and update Cleaning Mode value to: ' + JSON.stringify(Setvalue));
+                const ReadpathCM = DH_Did + '.control.' + (DreameStateProperties['S4P23']).replace(/\w\S*/g, function(SPName) {
+                  return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                }).replace(/\s/g, '');
+                await this.setState(ReadpathCM, Setvalue, true);
+              }
+
+              let AppChanged = false;
+              for (const ex in DreameActionExteParams) {
+                if (ex.indexOf('S' + element.siid + 'P' + element.piid) !== -1) {
+                  AppChanged = true;
+                  break;
+                }
+              }
+              if (AppChanged) {
+                await this.DH_RequestControlState();
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Error handling for MQTT
+    this.mqttClient.on('error', async (error) => {
+      this.log.error(error);
+      if (error.message && error.message.includes('Not authorized')) {
+        this.log.error('Not authorized to connect to MQTT');
+        this.setState('info.connection', false, true);
+        await this.DH_refreshToken();
+      }
+    });
+
+    // When the connection is closed
+    this.mqttClient.on('close', () => {
+      this.log.info('MQTT Connection closed');
+    });
+  }
+
+
+  async DH_connectMqttOld() {
     if (this.mqttClient) {
       this.mqttClient.end();
     }
@@ -11543,7 +11699,50 @@ class Dreamehome extends utils.Adapter {
     return InSetvalue;
   }
 
+  // Optimized for minimal resource consumption
   async DH_uncompress(In_Compressed, In_path) {
+  // Replace URL-safe characters with the standard Base64 characters
+    let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
+
+    let decode;
+    try {
+    // Decompress the data synchronously using inflateSync and convert the buffer to a string
+      decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
+    } catch (err) {
+    // Log a warning if decompression fails
+      this.log.warn('Error during decompression: ' + err);
+      return; // Exit if decompression fails
+    }
+
+    // Use a regular expression to extract the JSON-like structure from the decompressed string
+    let jsondecode = decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
+
+    let jsonread;
+    try {
+    // Try to parse the extracted JSON string
+      jsonread = JSON.parse(jsondecode);
+    } catch (err) {
+    // Log a warning if JSON parsing fails
+      this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
+      return; // Exit if JSON parsing fails
+    }
+
+    // If JSON is valid, proceed to process it further
+    if (!jsonread) {
+      return; // Exit if no valid JSON found
+    }
+
+    // Call another method to handle the decoded JSON data
+    await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
+
+    // Nullify variables to release memory after processing
+    input_Raw = null;
+    decode = null;
+    jsondecode = null;
+    jsonread = null;
+  }
+
+  async DH_uncompressOld(In_Compressed, In_path) {
     let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
     let decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
     let jsondecode = decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
@@ -11733,6 +11932,9 @@ class Dreamehome extends utils.Adapter {
       if (LogData) {
 	  this.log.info(`Updated history: Index ${newIndex} with ${JSON.stringify(historyEntry)}`);
       }
+
+      // 8. Clear historyEntry from RAM to save resources (important if historyEntry is large)
+      historyEntry = null; // Optimized for minimal resource consumption
 
     } catch (error) {
       this.log.error(`SetHistory failed: ${error.message}`);
