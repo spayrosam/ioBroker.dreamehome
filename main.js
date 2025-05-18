@@ -2041,7 +2041,7 @@ const DHURLSENDB = 'L2RldmljZS9zZW5kQ29tbWFuZA==';
 let DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
 const DHURLSENDDOM = 'LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==';
 let DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
-const DH_Map = {}, DH_MapIDs = [];
+const DH_Map = {};
 let In_path = '';
 let DH_Auth = '',
   DH_AuthRef = '',
@@ -2058,7 +2058,6 @@ let DH_Auth = '',
   DH_BDomain = '',
   DH_Domain = '',
   DH_filename = '',
-  DH_MapID = '',
   DH_CurMap = 0,
   DH_Host = '';
 const canvas = createCanvas();
