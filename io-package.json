@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "news": {
-      "0.1.4": {
+      "0.1.5": {
         "en": "Interactive Map - New Features",
         "de": "Interactive Map - Neue Funktionen",
         "ru": "Интерактивная карта - новые возможности",
