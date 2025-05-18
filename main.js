@@ -337,7 +337,7 @@ const DreameVacuumState = {
     17: 'Returning install mop',
     18: 'Returning remove mop',
     19: 'Water check',
-    20: 'Clean add water',
+    20: 'Add clean water',
     21: 'Washing paused',
     22: 'Auto emptying',
     23: 'Remote control',
@@ -371,7 +371,7 @@ const DreameVacuumState = {
     17: 'Rückgabe Mopp installieren',
     18: 'Rückgabe Mopp entfernen',
     19: 'Wasser prüfen',
-    20: 'Reinigen, Wasser hinzufügen',
+    20: 'Sauberes Wasser hinzufügen',
     21: 'Waschen pausiert',
     22: 'Automatische Entleerung',
     23: 'Fernsteuerung',
@@ -553,21 +553,23 @@ for (let i = 1; i < 33; i++) {
 const DreameSetRoute = {
   'EN': {
     '-1': 'Unknown',
-    1: 'Standart',
+    1: 'Standard',
     2: 'Intensive',
     3: 'Deep',
-    546: 'Intelligent',
-	    512: 'Unknown1',
-	    768: 'Unknown2'
+    4: 'Quick',
+    546: 'Standard2',
+    512: 'Quick2',
+    768: 'Deep2'
   },
   'DE': {
     '-1': 'Unbekannt',
-    1: 'Standart',
+    1: 'Standard',
     2: 'Intensiv',
     3: 'Tief',
-    546: 'Intelligent',
-	    512: 'Unbekannt1',
-	    768: 'Unbekannt2'
+    4: 'Schnell',
+    546: 'Standard2',
+    512: 'Schnell2',
+    768: 'Tief2'
   }
 };
 
@@ -664,7 +666,7 @@ const DreameSelfWashBaseStatus = {
     2: 'Drying',
     3: 'Returning',
     4: 'Paused',
-    5: 'Clean Add Water',
+    5: 'Add clean water',
     6: 'Adding Water'
   },
   'DE': {
@@ -674,7 +676,7 @@ const DreameSelfWashBaseStatus = {
     2: 'Trocknen',
     3: 'Rücklauf',
     4: 'Pausiert',
-    5: 'Reinigen Wasser hinzufügen',
+    5: 'Sauberes Wasser hinzufügen',
     6: 'Wasser zugeben'
   }
 };
@@ -989,6 +991,7 @@ const DreameActionProperties = {
   'S4P50E11': 'Collision-Avoidance Mode',
   'S4P50E12': 'Clean Route',
   'S4P50E13': 'Live Video Prompts',
+  'S4P50E14': 'Suction Max Plus',
   'S6A1': 'Request map',
   'S6A2': 'Update map data',
   'S6A2C1': 'Change map',
@@ -1053,13 +1056,14 @@ const DreameActionParams = {
   'S4P50E11': [{'siid':4,'piid':50,'value': '{"k":"LessColl","v":1}'}], //Collision-Avoidance Mode / LessColl 0: off 1: on
   'S4P50E12': [{'siid':4,'piid':50,'value': '{"k":"CleanRoute","v":1}'}], //CleanRoute 0: off 1: on
   'S4P50E13': [{'siid':4,'piid':50,'value': '{"k":"MonitorPromptLevel","v":1}'}], //Live Video Prompts 0: Weak 1: Strong
+  'S4P50E14': [{'siid':4,'piid':50,'value': '{"k":"SuctionMax","v":1}'}], //Suction Max Plus 0: off 1: on
   'S6A1': [{'piid': 2,'value': '{"req_type":1,"frame_type":"I","force_type":1}'}], // Request map
-  'S6A2': [{'piid': 4,'value':'{"customeClean":[[1,2,27,2,2,2]]}'}], // Update map data | Room Settings | 1: Segment, 2: Suction Level, 27 Water volume, 2: Cleaning Times, 2: Cleaning Mode, 2: ??
+  'S6A2': [{'piid': 4,'value':'{"customeClean":[[1,2,27,2,2,2]]}'}], // Update map data | Room Settings | 1: Segment, 2: Suction Level, 27 Water volume, 2: Cleaning Times, 2: Cleaning Mode, 2: Route
   'S6A2C1': [{'piid': 4,'value': '{"sm":{},"mapid":map_id}'}], // Update map data | Change map:
   'S6A2C2': [{'piid': 4,'value': '{"nrism":{"map_id":{"name":"New_name"}}}'}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
   'S6A2C3': [{'piid': 4,'value': '{"cm":{},"mapid":map_id}'}], // Update map data | Delete map
   'S6A2C4': [{'piid': 4,'value': '{"smra":{"map_id":{"ra":90}}}'}], // Update map data | Rotate map
-  'S6A2C5': [{'piid': 4,'value':'{"cleanOrder":[[1,2,3]]}'}], // Update map data | cleanOrder
+  'S6A2C5': [{'piid': 4,'value':'{"cleanOrder":[1,2,3]}'}], // Update map data | cleanOrder
   'S6A3': 'false', // Backup map
   'S6A4': 'false', // Wifi map
   'S7A1': 'false', // Locate
@@ -1107,7 +1111,23 @@ const DreameActionExteParams = {
   'S4P50E11': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Collision-Avoidance Mode / LessColl 0: off 1: on
   'S4P50E12': {'EN': {0: 'Off', 1: 'Standard', 2: 'Intensive', 3: 'Deep', 4: 'Quick'}, 'DE': {0: 'Aus', 1: 'Standard', 2: 'Intensiv', 3: 'Tief', 4: 'Schnell'}}, //CleanRoute 01: Standard 2: Intensive 3: Deep, 4: Quick
   'S4P50E13': {'EN': {0: 'The camera is blinking', 1: 'Voice prompts'}, 'DE': {0: 'Die Kameraanzeige blinkt', 1: 'Sprachansagen'}}, //Live Video Prompts 0: Weak 1: Strong
+  'S4P50E14': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Suction Max Plus 0: off 1: on
   'S7P1E1': {'EN': {0: 'Min', 100: 'Max'}, 'DE': {0: 'Min', 100: 'Max'}}, //Volume 1 to 100
+};
+
+const DreameDropdownCommands = {
+  'EN': {
+    'Start': 'Start cleaning',
+    'Stop': 'Stop',
+    'Pause': 'Pause',
+    'Charge': 'Return to charge'
+  },
+  'DE': {
+    'Start': 'Reinigung starten',
+    'Stop': 'Stopp',
+    'Pause': 'Pause',
+    'Charge': 'Zurück zur Ladestation'
+  }
 };
 
 let LogData; // = false;
@@ -2103,7 +2123,7 @@ class Dreamehome extends utils.Adapter {
           2: 'Only on input commands',
           3: 'On both voice and input commands'
         },
-        def: 'speakOnBoth'
+        def: 3
       },
       native: {}
     });
@@ -2135,105 +2155,24 @@ class Dreamehome extends utils.Adapter {
     await this.DH_CloudLogin();
     if (DH_Auth) {
       In_path = DH_Did + '.vis.';
-      await this.setObjectNotExists(In_path + 'vishtml0', {
+
+      // Create a generic dropdown object
+      await this.setObjectNotExistsAsync(DH_Did + '.control.Command', {
         type: 'state',
         common: {
-          name: 'HTML for VIS Map 1',
-          type: 'mixed',
-          role: 'state',
-          write: false,
+          name: 'Robot Command',
+          type: 'string',
+          role: 'level',
+          write: true,
           read: true,
-          def: ''
+          states: DreameDropdownCommands[UserLang],
+          desc: 'Control robot via dropdown (' + UserLang + ')'
         },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'vishtml1', {
-        type: 'state',
-        common: {
-          name: 'HTML for VIS Map 2',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: ''
-        },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'Perspective1', {
-        type: 'state',
-        common: {
-          name: 'Perspective1 for VIS Map 1',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '0,0,0.75,0,1,0,0,90'
-        },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'Perspective2', {
-        type: 'state',
-        common: {
-          name: 'Perspective2 for VIS Map 2',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '0,0,0.75,0,1,0,0,90'
-        },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'PosHistory0', {
-        type: 'state',
-        common: {
-          name: 'Dreame Position History for Map 1',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '{}'
-        },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'CharHistory0', {
-        type: 'state',
-        common: {
-          name: 'Dreame Charger History for Map 1',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '{}'
-        },
-        native: {},
+        native: {}
       });
 
-      await this.setObjectNotExists(In_path + 'PosHistory1', {
-        type: 'state',
-        common: {
-          name: 'Dreame Position History for Map 2',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '{}'
-        },
-        native: {},
-      });
-      await this.setObjectNotExists(In_path + 'CharHistory1', {
-        type: 'state',
-        common: {
-          name: 'Dreame Charger History for Map 2',
-          type: 'mixed',
-          role: 'state',
-          write: false,
-          read: true,
-          def: '{}'
-        },
-        native: {},
-      });
-
-
+      // Create state variable perspectives for floor 1 by default (even if no cards exist yet)
+	  await this.createFloorStates(1);
 
       try {
         const RobTaskStatusOb = await this.getStateAsync(DH_Did + '.state.TaskStatus');
@@ -2490,9 +2429,15 @@ class Dreamehome extends utils.Adapter {
                 await this.DH_getType(RetPointValue, path.replace('.state.', '.vis.'), SPkey);
                 await this.DH_setState(path.replace('.state.', '.vis.'), RetPointValue, true);
               }
-              if (SPkey == 'S4P7') {
+              if (SPkey == 'S4P7' /*"Task status"*/ ) {
                 await this.DH_getType(RetPointValue, path.replace('.state.', '.vis.'), SPkey);
                 await this.DH_setState(path.replace('.state.', '.vis.'), RetPointValue, true);
+                DH_NowTaskStatus = isNaN(+RetPointValue) ? 0 : +RetPointValue; // Change State
+				  this.log.info(`=======> DH_NowTaskStatus (${SPkey}) Set to : ${RetPointValue}`);
+              }
+			  if (SPkey == 'S4P1' /*"Status"*/ ) {
+                DH_NowStatus = isNaN(+RetPointValue) ? 0 : +RetPointValue; // Change State
+				  this.log.info(`=======> DH_NowStatus (${SPkey}) Set to : ${RetPointValue}`);
               }
               RetPointValue = await this.DH_SetPropSPID(SPkey, RetPointValue);
               await this.DH_getType(RetPointValue, path, SPkey);
@@ -2567,8 +2512,7 @@ class Dreamehome extends utils.Adapter {
   }
 
   async DH_RequestNewMap() {
-
-    /*try { //Test decrypted Map..
+	    /*try { //Test decrypted Map..
             var TSETURLData = {
                 did: DH_Did,
                 model: DH_Model,
@@ -2599,6 +2543,12 @@ class Dreamehome extends utils.Adapter {
             this.log.warn(`Unable to decrypt file at ${DH_URLDOWNURL}: ${error}`);
         }*/
 
+    let DH_input_Raw = null;
+    let DH_jsonread = null;
+    let DH_jsondecode = null;
+    let DH_decode = null;
+    let DH_DecodeMap = null;
+
     try {
       const SETURLData = {
         did: DH_Did,
@@ -2606,151 +2556,267 @@ class Dreamehome extends utils.Adapter {
         filename: DH_filename,
         region: DH_Region
       };
+
       const GetCloudRequestMap = await this.DH_URLRequest(DH_URLDOWNURL, SETURLData);
-      if (GetCloudRequestMap) {
-        const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
-        await this.setObjectNotExists(DH_Did + '.map.CloudData', {
-          type: 'state',
-          common: {
-            name: 'Map object. Only available when cloud connection is present',
-            type: 'json',
-            role: 'array',
-            write: false,
-            read: true,
-            def: ''
-          },
-          native: {},
+      if (!GetCloudRequestMap) {
+        this.log.warn('No map data received from cloud');
+        return;
+      }
+
+      const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
+
+      // CloudData Object handling
+      await this.setObjectNotExistsAsync(DH_Did + '.map.CloudData', {
+        type: 'state',
+        common: {
+          name: 'Map object',
+          type: 'json',
+          role: 'array',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {},
+      });
+      await this.setStateAsync(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
+
+      // Dynamic MapNumber handling
+      const dynamicStates = {};
+      let mapKeys = [];
+      if (RetFileData?.mapstr) {
+        mapKeys = Object.keys(RetFileData.mapstr);
+        mapKeys.forEach((mapKey) => {
+          dynamicStates[mapKey] = `Map ${parseInt(mapKey)+1}`;
         });
+      }
 
-        //await this.setState(In_path + 'map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
-        await this.setState(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
-        //const DH_DecodeMap = JSON.stringify(RetFileData["mapstr"][0]["map"]).toString();
+      const mapNumberPath = DH_Did + '.map.MapNumber';
+      const objExists = await this.objectExists(mapNumberPath);
 
-        await this.setObjectNotExists(DH_Did + '.map.MapNumber', {
+      if (!objExists) {
+        await this.setObjectNotExistsAsync(mapNumberPath, {
           type: 'state',
           common: {
-            name: 'Map Number. Only available when cloud connection is present',
+            name: 'Map Number',
             type: 'number',
             role: 'level',
-            states: {
-              0: "Map N' 1",
-              1: "Map N' 2"
-            },
+            states: dynamicStates,
             write: true,
             read: true,
-            def: 0
+            def: mapKeys[0] || 0
           },
           native: {},
         });
+      } else {
+        await this.extendObjectAsync(mapNumberPath, {
+          common: { states: dynamicStates }
+        });
+      }
 
+      // Current Map handling
+      try {
+        const DH_CurMapOb = await this.getStateAsync(mapNumberPath);
+        let currentMap = (DH_CurMapOb && DH_CurMapOb.val !== null) ? DH_CurMapOb.val : (mapKeys[0] || 0);
+
+        if (mapKeys.length > 0 && !mapKeys.includes(currentMap.toString())) {
+          currentMap = mapKeys[0];
+          await this.setStateAsync(mapNumberPath, currentMap, true);
+          this.log.warn('Invalid map number, reset to default');
+        }
+
+        DH_CurMap = currentMap;
+
+        // Call the floor update
+        await this.updateFloorsBasedOnMaps(DH_CurMap);
+
+      } catch (error) {
+        DH_CurMap = mapKeys[0] || 0;
+        await this.setStateAsync(mapNumberPath, DH_CurMap, true);
+        this.log.warn('Map number error:', error);
+      }
+
+      // Map data processing
+      if (RetFileData?.mapstr && DH_CurMap.toString() in RetFileData.mapstr) {
+        DH_DecodeMap = JSON.stringify(RetFileData.mapstr[DH_CurMap.toString()].map);
+      }
+
+      if (LogData) {
+	       this.log.info('Decode Map response: ' + JSON.stringify(DH_DecodeMap));
+      }
+
+      if (DH_DecodeMap) {
         try {
-          const DH_CurMapOb = await this.getStateAsync(DH_Did + '.map.MapNumber');
-          DH_CurMap = DH_CurMapOb.val;
-          this.log.info(DreameInformation[UserLang][0] + DH_CurMap);
-        } catch (error) {
-          this.log.warn(DreameInformation[UserLang][1] + error);
-          DH_CurMap = 0;
-        }
+          DH_input_Raw = DH_DecodeMap.replace(/-/g, '+').replace(/_/g, '/');
+          DH_decode = zlib.inflateSync(Buffer.from(DH_input_Raw, 'base64')).toString();
+          DH_jsondecode = DH_decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
 
-        let DH_DecodeMap = '';
-        //let AddMapLevel = {}; //FoundedMap = false,
-        for (const [MAkey, MAvalue] of Object.entries(RetFileData)) {
-          if (MAkey == 'mapstr') { // && (FoundedMap == false)) {
-            for (const [MBkey, MBvalue] of Object.entries(MAvalue)) {
-              if (parseInt(MBkey) == DH_CurMap) {
-                DH_DecodeMap = JSON.stringify(RetFileData[MAkey][MBkey]['map']).toString();
-                //FoundedMap = true;
-                //break;
-              }
-              // AddMapLevel[MBkey] = ": Map N' " + (parseInt(MBkey) + 1);
-            }
-          }
-          if (MAkey == 'curr_id') {
-            DH_MapIDs.push(MAvalue);
-            DH_MapID = MAvalue;
-          }
-        }
-        /*AddMapLevel = JSON.parse(JSON.stringify(AddMapLevel));
-                await this.setState(DH_Did + '.map.MapNumber', {
-                    states: AddMapLevel
-                });*/
-
-        await this.setObjectNotExists(DH_Did + '.map.MapID', {
-          type: 'state',
-          common: {
-            name: 'Map ID. Only available when cloud connection is present',
-            type: 'number',
-            role: 'value',
-            write: false,
-            read: true,
-            def: DH_MapID
-          },
-          native: {},
-        });
-        await this.setState(DH_Did + '.map.MapID', DH_MapID, true);
-        if (LogData) {
-	   this.log.info('Decode Map response: ' + JSON.stringify(DH_DecodeMap));
-        }
-
-
-        if (DH_DecodeMap !== '') {
-          let DH_input_Raw = DH_DecodeMap.replace(/-/g, '+').replace(/_/g, '/');
-          let DH_decode = zlib.inflateSync(Buffer.from(DH_input_Raw, 'base64')).toString();
-          let DH_jsondecode = DH_decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-          let DH_jsonread = (_ => {
-            try {
-              return JSON.parse(DH_jsondecode);
-            } catch (err) {
-              this.log.info('Error:' + err);
-              return undefined;
-            }
-          })();
-          if (LogData) {
-            this.log.info('Decode Map response: ' + JSON.stringify(DH_jsonread));
-          }
-          if (!DH_jsonread) {
-            this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
-          } else {
+          if (DH_jsondecode) {
+            DH_jsonread = JSON.parse(DH_jsondecode);
             DH_Map[DH_CurMap] = DH_jsonread;
-            await this.setObjectNotExists(DH_Did + '.mqtt.robot', {
-              type: 'state',
-              common: {
-                name: 'Dreame Robot Position',
-                type: 'json',
-                role: 'array',
-                write: false,
-                read: true,
-                def: JSON.stringify(DH_Map[DH_CurMap]['robot'])
-              },
-              native: {},
-            });
-            await this.setObjectNotExists(DH_Did + '.mqtt.charger', {
-              type: 'state',
-              common: {
-                name: 'Dreame Charger Position',
-                type: 'json',
-                role: 'array',
-                write: false,
-                read: true,
-                def: JSON.stringify(DH_Map[DH_CurMap]['charger'])
-              },
-              native: {},
-            });
+
+            if (LogData) {
+              this.log.info('Decode Map response: ' + JSON.stringify(DH_jsonread));
+            }
+
+            if (!DH_jsonread) {
+              this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
+            } else {
+
+              // Save positions
+              await Promise.all([
+                this.setObjectNotExistsAsync(DH_Did + '.mqtt.robot', {
+                  type: 'state',
+                  common: {
+                    name: 'Robot Position',
+                    type: 'json',
+                    role: 'array',
+                    write: false,
+                    read: true,
+                    def: JSON.stringify(DH_jsonread.robot || {})
+                  },
+                  native: {},
+                }),
+                this.setObjectNotExistsAsync(DH_Did + '.mqtt.charger', {
+                  type: 'state',
+                  common: {
+                    name: 'Charger Position',
+                    type: 'json',
+                    role: 'array',
+                    write: false,
+                    read: true,
+                    def: JSON.stringify(DH_jsonread.charger || {})
+                  },
+                  native: {},
+                })
+              ]);
+
+              this.log.info(DreameInformation[UserLang][5]);
+            }
           }
 
-          //await this.setState(DH_Did + '.map.CloudData', JSON.stringify(DH_Map[DH_CurMap]), true);
+        } catch (error) {
+          this.log.error('Map processing error:', error);
+        } finally {
+          // Explicit memory cleaning
           DH_input_Raw = null;
           DH_jsonread = null;
           DH_jsondecode = null;
           DH_decode = null;
           DH_DecodeMap = null;
-
-          this.log.info(DreameInformation[UserLang][5]);
         }
       }
     } catch (error) {
-      this.log.warn(`Unable to get file at ${DH_URLDOWNURL}: ${error}`);
+      this.log.error(`Map request failed: ${error}`);
+    } finally {
+      // Additional cleanup
+      DH_input_Raw = null;
+      DH_jsonread = null;
+      DH_jsondecode = null;
+      DH_decode = null;
+      DH_DecodeMap = null;
     }
+  }
+
+  // Updates the floors based on the available maps
+  async updateFloorsBasedOnMaps(currentMapNumber) {
+    const In_path = DH_Did + '.vis.';
+
+    // 1. Ensure base floor exists (Floor 1 -> stored as 0)
+    if (!await this.objectExists(`${In_path}ViewSettings0`)) {
+      await this.createFloorStates(1); // Creates ViewSettings0 and PosHistory0
+      this.log.info('Created base floor states (Floor 1 -> stored as 0)');
+    }
+
+    // 2. Get available floors from MapNumber states
+    const mapObj = await this.getObjectAsync(DH_Did + '.map.MapNumber');
+    let availableFloors = [1]; // Default to Floor 1
+
+    if (mapObj?.common?.states) {
+      availableFloors = Object.keys(mapObj.common.states)
+        .map(Number)
+        .sort((a,b) => a - b)
+        .map(n => n + 1); // Convert to 1-based numbering
+    }
+
+    // 3. Create missing floor states
+    for (const floor of availableFloors) {
+      const storageNumber = floor - 1; // Convert to 0-based storage
+      if (!await this.objectExists(`${In_path}ViewSettings${storageNumber}`)) {
+        await this.createFloorStates(floor);
+        this.log.info(`Created floor states for floor ${floor} (stored as ${storageNumber})`);
+      }
+    }
+  }
+
+  // Helper function for creating floor states
+  async createFloorStates(requestedFloor) {
+    const actualFloor = requestedFloor - 1; // Conversion 1 -> 0, 2 -> 1
+    const In_path = DH_Did + '.vis.';
+
+    // Define default values for perspective settings
+    const defaultPerspective = {
+      perspective: {
+        xRotation: 0,
+        yRotation: 0,
+        zRotation: 0,
+        perspective: 1200,
+        zoom: 100,
+        xPosition: 0,
+        yPosition: 0,
+        bgColor: '#ffffff'
+      },
+      visibility: {
+        showRobotPath: true,
+        showHistoryPath: true,
+        labelsHidden: false
+      },
+      selections: {
+        rooms: [],
+        carpets: []
+      }
+    };
+
+    await Promise.all([
+      this.setObjectNotExistsAsync(`${In_path}ViewSettings${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `Map Perspective Settings Floor ${requestedFloor}`,
+          type: 'object',
+          role: 'json',
+          write: true,
+          read: true,
+          def: JSON.stringify(defaultPerspective)
+        },
+        native: {}
+      }),
+      this.setObjectNotExistsAsync(`${In_path}PosHistory${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `Map Position History Floor ${requestedFloor}`,
+          type: 'mixed',
+          role: 'state',
+          write: true,
+          read: true,
+          def: '{}'
+        },
+        native: {}
+      }),
+
+      // Create state variables for all floors as an HTML file
+      this.setObjectNotExists(`${In_path}vishtml${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `HTML file for floor ${requestedFloor}`,
+          type: 'mixed',
+          role: 'state',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {}
+      })
+    ]);
+    this.log.info(`Created states for floor ${requestedFloor} (stored as ${actualFloor})`);
   }
 
   async DH_getFile(url) {
@@ -3307,35 +3373,44 @@ class Dreamehome extends utils.Adapter {
                     z-index: 100;
                 }
                 #robot-position {
-                    position: absolute;
-                    width: 20px;
-                    height: 20px;
-                    background: #ff0000;
-                    border-radius: 50%;
-                    border: 2px solid white;
-                    box-shadow: 0 0 12px rgba(255,0,0,0.8);
-                    transform: translate(-10px, -10px);
-                    z-index: 110;
-                    display: none;
-                    animation: pulse-robot 1s infinite alternate;
+                    transition: transform 0.3s ease-out;
+                    will-change: transform;
                 }
-                @keyframes pulse-robot {
-                    0% { transform: translate(-10px, -10px) scale(1); }
-                    100% { transform: translate(-10px, -10px) scale(1.3); }
+
+				#robot-path-history {
+				position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0.3;
+                    pointer-events: none;
+                    z-index: 101;
                 }
-                .cleaned-area {
-                    opacity: 0.7;
-                    transition: all 1s ease;
-                }
-                #robot-path {
+
+                #robot-path-current {
                     position: absolute;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-				    opacity: 0.3;
+                    opacity: 0.7;
                     pointer-events: none;
-                    z-index: 101;
+                    z-index: 102;
+                }
+
+                #robot-path-current path {
+                    animation: pulse 1s infinite;
+                }
+                @keyframes pulse {
+                    0% { stroke-width: 3px; }
+                    50% { stroke-width: 5px; }
+                    100% { stroke-width: 3px; }
+                }
+
+                .cleaned-area {
+                    opacity: 0.7;
+                    transition: all 1s ease;
                 }
                 .room-label-fixed {
                     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -3429,13 +3504,14 @@ class Dreamehome extends utils.Adapter {
                     border-radius: 4px;
                     color: #ffffff;
                 }
+
 				/* ==================== */
-                /* Quantum Menu Effects */
+                /* Main Menu Effects */
                 /* ==================== */
 
                 .main-menu-button {
 					top: 5px;
-                    right: 90px;
+                    right: 15px;
                     width: 65px;
                     height: 65px;
                     border-radius: 50%;
@@ -3548,6 +3624,15 @@ class Dreamehome extends utils.Adapter {
                     100% { box-shadow: 0 10px 35px rgba(43, 180, 226, 0.5); }
                 }
 
+				.current-selection {
+					font-weight: 500;
+                    color: #2bb4e2;
+                    padding: 8px 12px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                    font-size: 0.6em;
+				}
+
                 .menu-level::before {
                     content: '';
                     position: absolute;
@@ -3578,6 +3663,7 @@ class Dreamehome extends utils.Adapter {
                     overflow: hidden;
                     border: 1px solid rgba(255,255,255,0.05);
                     z-index: 150;
+					min-width: 240px;
                 }
 
                 .menu-item::before {
@@ -3615,7 +3701,6 @@ class Dreamehome extends utils.Adapter {
                     font-weight: 600;
                     margin-bottom: 10px;
                     color: #2bb4e2;
-                    font-size: 18px;
                     padding: 8px 12px;
                     border-bottom: 1px solid rgba(255,255,255,0.1);
                     letter-spacing: 1px;
@@ -3644,18 +3729,6 @@ class Dreamehome extends utils.Adapter {
                     transform: translateX(-3px);
                 }
 
-                /* Particle Effects */
-                .menu-particle {
-                    position: absolute;
-                    width: 4px;
-                    height: 4px;
-                    background: white;
-                    border-radius: 50%;
-                    pointer-events: none;
-                    opacity: 0;
-                    z-index: 200;
-                }
-
                 /* Responsive */
                 @media (max-width: 768px) {
                     .menu-level {
@@ -3663,8 +3736,10 @@ class Dreamehome extends utils.Adapter {
                         min-width: 200px;
                     }
                 }
-                /* End Quantum Menu Effects */
 
+				/* ==================== */
+				/* info: Charger station and current room  */
+				/* ==================== */
 
 				.charger-station-mini {
                     width: 40px;
@@ -3723,8 +3798,10 @@ class Dreamehome extends utils.Adapter {
                     position: relative;
                 }
 
+				/* ==================== */
+                /* Base Status-specific animations for the mini version */
+				/* ==================== */
 
-                /* Status-specific animations for the mini version */
                 .charger-station-mini[data-status="charging"] .charger-base {
                     animation: pulse-blue 2s infinite;
                 }
@@ -3768,7 +3845,9 @@ class Dreamehome extends utils.Adapter {
                     animation: blink 1.5s infinite;
                 }
 
-
+				/* ==================== */
+				/* Base Status-specific animations*/
+				/* ==================== */
 
                 .charger-station {
                     position: absolute;
@@ -3796,20 +3875,6 @@ class Dreamehome extends utils.Adapter {
                     width: 80%;
                     height: 80%;
                     fill: rgba(0,255,255,0.5);
-                }
-
-                .status-text {
-                    position: absolute;
-                    bottom: -20px;
-                    left: 0px;
-                    width: 100%;
-                    text-align: center;
-                    font-size: 8px;
-                    font-weight: bold;
-                    color: white;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-                    transform: scale(1.5);
-                    transform-origin: top center;
                 }
 
 				/* Base styles for all statuses */
@@ -3920,6 +3985,814 @@ class Dreamehome extends utils.Adapter {
                     50% { opacity: 0.5; }
                 }
 
+				/* ==================== */
+				/* Main menu Buttons - Compact icon buttons next to each other */
+				/* ==================== */
+
+				.icon-hide-show-menu {
+                    display: flex;
+                    gap: 3px;
+                    padding: 2px;
+                    justify-content: flex-start;
+                					scrollbar-width: thin;
+                					scrollbar-color: rgba(43, 180, 226, 0.8) transparent;
+                					width: 100%;
+                                    color: white;
+                					flex-wrap: wrap; /* For very small screens */
+                }
+				.hide-show-option {
+                    border: 1px solid rgba(255,255,255,1);
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 55px;
+                    height: 55px;
+                    position: relative;
+                	border-radius: 50% !important;
+                	background: radial-gradient(circle at center,
+                                                rgba(255,255,255,0.8) 0%,
+                                                rgba(255,255,255,0) 70%);
+                	transition: opacity 0.3s;
+                }
+
+				.hide-show-option-svg {
+					transition: all 0.4s ease !important;
+					fill: rgba(255, 255, 255,1) !important;
+                	stroke: rgba(43, 180, 226,0) !important;
+                	transition: all 0.4s ease !important;
+					filter: drop-shadow(#000000 0.10rem 0 1px) drop-shadow(#000000 0 0.25rem 1px) !important;
+                }
+                .hide-show-option svg {
+                    width: 85%;
+                    height: 85%;
+                }
+
+                .hide-show-option:hover .hide-show-option-svg {
+                  fill: rgba(43, 180, 226,1);
+                  stroke: rgba(43, 180, 226,0.5);
+                }
+
+                .hide-show-option:hover {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+                }
+
+                .hide-show-option.active .path1 {
+                  fill: rgba(43, 180, 226, 0.5) !important;
+                  stroke: rgba(43, 180, 226, 1) !important;
+                  transform: scale(1.05) !important;
+                }
+
+                .hide-show-option.active {
+                	background: radial-gradient(circle at center,
+                                                rgba(43, 180, 226,0) 0%,
+                                                rgba(43, 180, 226,1) 100%);
+                	transition: all 0.6s;
+                	box-shadow: 0 0 15px rgba(43, 180, 226, 0.9);
+                }
+
+				/* ==================== */
+                /* Cleaning menu - Compact icon buttons next to each other */
+				/* ==================== */
+
+                .icon-clean-menu {
+                    display: flex;
+                    gap: 3px;
+                    padding: 2px;
+                    justify-content: flex-start;
+                					scrollbar-width: thin;
+                					scrollbar-color: rgba(43, 180, 226, 0.8) transparent;
+                					width: 100%;
+                                    color: white;
+                					min-width: 300px;
+                					flex-wrap: wrap; /* For very small screens */
+                }
+
+                .mode-option {
+                    border: 1px solid rgba(255,255,255,1);
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 55px;
+                    height: 55px;
+                    position: relative;
+                	border-radius: 50%;
+                	background: radial-gradient(circle at center,
+                                                rgba(255,255,255,0.8) 0%,
+                                                rgba(255,255,255,0) 70%);
+                	transition: opacity 0.3s;
+                }
+
+                .mode-option i {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 45px;
+                    height: 45px;
+                	cursor: pointer;
+                }
+
+                .mode-option-svg {
+					transition: all 0.4s ease !important;
+					fill: rgba(255, 255, 255,1) !important;
+                	stroke: rgba(43, 180, 226,0) !important;
+                	transition: all 0.4s ease !important;
+					filter: drop-shadow(#000000 0.10rem 0 1px) drop-shadow(#000000 0 0.25rem 1px) !important;
+                }
+                .mode-option svg {
+                    width: 90%;
+                    height: 90%;
+                }
+
+                .mode-option:hover .mode-option-svg {
+                  fill: rgba(43, 180, 226,1);
+                  stroke: rgba(43, 180, 226,0.5);
+                }
+
+                .mode-option:hover {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+                }
+
+                .mode-option.active .mode-option-svg path {
+                  fill: rgba(43, 180, 226, 0.5) !important;
+                  stroke: rgba(43, 180, 226, 1) !important;
+                  transform: scale(1.05) !important;
+                }
+
+                .mode-option.active {
+                	background: radial-gradient(circle at center,
+                                                rgba(43, 180, 226,0) 0%,
+                                                rgba(43, 180, 226,1) 100%);
+                	transition: all 0.6s;
+                	box-shadow: 0 0 15px rgba(43, 180, 226, 0.9);
+                }
+
+				/* ==================== */
+                /* Cleaning menu extensions - Styling for the options */
+				/* ==================== */
+
+                .option-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    margin-bottom: 15px;
+                }
+
+                .option-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 3px;
+                    font-weight: 600;
+                    color: #2bb4e2;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                }
+
+                .option-buttons-container {
+                    display: flex;
+                    gap: 3px;
+                    flex-wrap: wrap;
+                }
+
+                .option-group.visible {
+                    display: flex;
+                	flex-direction: column;
+                    gap: 8px;
+                }
+
+
+                .mode-option-buttons {
+                    border: 1px solid rgba(255,255,255,1);
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 55px;
+                    height: 55px;
+                    position: relative;
+                	border-radius: 50%;
+                	background: radial-gradient(circle at center,
+                                                rgba(255,255,255,0.8) 0%,
+                                                rgba(255,255,255,0) 70%);
+                	transition: opacity 0.3s;
+                }
+
+                .mode-option-buttons i {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 45px;
+                    height: 45px;
+                	cursor: pointer;
+                }
+
+                .mode-option-buttons-svg {
+                	fill: rgba(255, 255, 255,1) !important;
+                	stroke: rgba(0, 0, 0,0.5) !important;
+                	transition: all 0.4s ease !important;
+					filter: drop-shadow(#000000 0.05rem 0 1px) drop-shadow(#000000 0 0.25rem 1px) !important;
+                }
+                .mode-option-buttons svg {
+                    width: 75%;
+                    height: 75%;
+                }
+
+                .mode-option-buttons:hover .mode-option-buttons-svg {
+                  fill: rgba(43, 180, 226,1);
+                  stroke: rgba(43, 180, 226,0.5);
+                }
+
+                .mode-option-buttons:hover {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+                }
+
+                .mode-option-buttons.active .mode-option-buttons-svg path {
+                  fill: rgba(43, 180, 226, 0.5) !important;
+                  stroke: rgba(43, 180, 226, 1) !important;
+                  transform: scale(1.05) !important;
+                }
+
+                .mode-option-buttons.active {
+                	background: radial-gradient(circle at center,
+                                                rgba(43, 180, 226,0) 0%,
+                                                rgba(43, 180, 226,1) 100%);
+                	transition: all 0.6s;
+                	box-shadow: 0 0 15px rgba(43, 180, 226, 0.9);
+                }
+
+                .option-label {
+                    font-size: 12px;
+                    text-align: center;
+                    color: white;
+                }
+
+				/* ==================== */
+                /* Summary tooltip */
+				/* ==================== */
+
+                .summary-tooltip {
+                	transition: opacity 0.3s ease, transform 0.3s ease;
+                    position: absolute;
+                    top: 80px;  /* Below the status display */
+                    left: 20px;
+                    z-index: 130;
+                    background: rgba(43, 180, 226, 0.15);
+                    backdrop-filter: blur(10px);
+                    border-radius: 12px;
+                    padding: 12px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    border: 1px solid rgba(43, 180, 226, 0.3);
+                    max-width: 300px;
+                    transform: translateY(-10px);
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                    pointer-events: none;
+                    display: none;
+                }
+
+                .summary-tooltip.active {
+                    display: block;
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+
+                .selection-summary {
+                	background: rgba(43, 180, 226, 0.1);
+                    border-radius: 12px;
+                    padding: 8px;
+                    margin: 0 0 10px 0;
+                    border: 1px solid rgba(43, 180, 226, 0.3);
+                    font-size: 13px;
+                    line-height: 1.4;
+                	color: #000000;
+                }
+
+                .selection-summary div {
+                    margin: 3px 0;
+                    display: flex;
+                    justify-content: space-between;
+                }
+
+                .selection-summary strong {
+                    color: #2bb4e2;
+                    margin-bottom: 5px;
+                    display: block;
+                    text-align: center;
+                }
+
+				/* ==================== */
+                /* Clean Command menu */
+				/* ==================== */
+
+				/* === Command Clean Interface Menu === */
+				.command-interface {
+				  position: absolute;
+				  top: 90px;
+				  right: 15px;
+				  z-index: 200;
+				  display: flex;
+				  justify-content: center;
+				}
+
+				.command-main-btn {
+				  position: relative;
+				  width: 65px;
+				  height: 65px;
+				  border-radius: 50%;
+				  background: radial-gradient(circle at 65% 35%, #35a3de, #05354f);
+				  box-shadow: 0 5px 15px rgba(43, 180, 226, 0.6);
+				  transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+				  display: flex;
+				  align-items: center;
+				  justify-content: center;
+				  cursor: pointer;
+				  border: none;
+				  color: white;
+				  font-size: 22px;
+				  z-index: 200;
+				}
+
+				.command-options {
+				  position: absolute;
+				  display: none;
+				  gap: 15px;
+				  top: 0;
+				  right: 70px;
+				  opacity: 0;
+				  flex-direction: row-reverse;
+				  transform-origin: right center;
+				  transform: translateX(30px) rotateY(-40deg);
+				  transition:
+				    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+				    opacity 0.3s ease;
+				}
+
+				.command-interface:hover .command-options {
+				  display: flex;
+				  opacity: 1;
+				  transform: translateX(0) rotateY(0);
+				}
+
+				.cmd-btn {
+				  width: 50px;
+				  height: 50px;
+				  border-radius: 50%;
+				  background: radial-gradient(circle at 65% 35%, #35a3de, #05354f);
+				  box-shadow: 0 5px 15px rgba(43, 180, 226, 0.6);
+				  transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+				  color: white;
+				  font-size: 18px;
+				  cursor: pointer;
+				  transition: all 0.3s ease;
+				  display: flex;
+				  flex-direction: column;
+				  align-items: center;
+				  justify-content: center;
+				  gap: 5px;
+				  border: none;
+				}
+
+				.cmd-btn span {
+				  font-size: 10px;
+				}
+
+				.cmd-btn:hover {
+				  background: rgba(0, 150, 255, 0.5);
+				  transform: translateY(-5px);
+				  box-shadow: 0 5px 15px rgba(0, 200, 255, 0.3);
+				}
+
+				/* === Command Base Interface Menu === */
+				.command-Base-interface {
+				  position: absolute;
+				  top: 180px;
+				  right: 15px;
+				  z-index: 200;
+				  display: flex;
+				  justify-content: center;
+				}
+
+				.command-Base-interface:hover .command-Base-options {
+				  display: flex;
+				  opacity: 1;
+				  transform: translateX(0) rotateY(0);
+				}
+
+				.command-Base-options {
+				  position: absolute;
+				  display: none;
+				  gap: 15px;
+				  top: 0;
+				  right: 70px;
+				  opacity: 0;
+				  flex-direction: row-reverse;
+				  transform-origin: right center;
+				  transform: translateX(30px) rotateY(-40deg);
+				  transition:
+				    transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+				    opacity 0.3s ease;
+				}
+
+				.command-Base-main-btn {
+				  position: relative;
+				  width: 65px;
+				  height: 65px;
+				  border-radius: 50%;
+				  background: radial-gradient(circle at 65% 35%, #35a3de, #05354f);
+				  box-shadow: 0 5px 15px rgba(43, 180, 226, 0.6);
+				  transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+				  display: flex;
+				  align-items: center;
+				  justify-content: center;
+				  cursor: pointer;
+				  border: none;
+				  color: white;
+				  font-size: 22px;
+				  z-index: 200;
+				}
+
+				.cmd-Base-btn {
+				  width: 50px;
+				  height: 50px;
+				  border-radius: 50%;
+				  background: radial-gradient(circle at 65% 35%, #35a3de, #05354f);
+				  box-shadow: 0 5px 15px rgba(43, 180, 226, 0.6);
+				  transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+				  color: white;
+				  font-size: 18px;
+				  cursor: pointer;
+				  transition: all 0.3s ease;
+				  display: flex;
+				  flex-direction: column;
+				  align-items: center;
+				  justify-content: center;
+				  gap: 5px;
+				  border: none;
+				}
+
+				.cmd-Base-btn.active {
+				  background: radial-gradient(circle at 65% 35%, #ff6b6b, #8b0000);
+				  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+				}
+
+				.cmd-Base-btn span {
+				  font-size: 10px;
+				}
+
+				.cmd-Base-btn:hover {
+				  background: rgba(0, 150, 255, 0.5);
+				  transform: translateY(-5px);
+				  box-shadow: 0 5px 15px rgba(0, 200, 255, 0.3);
+				}
+
+				/* === SVG Icons === */
+				.base-main-icon {
+				  width: 36px;
+				  height: 36px;
+				  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+				}
+				.base-icon {
+				  width: 24px;
+				  height: 24px;
+				  transition: all 0.3s ease;
+				}
+
+				.base-wash-icon {
+				  width: 36px !important;
+				  height: 36px !important;
+				}
+
+				.base-all-icon {
+				  width: 24px;
+				  height: 24px;
+				  transition: all 0.3s ease;
+				}
+
+
+				.lock-icon {
+				  width: 24px;
+				  height: 24px;
+				  transition: all 0.3s ease;
+				}
+
+				/* Update existing CSS for SVG support */
+				.cmd-Base-btn {
+				  /* existing styles... */
+				  padding: 8px; /* Add padding for better touch area */
+				}
+
+				.cmd-Base-btn.active .lock-icon {
+				  color: #ff6b6b; /* Red color for active state */
+				}
+
+				/* Add animation for lock/unlock transition */
+				@keyframes lockAnimation {
+				  0% { transform: scale(1); }
+				  50% { transform: scale(1.2); }
+				  100% { transform: scale(1); }
+				}
+
+				.lock-animate {
+				  animation: lockAnimation 0.3s ease;
+				}
+
+				/* === Keyframe animations === */
+				@keyframes commandPulse {
+				  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+				  70% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+				  100% { opacity: 0; }
+				}
+
+				/* ==================== */
+                /* Clean Command menu */
+				/* ==================== */
+				/* Battery indicator (charging bar with animation) */
+				.battery-indicator {
+				  margin-top: 15px;
+				  display: flex;
+				  align-items: center;
+				}
+
+				.battery-level {
+				  height: 10px;
+				  background: linear-gradient(90deg, #00ffaa, #00ddff);
+				  border-radius: 5px;
+				  width: 70%;
+				  animation: battery-pulse 2s infinite;
+				}
+
+				.low-battery {
+				  background: linear-gradient(90deg, #ff3300, #ff9900) !important;
+				  animation: battery-pulse 1s infinite !important;
+				}
+
+				#battery-percent {
+				  margin-left: 10px;
+				  color: #00ffaa;
+				  font-weight: bold;
+				}
+				@keyframes battery-pulse {
+				  0%, 100% { opacity: 1; }
+				  50% { opacity: 0.7; }
+				}
+
+				/* ==================== */
+                /* customeClean Room setting menu */
+				/* ==================== */
+				.settings-button {
+				    position: absolute;
+				    top: 0;
+				    right: 0;
+				    width: 20px;
+				    height: 20px;
+				    cursor: pointer;
+				    opacity: 0.7;
+				    transition: all 0.2s;
+				    z-index: 145;
+				    pointer-events: all;
+				    display: flex;
+				    align-items: center;
+				    justify-content: center;
+				    background: rgba(0,0,0,0.05);
+				    border-radius: 50%;
+				}
+
+				.settings-button:hover {
+				    opacity: 1;
+				    background: rgba(43, 180, 226, 0.2);
+				    transform: scale(1.1);
+				}
+
+				.room-label-fixed.active-menu .settings-button {
+				    opacity: 1;
+				    background: rgba(43, 180, 226, 0.3);
+				}
+
+				.settings-icon {
+				    pointer-events: none;
+				    width: 16px;
+				    height: 16px;
+				}
+
+				.radial-menu {
+				  position: fixed;
+				  z-index: 140;
+				  display: none;
+				  pointer-events: none;
+				  width: 140px;
+				  height: 140px;
+				  transform: translate(-50%, -50%);
+				  left: 0;
+				  top: 0;
+				  transform-origin: center;
+				}
+
+				.radial-menu.active {
+				  display: block;
+				  animation: radialMenuFadeIn 0.3s ease-out forwards;
+				}
+
+				@keyframes radialMenuFadeIn {
+				  0% {
+				    opacity: 0;
+				    transform: translate(-50%, -50%) scale(0.5);
+				  }
+				  100% {
+				    opacity: 1;
+				    transform: translate(-50%, -50%) scale(1);
+				  }
+				}
+
+				.main-option {
+				  position: absolute;
+				  width: 50px;
+				  height: 50px;
+				  border-radius: 50%;
+				  background: rgba(43, 180, 226, 0.9);
+				  display: flex !important;
+				  align-items: center !important;
+				  justify-content: center !important;
+				  color: white;
+				  font-size: 20px;
+				  cursor: pointer;
+				  pointer-events: all;
+				  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+				  transition: all 0.3s ease;
+				  border: 2px solid white;
+				  opacity: 0;
+				  transform: translate(-50%, -50%) scale(0.5);
+				  margin-left: -25px;
+				  margin-top: -25px;
+				  transform-origin: center !important;
+				}
+
+				.main-option > svg {
+				    width: 32px;
+				    height: 32px;
+				    display: block;
+				    margin: 0;
+				    padding: 0;
+				    transform: translate(0, 0);
+				}
+
+				.main-option:hover > svg {
+				    transform: scale(1.15);
+				}
+
+				.main-option.active > svg {
+				    transform: scale(1.3);
+				}
+
+				.radial-menu.active .main-option {
+				  display: block;
+				  animation: radialMenuAppear 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+				}
+
+				@keyframes radialMenuAppear {
+				  0% {
+				    opacity: 0;
+				    transform: translate(-50%, -50%) scale(0.5);
+				  }
+				  100% {
+				    opacity: 1;
+				    transform: translate(var(--tx), var(--ty)) scale(1);
+				  }
+				}
+
+				.radial-menu.closing {
+				  animation: radialMenuDisappear 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+				  pointer-events: none;
+				}
+
+				@keyframes radialMenuDisappear {
+				  0% {
+				    opacity: 1;
+				    transform: translate(var(--tx), var(--ty)) scale(1);
+				  }
+				  100% {
+				    opacity: 0;
+				    transform: translate(-50%, -50%) scale(0.5);
+				  }
+				}
+
+				.main-option:hover {
+				  transform: translate(var(--tx), var(--ty)) scale(1.1);
+				  background: rgba(43, 180, 226, 1);
+				}
+
+				.main-option.active {
+				  transform: translate(-50%, -50%) scale(1.2) !important;
+				  z-index: 140;
+				    animation: optionCenter 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+				  box-shadow: 0 0 0 4px rgba(255,255,255,0.8),
+				              0 8px 25px rgba(43, 180, 226, 0.5);
+				}
+
+				@keyframes optionCenter {
+				  0% {
+				    transform: translate(var(--tx), var(--ty)) scale(1);
+				  }
+				  60% {
+				    transform: translate(-50%, -50%) scale(1.3);
+				  }
+				  100% {
+				    transform: translate(-50%, -50%) scale(1.25);
+				  }
+				}
+
+				.main-option.hidden {
+				  pointer-events: none;
+
+				  animation: optionHide 0.35s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards !important;
+
+				  opacity: 0 !important;
+				}
+
+				@keyframes optionHide {
+				  0% {
+				    transform: translate(var(--tx), var(--ty)) scale(1) rotate(0deg);
+				    opacity: 1;
+				    filter: blur(0);
+				    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+				  }
+				  50% {
+				    transform: translate(
+				      calc(-50% + (var(--tx) + 50%) * 0.5),
+				      calc(-50% + (var(--ty) + 50%) * 0.5)
+				    ) scale(0.7) rotate(-15deg);
+				    opacity: 0.5;
+				  }
+				  100% {
+				    transform: translate(-50%, -50%) scale(0.4) rotate(30deg);
+				    opacity: 0;
+				    filter: blur(2px);
+				    box-shadow: 0 0 0 rgba(0,0,0,0);
+				  }
+				}
+
+				.sub-options {
+				  position: absolute;
+				  display: none;
+				  pointer-events: none;
+				  width: 100%;
+				  height: 100%;
+				  top: 0;
+				  left: 0;
+				}
+
+				.sub-options.active {
+				  display: block;
+				  pointer-events: all;
+				}
+
+				.sub-option {
+				  position: absolute;
+				  width: 40px;
+				  height: 40px;
+				  border-radius: 50%;
+				  background: rgba(255, 255, 255, 0.9);
+				  display: flex;
+				  align-items: center;
+				  justify-content: center;
+				  color: #2bb4e2;
+				  font-size: 16px;
+				  cursor: pointer;
+				  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+				  transition: all 0.3s ease;
+				  border: 2px solid #2bb4e2;
+				  opacity: 0;
+				  transform: translate(-50%, -50%) scale(0.5);
+				  margin-left: -20px;
+				  margin-top: -20px;
+				}
+
+				.sub-options.active .sub-option {
+				   animation: subOptionEnter 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards;
+				  animation-delay: calc(var(--index) * 0.08s + 0.15s);
+				}
+
+				@keyframes subOptionEnter {
+				  0% {
+				    opacity: 0;
+				    transform: translate(-50%, -50%) scale(0) rotate(15deg);
+				  }
+				  80% {
+				    opacity: 0.9;
+				    transform: translate(var(--tx), var(--ty)) scale(1.08);
+				  }
+				  100% {
+				    opacity: 1;
+				    transform: translate(var(--tx), var(--ty)) scale(1);
+				  }
+				}
+
+				.sub-option:hover {
+				  transform: translate(var(--tx), var(--ty)) scale(1.1);
+				  background: white;
+				}
+
+
             </style>
         </head>
         <body>
@@ -3966,7 +4839,7 @@ class Dreamehome extends utils.Adapter {
     const [tx1, ty1] = toCanvas(x1, y1);
     return `
                         <div class="carpet" id="carpet-${id}"
-                             style="left:${tx1}px;top:${ty1}px;width:${(x2-x1)*scale}px;height:${(y2-y1)*scale}px;background:${color}33;border:2px solid ${color}">
+							style="left:${tx1}px;top:${ty1}px;width:${(x2-x1)*scale}px;height:${(y2-y1)*scale}px;background:${color}33;border:2px solid ${color}">
                         </div>`;
   }).join('')}
 
@@ -3992,30 +4865,58 @@ class Dreamehome extends utils.Adapter {
                                     </svg>
                                 </div>
                             </div>
-                            <div class="status-text">Idle</div>
                         </div>
                     ` : ''}
 
-                    <svg id="robot-path"
-                        <path d="M" stroke="rgba(255,0,0,0.5)" stroke-width="2" fill="none" />
-                        <circle cx="" r="4" fill="blue" />
-                    </svg>
+					<svg id="robot-path-history">
+						<path d="M" stroke="rgba(0,150,255,0.5)" stroke-width="2" fill="none" />
+					</svg>
+
+					<svg id="robot-path-current">
+						<path d="M" stroke="rgba(255,50,50,0.8)" stroke-width="3" fill="none" />
+					</svg>
 
                     <!-- CURRENT ROBOT POSITION (as red dot) -->
-                    <div id="robot-position"
-                            style="display:none;
-                                width:20px;
-                                height:20px;
-                                background:#ff0000;
-                                border-radius:50%;
-                                border:2px solid white;
-                                box-shadow:0 0 10px rgba(255,0,0,0.7);
-                                position:absolute;
-                                transform:translate(-10px,-10px);
-                                z-index:110;
-                                display:none;">
-                    </div>
-                </div>
+                    <svg id="robot-position"
+                          style="position:absolute;width:64px;height:64px;transform:translate(-32px,-32px);z-index:110;display:none;"
+                          viewBox="0 0 200 200" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <!--Robot body-->
+                          <circle cx="100" cy="100" r="80" fill="#f8f8f8" stroke="#333" stroke-width="4" opacity="0.5">
+                            <animate attributeName="cy" values="100;98;100;102;100" dur="2s" repeatCount="indefinite"/>
+                          </circle>
+                        <!--Radar scanner-->
+                          <g transform="translate(100,60)">
+                        <!--Static radar background-->
+                            <circle r="15" fill="none" stroke="#aaa" stroke-width="3" opacity="1"/>
+                        <!--Pulsating radar rings-->
+                            <circle r="3" fill="none" stroke="#ff0000" stroke-width="3.5" opacity="0">
+                              <animate attributeName="r" values="3;35" dur="3.5s" begin="0s" repeatCount="indefinite"/>
+                              <animate attributeName="opacity" values="1;0.5" dur="3.5s" begin="0s" repeatCount="indefinite"/>
+                            </circle>
+                        <!--Radar center-->
+                            <circle r="12" fill="#000000" opacity="0.5"/>
+                          </g>
+                        <!--Wheels-->
+                          <rect x="12" y="85" width="12" height="30" rx="6" fill="#444" opacity="0.9">
+                            <animate attributeName="y" values="85;82;85;88;85" dur="2.4s" repeatCount="indefinite"/>
+                          </rect>
+                          <rect x="176" y="85" width="12" height="30" rx="6" fill="#444" opacity="0.9">
+                            <animate attributeName="y" values="85;88;85;82;85" dur="2.4s" repeatCount="indefinite"/>
+                          </rect>
+                        <!--Brush animation-->
+                          <g transform="translate(145,39)">
+                            <circle r="8" fill="#777" opacity="1"/>
+                            <g transform="rotate(0,0,0)">
+                              <line x1="-8" y1="0" x2="-23" y2="0" stroke="#000" stroke-width="2"/>
+                              <line x1="0" y1="-8" x2="0" y2="-23" stroke="#000" stroke-width="2"/>
+                              <line x1="8" y1="0" x2="23" y2="0" stroke="#000" stroke-width="2"/>
+                              <line x1="0" y1="8" x2="0" y2="23" stroke="#000" stroke-width="2"/>
+                              <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="5s" repeatCount="indefinite"/>
+                            </g>
+                          </g>
+					</svg>
+
+				</div>
 
 				<!-- Cascading Menu System -->
                 <div class="control-panel">
@@ -4026,28 +4927,62 @@ class Dreamehome extends utils.Adapter {
                         <div class="menu-title">Main Menu</div>
                         <button class="menu-item" data-next="view-menu">
                             <i>
-							    <svg width="24" height="24" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" viewBox="0 0 24 24">
-									<path style="opacity:.797" fill="#2bb4e2" d="M24.5.5a18.4 18.4 0 0 1 6 .5q9.311 10.884 19 0Q61.632-.87 60 11.499q5.247 8.445 15.5 8.001 4.645 8.104-2.5 14-24.593-35.424-59-10a52.2 52.2 0 0 0-7 10l-5-5q-1-2.5 0-5 1.565-1.684 2-4 17 1 16-16 2.114-1.921 4.5-3" transform="scale(.3)"/>
-									<path style="opacity:.886" fill="#fefffe" d="M34.5 15.5q25.845-1.131 37.5 22Q67.647 57.362 47.5 63 19.87 67.292 7 42.5q-.875-4.134 1-8 9.357-15.132 26.5-19m2 12q20.17 1.404 12.5 20-11.982 10.142-21-3-2.844-12.314 8.5-17" transform="scale(.3)"/>
-									<path style="opacity:.769" fill="#2bb4e2" d="M37.5 31.5q3.49-.38 6 2-3.71 2.397 0 4.5 1.573.739 3-.5 2.698 6.038-3 9.5-13.627 2.374-11-11 1.963-3.037 5-4.5" transform="scale(.3)"/>
-									<path style="opacity:.798" fill="#2bb4e2" d="M5.5 46.5q5.28 5.67 11 11.5 19.167 14.438 41 4a108 108 0 0 0 16-15.501q6.677 5.565 2 13-16.84.59-17 17.5a19.7 19.7 0 0 1-6.5 1.5q-5.834-3.54-12.5-6-5.499 1.244-9 5.5-5.556 1.206-10.5-1.5.799-16.703-16-17-5.445-7.245 1.5-13" transform="scale(.3)"/>
-                                </svg>
+							    <svg width="24" height="24" style="fill-rule:evenodd" viewBox="0 0 24 24">
+								<path style="opacity:.6" fill="#fff" d="M8.46.18a.3.3 0 0 1 .24.06q2.095 2.804 5.28 1.32.78-.54 1.32-1.32 1.266.302 2.46.9-.247 5.123 4.86 4.68.417 1.195.84 2.4l-.06.24q-.832.443-1.38 1.2-2.162-3.032-5.4-4.86Q8.983 1.782 3.48 7.86q-.666.974-1.5 1.8-.518-.728-1.32-1.14a.6.6 0 0 1-.12-.3 16 16 0 0 1 .9-2.28q5.04.24 4.8-4.8A58 58 0 0 0 8.46.18"/>
+								<path style="opacity:.964" fill="#fff" d="M10.74 4.98q7.629-.191 10.86 6.72.117.557-.12 1.08-4.157 7.674-12.66 5.82-4.667-1.727-6.66-6.3-.105-.496.12-.96 2.702-5.261 8.46-6.36m.24 3.24q4.159-.282 4.8 3.84-.608 4.06-4.68 3.78-3.31-1.128-2.94-4.62.649-2.239 2.82-3"/>
+								<path style="opacity:.6" fill="#fff" d="M11.58 9.78q.614-.045 1.2.12l.12.18q-.764.843.12 1.56.603.07 1.2-.06.008 2.902-2.88 2.58-1.805-.76-1.5-2.7.382-1.373 1.74-1.68"/>
+								<path style="opacity:.6" fill="#fff" d="M1.86 14.34q.212-.04.36.12 5.065 7.573 13.8 4.98 3.673-1.732 5.94-5.1a12 12 0 0 0 1.5 1.38 22 22 0 0 1-.96 2.4q-5.08-.41-4.8 4.74-1.203.631-2.52.78-1.473-2.172-4.08-1.68-1.493.357-2.28 1.68-1.317-.149-2.52-.78.188-2.117-1.08-3.78-1.696-1.262-3.78-1.02a41 41 0 0 1-.9-2.34 22 22 0 0 0 1.32-1.38"/>
+								</svg>
 							</i> View settings
                         </button>
-                        <button class="menu-item" data-next="clean-menu">
-                            <i>??</i> Cleaning
-                        </button>
-                        <button class="menu-item" id="toggle-robot-path">
-                            Hide Robot Path
-                        </button>
 
-						<button class="menu-item" id="toggle-room-label">
-                            Show room labels
-                        </button>
+						<button class="menu-item" data-next="clean-menu">
+							Cleaning Mode
+							<span class="current-selection" id="current-mode-display">Not selected</span>
+						</button>
+                        <div class="icon-hide-show-menu">
+							<button class="hide-show-option" id="toggle-robot-path">
+    					        <i>
+    					    		<svg class="hide-show-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+    								<path class="path1" style="opacity:.929" d="M25.3 5.3a4.3 4.3 0 0 1 1.8.3 1373 1373 0 0 0 12.4 4.5l.2.6a1426 1426 0 0 0-1.5 11.8 360 360 0 0 1-.5 16.2A708 708 0 0 0 26.3 36a49.4 49.4 0 0 0-7.4-.2 39 39 0 0 1-5.3 1.3A453 453 0 0 1 .5 34.7a219 219 0 0 1 1.6-13.5A322 322 0 0 1 .3 6.9a531 531 0 0 0 10.6-.8 555 555 0 0 0 9.2 1.6 23 23 0 0 0 5.2-2.4m6.2 5q-3.633.614-2.2 4.1-.372 1.144-1.2 2a17 17 0 0 1-4 1q-2.019.766-2 2.9a12.6 12.6 0 0 0 .4 2.4 2.1 2.1 0 0 1-.3.8q-3.328 1.377-5.3 4.4a13 13 0 0 0-2.6-2.1q-2.439-.619-4.8.3-1.454-2.412-4-1.3-2.113 2.332.4 4.2 1.92.619 3.2-1a15.5 15.5 0 0 1 4.4-.4 9 9 0 0 1 1.7 1.5q-.149 4.254 3.9 3.1 1.984-2.038 0-4.1 1.028-1.429 2.6-2.2 1.151 1.964 3.4 1.3 2.11-1.432.9-3.7-.659-.729-1.6-1-.722-1.507-.1-3a2.5 2.5 0 0 1 .8-.5q4.499.356 6-3.8 3.318-.485 2.3-3.7a4 4 0 0 1-.7-.8 37 37 0 0 1 3.6 1.1.8.8 0 0 1 .2.4 254 254 0 0 0-1.4 12.2 103 103 0 0 1 .1 10.7q-7.753-2.11-15.8-2.2a427 427 0 0 0-5.7 1 187 187 0 0 0-10.2-1.4 232 232 0 0 1 1.6-11.9 486 486 0 0 0-2-10.5 99 99 0 0 1 7.6-1 143 143 0 0 1 10.4 2 61 61 0 0 1 5.1-2.6 49 49 0 0 1 5.3 1.8"/>
+    								<path style="opacity:.6" fill="#2bb4e2" d="M31.5 10.3h.4q.103.252.4.2.103.252.4.2a4 4 0 0 0 .7.8q1.018 3.215-2.3 3.7-1.501 4.156-6 3.8a2.5 2.5 0 0 0-.8.5q-.622 1.493.1 3 .941.271 1.6 1 1.21 2.268-.9 3.7-2.249.664-3.4-1.3-1.572.771-2.6 2.2 1.984 2.062 0 4.1-4.049 1.154-3.9-3.1a9 9 0 0 0-1.7-1.5 15.5 15.5 0 0 0-4.4.4q-1.28 1.619-3.2 1-2.513-1.868-.4-4.2 2.546-1.112 4 1.3 2.361-.919 4.8-.3a13 13 0 0 1 2.6 2.1q1.972-3.023 5.3-4.4a2.1 2.1 0 0 0 .3-.8 12.6 12.6 0 0 1-.4-2.4q-.019-2.134 2-2.9a17 17 0 0 0 4-1q.828-.856 1.2-2-1.433-3.486 2.2-4.1"/>
+    								</svg>
+    					    	</i>
+                            </button>
 
-                		<button class="menu-item" id="reset-selection-btn">
-                            Reset Selection
-                        </button>
+    						<button class="hide-show-option" id="toggle-history-path">
+                                <i>
+                                    <svg class="hide-show-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                                    <path style="opacity:.4" fill="#ff0000" d="M31.5 10.3h.4q.103.252.4.2.103.252.4.2a4 4 0 0 0 .7.8q1.018 3.215-2.3 3.7-1.501 4.156-6 3.8a2.5 2.5 0 0 0-.8.5q-.622 1.493.1 3 .941.271 1.6 1 1.21 2.268-.9 3.7-2.249.664-3.4-1.3-1.572.771-2.6 2.2 1.984 2.062 0 4.1-4.049 1.154-3.9-3.1a9 9 0 0 0-1.7-1.5 15.5 15.5 0 0 0-4.4.4q-1.28 1.619-3.2 1-2.513-1.868-.4-4.2 2.546-1.112 4 1.3 2.361-.919 4.8-.3a13 13 0 0 1 2.6 2.1q1.972-3.023 5.3-4.4a2.1 2.1 0 0 0 .3-.8 12.6 12.6 0 0 1-.4-2.4q-.019-2.134 2-2.9a17 17 0 0 0 4-1q.828-.856 1.2-2-1.433-3.486 2.2-4.1"/>
+                                    <path fill="#2bb4e2" d="M21.146 29.774a.774.774 90 01.202 1.534 10 10 90 01-2.024.062 10 10 90 01-6.392-2.908A10 10 90 0110 21.386c0-2.762 1.12-5.262 2.93-7.072A9.98 9.98 90 0122.784 11.776 10 10 90 0124.88 12.652L24.682 12.136A.84.84 90 0126.248 11.54l.836 2.182a.8.8 90 01.054.258.84.84 90 01-.582.932l-2.232.682a.836.836 90 01-.486-1.598l.184-.056a8.4 8.4 90 00-1.666-.682A8.4 8.4 90 0020.004 12.93a8.4 8.4 90 00-5.98 2.478 8.44 8.44 90 00-2.478 5.98c0 2.336.946 4.45 2.478 5.98A8.44 8.44 90 0019.354 29.82c.594.046 1.204.03 1.792-.046M18.474 17.318a.772.772 90 011.546 0v4.706l3.222 1.416a.772.772 90 01-.622 1.414l-3.644-1.602a.78.78 90 01-.502-.724zM23.84 28.948a.774.774 90 00.7 1.38q.75-.378 1.426-.878a.774.774 90 00-.92-1.242 8 8 90 01-1.204.74m3.154-2.77a.774.774 90 001.284.862q.47-.696.816-1.46a.774.774 90 00-1.41-.638 8 8 90 01-.69 1.236m1.42-3.964a.772.772 90 101.54.146q.08-.834.024-1.672a.776.776 90 00-1.544.108q.048.708-.02 1.418m-.644-4.162a.772.772 90 101.42-.612 10 10 90 00-.784-1.478.774.774 90 00-1.3.836q.384.598.664 1.25"/>
+                                    <path class="path1" style="opacity:.929" d="M 25.3 5.3 a 4.3 4.3 0 0 1 1.8 0.3 a 1373 1373 0 0 0 12.4 4.5 l 0.2 0.6 a 1426 1426 0 0 0 -1.5 11.8 a 360 360 0 0 1 -0.5 16.2 A 708 708 0 0 0 26.3 36 a 49.4 49.4 0 0 0 -7.4 -0.2 a 39 39 0 0 1 -5.3 1.3 A 453 453 0 0 1 0.5 34.7 a 219 219 0 0 1 1.6 -13.5 A 322 322 0 0 1 0.3 6.9 a 531 531 0 0 0 10.6 -0.8 a 555 555 0 0 0 9.2 1.6 z a 37 37 0 0 1 1.7 3.7 M 36 12 a 254 254 0 0 0 -1.4 12.2 a 103 103 0 0 1 0.1 10.7 q -7.753 -2.11 -15.8 -2.2 a 427 427 0 0 0 -5.7 1 a 187 187 0 0 0 -10.2 -1.4 a 232 232 0 0 1 1.6 -11.9 a 486 486 0 0 0 -2 -10.5 a 99 99 0 0 1 7.6 -1 a 143 143 0 0 1 10.4 2 a 61 61 0 0 1 6.4 -1.9 Z z"/>
+                                    </svg>
+                                </i>
+    						</button>
+
+
+    						<button class="hide-show-option" id="toggle-room-label">
+    						    <i>
+    						        <svg class="hide-show-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+    						            <path class="path1" style="opacity:.929" d="M 25.3 5.3 a 4.3 4.3 0 0 1 1.8 0.3 a 1373 1373 0 0 0 12.4 4.5 l 0.2 0.6 a 1426 1426 0 0 0 -1.5 11.8 a 360 360 0 0 1 -0.5 16.2 A 708 708 0 0 0 26.3 36 a 49.4 49.4 0 0 0 -7.4 -0.2 a 39 39 0 0 1 -5.3 1.3 A 453 453 0 0 1 0.5 34.7 a 219 219 0 0 1 1.6 -13.5 A 322 322 0 0 1 0.3 6.9 a 531 531 0 0 0 10.6 -0.8 a 555 555 0 0 0 9.2 1.6 z a 37 37 0 0 1 1.7 3.7 M 36 12 a 254 254 0 0 0 -1.4 12.2 a 103 103 0 0 1 0.1 10.7 q -7.753 -2.11 -15.8 -2.2 a 427 427 0 0 0 -5.7 1 a 187 187 0 0 0 -10.2 -1.4 a 232 232 0 0 1 1.6 -11.9 a 486 486 0 0 0 -2 -10.5 a 99 99 0 0 1 7.6 -1 a 143 143 0 0 1 10.4 2 a 61 61 0 0 1 6.4 -1.9 Z z"/>
+    						            <rect x="9" y="14" width="20" height="14" rx="2" fill="none" stroke="#2bb4e2" stroke-width="1.5"/><line x1="20" y1="32" x2="20" y2="28" style="stroke:#2bb4e2;stroke-width:2" />
+    						            <text x="16" y="26" font-family="Arial" font-size="14" text-anchor="middle" fill="#2bb4e2">A</text>
+    						            <text x="24" y="16" font-family="Arial" font-size="14" text-anchor="middle" fill="#2bb4e2" dy="10">1</text>
+    						        </svg>
+    						    </i>
+    						</button>
+
+							<button class="hide-show-option" id="reset-selection-btn">
+	    						    <i>
+	    						        <svg class="hide-show-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+										    <path class="path1" style="opacity:.929" d="M 25.3 5.3 a 4.3 4.3 0 0 1 1.8 0.3 a 1373 1373 0 0 0 12.4 4.5 l 0.2 0.6 a 1426 1426 0 0 0 -1.5 11.8 a 360 360 0 0 1 -0.5 16.2 A 708 708 0 0 0 26.3 36 a 49.4 49.4 0 0 0 -7.4 -0.2 a 39 39 0 0 1 -5.3 1.3 A 453 453 0 0 1 0.5 34.7 a 219 219 0 0 1 1.6 -13.5 A 322 322 0 0 1 0.3 6.9 a 531 531 0 0 0 10.6 -0.8 a 555 555 0 0 0 9.2 1.6 z a 37 37 0 0 1 1.7 3.7 M 36 12 a 254 254 0 0 0 -1.4 12.2 a 103 103 0 0 1 0.1 10.7 q -7.753 -2.11 -15.8 -2.2 a 427 427 0 0 0 -5.7 1 a 187 187 0 0 0 -10.2 -1.4 a 232 232 0 0 1 1.6 -11.9 a 486 486 0 0 0 -2 -10.5 a 99 99 0 0 1 7.6 -1 a 143 143 0 0 1 10.4 2 a 61 61 0 0 1 6.4 -1.9 Z z"/>
+										    <rect x="6" y="11" width="12" height="18" rx="1" fill="none" stroke="lime" stroke-width="1.5"/>
+										    <rect x="21" y="20" width="18" height="12" rx="1" fill="#32CD32" stroke="lime" stroke-width="1.5"/>
+										    <path  fill="#2bb4e2" d="M30 22.44V19.359c0-1.519-.209-2.633-.911-3.43-.719-.814-1.816-1.165-3.541-1.092H24.017V13.461Q24.003 13.187 23.832 13.073c-.286-.191-.57.036-.776.219C22.462 13.822 20.504 15.327 20.172 15.615a.454.454 0 000 .713c.326.275 2.214 1.715 2.826 2.27.216.194.523.479.834.273q.171-.114.185-.389V16.93h1.576c1.058-.049 1.65.074 1.925.387.298.339.387 1.028.387 2.047V22.44Z"/>
+	    						        </svg>
+	    						    </i>
+	                        </button>
+						</div>
 
 						<button class="menu-item" data-next="spectacle-menu">
                             <i>&#128171;</i>Spectacle
@@ -4059,7 +4994,7 @@ class Dreamehome extends utils.Adapter {
                     <!-- View Menu Level 2 -->
                     <div class="menu-level" id="view-menu">
 
-                        <div class="menu-title">View Settings</div>
+                        <div class="menu-title">View Menu</div>
 
                         <div class="slider-container">
                             <label for="x-rotation">X-Rotation:</label>
@@ -4121,30 +5056,78 @@ class Dreamehome extends utils.Adapter {
                         <button class="back-button" data-back="main-menu">&#128072; Back</button>
                     </div>
 
-                    <!-- Cleaning Menu Level 2 -->
-                    <div class="menu-level" id="clean-menu">
-                        <div class="menu-title">Cleaning Mode</div>
-                        <button class="menu-item" id="start-cleaning">
-                            <i>??</i> Sweeping
-                        </button>
-                        <button class="menu-item" id="spot-cleaning">
-                            <i>??</i> Mopping
-                        </button>
-                        <button class="menu-item" id="zone-cleaning">
-                            <i>??</i> Sweeping and mopping
-                        </button>
-                        <button class="menu-item" id="mop-cleaning">
-                            <i>??</i> Mopping after sweeping
-                        </button>
-                        <button class="menu-item" id="vacuum-cleaning">
-                            <i>??</i> Custom room cleaning
-                        </button>
-                        <button class="back-button" data-back="main-menu">&#128072; Back</button>
-                    </div>
-
 					<!-- Cleaning Menu Level 2 -->
+					<div class="menu-level" id="clean-menu">
+					    <div class="menu-title">Cleaning Menu</div>
+
+					    <!-- Mode selection -->
+					    <div class="icon-clean-menu">
+						    <button class="mode-option" data-mode="Sweeping">
+						        <i>
+						    		<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+									<path fill="#fff" d="M29.1 2.9q1.69.338 1.3 2A32.6 32.6 0 0 0 26 9.3a26.3 26.3 0 0 0-2.2 6q-1.246.851-2.2-.4.488-8.084 7.5-12"/>
+									<path fill="#fff" d="M29.7 8.1q1.423-.138 2.4.9 4.23 3.51 5.3 8.9a6.1 6.1 0 0 1 0 2.2q-.847.921-2 .4-.955-6.514-6.2-10.4-.567-1.176.5-2"/>
+									<path fill="#fff" d="M16.3 9.7q2.594-.207 1.7 2.2-7.31 4.714-8.4 13.4-.875 1.244-2.1.4-.441-.508-.4-1.2 1.266-9.542 9.2-14.8"/>
+									<path fill="#fff" d="M17.7 16.3q.707-.049 1.4.1 5.711 2.212 11.4-.1 1.825.249 1.2 2-2.285 1.447-5 1.7l-3.4.2q5.261 5.458 4.8 12.9-1.212.535-2.1-.4-.597-5.597-4-10a39.3 39.3 0 0 0-4.8-4.4q-.342-1.176.5-2"/>
+									<path fill="#fff" d="M1.7 27.9q.707-.049 1.4.1 8.117 3.338 16.3.1 1.321.072 1.3 1.4.033.562-.4.9-9.595 3.961-19-.4-.507-1.211.4-2.1"/>
+									</svg>
+						    	</i>
+						    </button>
+
+						    <button class="mode-option" data-mode="Mopping">
+						        <i>
+						    		<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+									<path fill="#fff" d="M15.1 1.9q.846-.076 1.6.3A75 75 0 0 1 23 9.7q.888 2.477-1.7 2.1l-5.5-6.7q-5.93 6.254-9.8 14-3.723 7.738 2.7 13.5 6.843 5.237 13.8.2a22 22 0 0 1 2.6-2.4q1.47-.315 2 1.1-2.597 4.441-7.6 5.9-10.942 2.203-16.3-7.5-2.153-4.894-.6-10 4.564-10.207 12.5-18"/>
+									<path fill="#fff" d="M28.5 6.9q1.149-.075 2 .7 4.055 4.457 6.7 9.9 2.28 7.486-4.5 11.3-6.091 2.183-10.5-2.5-3.775-5.66 0-11.4 2.547-4.494 6.3-8m.4 3.4q.873.522 1.5 1.4a63 63 0 0 1 4.4 7q1.395 5.56-3.9 7.9-5.527 1.161-7.7-4.1-.701-2.999 1-5.6a46.3 46.3 0 0 1 4.7-6.6"/>
+									</svg>
+						    	</i>
+						    </button>
+
+						    <button class="mode-option" data-mode="SweepingAndMopping">
+						        <i>
+						    		<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+									<path fill="#fff" d="M15.1 1.9q1.177 -0.129 2.1 0.6a99.2 99.2 0 0 1 4.8 5.8 14.8 14.8 0 0 1 1.9 3.1q-0.443 1.522 -2 1.2A172.2 172.2 0 0 1 15.8 5.1q-6.842 7.244 -10.8 16.4 -1.313 7.223 4.5 11.7 8.574 4.946 15.1 -2.5a20.08 20.08 0 0 1 1.9 -2.7q1.656 -0.398 2 1.3 -4.77 9.986 -15.8 8.3 -8.38 -2.28 -10.5 -10.7 -0.974 -6.303 2.6 -11.6 4.288 -7.381 10.3 -13.4"/>
+									<path fill="#fff" d="M28.5 8.9q2.181 -0.139 1.7 2 -3.774 2.605 -5.3 6.9a28.4 28.4 0 0 0 -0.9 3.5q-0.995 1.082 -2.2 0.2 -0.132 -8.134 6.7 -12.6"/>
+									<path fill="#fff" d="M29.5 14.3q1.542 -0.228 2.6 0.9 5.465 4.579 5.3 11.7 -1.274 1.172 -2.4 -0.2 -0.396 -4.996 -3.8 -8.6a15.68 15.68 0 0 1 -2.2 -2q-0.261 -1.048 0.5 -1.8"/>
+									<path fill="#fff" d="M18.1 22.5a120.4 120.4 0 0 1 3.8 1.1q4.539 0.885 8.8 -0.9 1.186 0.186 1.4 1.4 -0.907 1.608 -2.8 1.9 -5.993 1.714 -11.6 -1 -1.167 -1.454 0.4 -2.5"/>
+									</svg>
+						    	</i>
+						    </button>
+
+						    <button class="mode-option" data-mode="MoppingAfterSweeping">
+						        <i>
+						    		<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+									<path fill="#fff" d="M23.1 4.7q.868-.137 1.5.4a66.5 66.5 0 0 1-.2 10.2q-.8.4-1.6 0l-.2-8a.73.73 0 0 0-.3-.2q-.87.735-2 .8-.105-1.069.4-2 1.144-.772 2.4-1.2"/>
+									<path fill="#fff" d="M12.7 5.5q1.856-.19 1.9 1.6a44 44 0 0 0-3.4 3.6 19 19 0 0 0-2 5.4q-.979.773-2 0-.435-4.199 2.2-7.6 1.529-1.681 3.3-3"/>
+									<path fill="#fff" d="M14.3 10.5q1.423-.138 2.4.9 4.072 3.393 4.6 8.7-.437 1.989-2.3 1.2a26 26 0 0 0-1.8-5.2L16 14.5a18.7 18.7 0 0 1-2.4-2.2q-.306-1.184.7-1.8"/>
+									<path style="opacity:.902" fill="#fff" d="M4.5 17.1q.728.007 1.4.3 2.545 1.736 5.6 1.2a21 21 0 0 0 3.4-1.3q1.94.529 1 2.3-6.148 3.821-12.2-.2-.826-1.572.8-2.3"/>
+									<path style="opacity:.6" fill="#fff" d="M28.3 17.1q.945-.087 1.8.3 3.445 3.244 5.5 7.5 2.276 6.373-3.7 9.5-6.714 1.967-9.7-4.3-.669-2.436.2-4.8 2.202-4.65 5.9-8.2m.4 3.8q1.141.384 1.9 1.4 1.602 2.002 2.6 4.4.402 5.698-5.3 5.1-3-.95-3.2-4.1 1.136-3.929 4-6.8"/>
+									<path style="opacity:.6" fill="#fff" d="M14.7 24.7q4.731-.219 3.7 4.4a29 29 0 0 1-3.5 4.4q1.882.046 3.8.1.8.9 0 1.8-3 .2-6 0-.774-.444-.5-1.3a28.2 28.2 0 0 1 3.8-4.2q1.011-1.232.8-2.8-.899-.829-2.1-.5a79 79 0 0 1-1.7.9q-1.162-.341-.4-1.4.946-.904 2.1-1.4"/>
+									</svg>
+						    	</i>
+						    </button>
+
+						    <button class="mode-option" data-mode="CustomRoomCleaning">
+						        <i>
+						    		<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+									<path fill="#fff" d="M8.7 3.5q5.061-.283 6.9 4.4 1.478 4.481 1.1 9.2-3.954.209-7.8-.7-7.3-2.05-5.1-9.3 1.649-2.944 4.9-3.6m.4 2q4.611.16 5.1 4.8a28 28 0 0 1 .7 4.8q-4.183-.027-8-1.7-2.64-2.71-.9-6.1 1.199-1.572 3.1-1.8"/>
+									<path fill="#fff" d="M28.1 3.7q8.944-.207 7.5 8.6-1.285 2.873-4.3 3.9-4.208 1.29-8.6 1-.681-4.746.9-9.3 1.358-3.11 4.5-4.2m.4 2q6.546-.203 5.1 6.2-.674 1.564-2.3 2.1a27.6 27.6 0 0 1-7 1.3q.102-4.207 1.9-8 .945-1.143 2.3-1.6"/>
+									<path fill="#fff" d="M13.1 22.3a16 16 0 0 1 3.5.2q.621 5.434-1.6 10.4-3.533 4.767-8.9 2.1-3.55-2.556-2.7-6.9.788-3.388 4.1-4.5 2.76-1.007 5.6-1.3m1.4 1.8q.399 4.258-1.5 8.2-1.892 2.131-4.7 1.5-4.123-1.757-2.7-6.1 1.156-2.053 3.5-2.5a59 59 0 0 1 5.4-1.1"/>
+									<path fill="#fff" d="M22.5 22.5q4.616-.354 9 1.1 5.308 2.064 4.3 7.7-2.011 5.631-7.9 4.5-3.214-.913-4.3-4.1-1.478-4.481-1.1-9.2m2 1.8q4.078.245 7.8 1.9 2.647 2.701.9 6.1-3.235 3.214-6.8.4-1.111-1.631-1.4-3.6-.591-2.413-.5-4.8"/>
+									</svg>
+						    	</i>
+						    </button>
+					    </div>
+
+					    <!-- Dynamic settings -->
+					    <div class="settings-container"></div>
+
+					    <button class="back-button" data-back="main-menu">&#128072; Back</button>
+					</div>
+
+					<!-- Spectacle Menu Level 2 -->
                     <div class="menu-level" id="spectacle-menu">
-                        <div class="menu-title">Visual Spectacle</div>
+                        <div class="menu-title">Spectacle Menu</div>
 						<div class="slider-container">
                             <label for="animation-speed">Speed:</label>
                             <input type="range" id="animation-speed" min="1" max="10" value="5" step="0.1">
@@ -4158,8 +5141,156 @@ class Dreamehome extends utils.Adapter {
                         </button>
                         <button class="back-button" data-back="main-menu">&#128072; Back</button>
                     </div>
+
+
+					<!-- Command cleaning menu -->
+                    <div class="command-interface">
+                      <!-- Main command button -->
+                      <button class="command-main-btn" id="command-trigger">
+                        <svg width="64" height="64" viewBox="0 0 200 200" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <!--Robot body-->
+                          <circle cx="100" cy="100" r="80" fill="#f8f8f8" stroke="#333" stroke-width="4" opacity="0.5">
+                            <animate attributeName="cy" values="100;98;100;102;100" dur="2s" repeatCount="indefinite"/>
+                          </circle>
+                        <!--Radar scanner-->
+                          <g transform="translate(100,60)">
+                        <!--Static radar background-->
+                            <circle r="15" fill="none" stroke="#aaa" stroke-width="3" opacity="0.9"/>
+                        <!--Pulsating radar rings-->
+                            <circle r="3" fill="none" stroke="#fff" stroke-width="3.5" opacity="0">
+                              <animate attributeName="r" values="3;35" dur="3.5s" begin="0s" repeatCount="indefinite"/>
+                              <animate attributeName="opacity" values="1;0.5" dur="3.5s" begin="0s" repeatCount="indefinite"/>
+                            </circle>
+                        <!--Radar center-->
+                            <circle r="12" fill="#000000" opacity="0.3"/>
+                          </g>
+                        <!--Wheels-->
+                          <rect x="12" y="85" width="12" height="30" rx="6" fill="#444" opacity="0.9">
+                            <animate attributeName="y" values="85;82;85;88;85" dur="2.4s" repeatCount="indefinite"/>
+                          </rect>
+                          <rect x="176" y="85" width="12" height="30" rx="6" fill="#444" opacity="0.9">
+                            <animate attributeName="y" values="85;88;85;82;85" dur="2.4s" repeatCount="indefinite"/>
+                          </rect>
+                        <!--Play button-->
+                          <polygon points="90,77 125,97 90,117" fill="#fff">
+                            <animate attributeName="opacity" values="1;0.7;1" dur="1.5s" repeatCount="indefinite"/>
+                            <animate attributeName="points" values="90,77 125,97 90,117; 85,77 125,97 85,117; 90,77 125,97 90,117" dur="2s" repeatCount="indefinite"/>
+                          </polygon>
+                        <!--Stop button-->
+                          <rect x="34" y="77" width="40" height="40" fill="#fff" rx="5">
+                            <animate attributeName="fill" values="#fff;#fff" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="width" values="40;35;40" dur="1.5s" repeatCount="indefinite"/>
+                            <animate attributeName="height" values="40;35;40" dur="1.5s" repeatCount="indefinite"/>
+                          </rect>
+                        <!--Pause button-->
+                          <rect x="140" y="77" width="12" height="40" fill="#fff" rx="2">
+                            <animate attributeName="height" values="40;30;40" dur="1s" repeatCount="indefinite"/>
+                          </rect>
+                          <rect x="155" y="77" width="12" height="40" fill="#fff" rx="2">
+                            <animate attributeName="height" values="40;30;40" dur="1s" begin="0.5s" repeatCount="indefinite"/>
+                          </rect>
+                        <!--Brush animation-->
+                          <g transform="translate(145,39)">
+                            <circle r="8" fill="#bbb" opacity="0.9"/>
+                            <g transform="rotate(0,0,0)">
+                              <line x1="-8" y1="0" x2="-13" y2="0" stroke="#fff" stroke-width="2"/>
+                              <line x1="0" y1="-8" x2="0" y2="-13" stroke="#fff" stroke-width="2"/>
+                              <line x1="8" y1="0" x2="13" y2="0" stroke="#fff" stroke-width="2"/>
+                              <line x1="0" y1="8" x2="0" y2="13" stroke="#fff" stroke-width="2"/>
+                              <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="5s" repeatCount="indefinite"/>
+                            </g>
+                          </g>
+                        </svg>
+                      </button>
+
+                      <!-- Floating Command Menu -->
+                      <div class="command-options">
+                        <button class="cmd-btn" data-command="Start">
+                          <svg class="base-all-icon" viewBox="0 0 24 24">
+							<path fill="currentColor" d="M8 5v14l11-7z"/>
+						  </svg>
+                          <span>Start</span>
+                        </button>
+                        <button class="cmd-btn" data-command="Pause">
+                          <svg class="base-all-icon" viewBox="0 0 24 24">
+							<path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+						  </svg>
+                          <span>Pause</span>
+                        </button>
+                        <button class="cmd-btn" data-command="Stop">
+                          <svg class="base-all-icon" viewBox="0 0 24 24">
+							<path fill="currentColor" d="M6 6h12v12H6z"/>
+						  </svg>
+                          <span>Stop</span>
+                        </button>
+						 <button class="cmd-btn" data-command="CustomCleanSelected">
+						  <svg viewBox="0 0 64 64" width="32" height="32">
+						    <rect x="4" y="4" width="15" height="15" fill="none" stroke="#fff" stroke-width="2">
+						      <animate attributeName="opacity" values="0;1" dur="1s" begin="0.5s" fill="freeze"/>
+						      <animate attributeName="stroke-dasharray" values="1,0.5;1" dur="8s" repeatCount="indefinite"/>
+						    </rect>
+						    <rect x="24" y="4" width="36" height="18" fill="none" stroke="#fff" stroke-width="2"/>
+						    <rect x="4" y="26" width="14" height="24" fill="none" stroke="#fff" stroke-width="2" opacity="1"/>
+						    <rect x="22" y="26" width="38" height="34" fill="#fff" stroke="#fff" stroke-width="2" fill-opacity="0.7" stroke-opacity="0.9">
+						      <animate attributeName="opacity" values="0;1" dur="1s" begin="0.5s" fill="freeze"/>
+						      <animate attributeName="stroke-dasharray" values="3,1;3,5" dur="8s" repeatCount="indefinite"/>
+						    </rect>
+						    <polygon points="32,16 50,32 32,48" fill="#fff" fill-opacity="1" stroke="#fff" stroke-width="8" stroke-opacity="0.8">
+						      <animate attributeName="stroke-width" values="10;6;10" dur="2s" repeatCount="indefinite"/>
+						    </polygon>
+						  </svg>
+                          <span>Selected</span>
+						 </button>
+                        <button class="cmd-btn" data-command="Charge">
+						  <svg class="base-all-icon" viewBox="0 0 24 24">
+							<path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"/>
+						  </svg>
+                          <span>Charge</span>
+                        </button>
+                      </div>
+                    </div>
+
+					<!-- Command Charging Station menu -->
+					<div class="command-Base-interface">
+					  <!-- Main command button -->
+					  <button class="command-Base-main-btn" id="command-Base-trigger">
+						<svg class="base-main-icon" viewBox="0 0 64 64">
+							<path style="opacity:0.4" fill="#fff" d="M32,12c-6.6,0-12,5.4-12,12v8h-6v-8c0-9.9,8.1-18,18-18s18,8.1,18,18v8h-6v-8C44,17.4,38.6,12,32,12z"/>
+							<circle style="opacity:0.8" fill="#fff" cx="32" cy="24" r="14"/>
+							<circle style="opacity:1" fill="#fff" cx="32" cy="17" r="4"/>
+							<path fill="#fff" d="M56,30H8c-2.2,0-4,1.8-4,4v20c0,2.2,1.8,4,4,4h48c2.2,0,4-1.8,4-4V34C60,31.8,58.2,30,56,30z M52,50H12V34h40V50z"/>
+					        <rect style="opacity:0.7" fill="#fff" x="12" y="35" width="40" height="14"/>
+							<g><path style="opacity:0.978" fill="#FFD700" d="M 37.425 14.785 C 37.6459 14.7536 37.8559 14.7886 38.055 14.89 C 36.0604 20.139 34.1704 25.424 32.385 30.745 C 35.535 30.745 38.685 30.745 41.835 30.745 C 41.7397 31.2994 41.4946 31.7894 41.1 32.215 C 35.64 39.0751 30.18 45.9349 24.72 52.795 C 24.4716 53.0535 24.2266 53.0535 23.985 52.795 C 25.9163 47.7012 27.8063 42.5911 29.655 37.465 C 26.4053 37.3571 23.1853 37.1821 19.995 36.94 C 25.855 29.5773 31.665 22.1922 37.425 14.785 Z"/></g>
+						</svg>
+					  </button>
+
+					  <!-- Floating Command Menu -->
+					  <div class="command-Base-options">
+					    <button class="cmd-Base-btn" data-base-type="StartAutoEmpty" data-base-value="true">
+					      <svg class="base-icon" viewBox="0 0 24 24">
+					        <path fill="currentColor" d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M9,8H11V17H9V8M13,8H15V17H13V8Z"/>
+					      </svg>
+					      <span>Empty</span>
+					    </button>
+					    <button class="cmd-Base-btn" data-base-type="StartWashing" data-base-value="true">
+					      <svg class="base-wash-icon" viewBox="0 0 24 24" width="36" height="36">
+					        <path d="M 0.95 8.065 c 1.425 -3.51 2.1375 -5.265 6.4125 -7.02 h 8.55 c 2.85 0 5.7 3.51 7.8375 7.02 Z" style="opacity:0.9" fill="#fff" stroke="#fff" stroke-width="0.6"/>
+					        <path style="opacity:0.9" fill="#fff" stroke="#fff" stroke-width="0.6" d="M 6 15.75 c -1.125 0 -2.25 -0.75 -2.25 -1.875 s 2.25 -3.375 2.25 -3.375 s 2.25 2.25 2.25 3.375 s -1.125 1.875 -2.25 1.875"/>
+					        <path style="opacity:0.9" fill="#fff" stroke="#fff" stroke-width="0.6" d="M13 18.75c-1.125 0 -2.25 -0.75 -2.25 -1.875s2.25 -3.375 2.25 -3.375 2.25 2.25 2.25 3.375 -1.125 1.875 -2.25 1.875"/>
+					        <path style="opacity:0.9" fill="#fff" stroke="#fff" stroke-width="0.6" d="M 19 15.75 c -1.125 0 -2.25 -0.75 -2.25 -1.875 s 2.25 -3.375 2.25 -3.375 s 2.25 2.25 2.25 3.375 s -1.125 1.875 -2.25 1.875"/>
+						  </svg>
+					      <span>Wash</span>
+					    </button>
+					    <button class="cmd-Base-btn" id="child-lock-btn" data-base-type="ChildLock" data-base-value="1">
+					      <svg class="lock-icon" viewBox="0 0 24 24">
+					        <path fill="currentColor" d="M12,3A4,4 0 0,0 8,7V8H6V7A6,6 0 0,1 12,1A6,6 0 0,1 18,7V8H16V7A4,4 0 0,0 12,3M12,5A2,2 0 0,1 14,7V8H10V7A2,2 0 0,1 12,5M19,10A1,1 0 0,0 18,9H6A1,1 0 0,0 5,10V20A2,2 0 0,0 7,22H17A2,2 0 0,0 19,20V10Z"/>
+					      </svg>
+					      <span>Lock</span>
+					    </button>
+					  </div>
+					</div>
+
                 </div>
-                <!-- End Cascading Menu System -->
 
                 <div class="coverage-info">
                     <div class="coverage-content">
@@ -4183,6 +5314,26 @@ class Dreamehome extends utils.Adapter {
                             <div>Current Cleaned: <span id="current-CleanedArea">0</span>m²</div>
                             <div>Current Room: <span id="current-room">-</span></div>
                         </div>
+
+						<!-- Battery indicator -->
+						<div class="battery-indicator">
+                            <div class="battery-level" id="battery-level"></div>
+                            <span id="battery-percent">0%</span>
+						</div>
+
+
+                    </div>
+                </div>
+
+                <!-- Summary Tooltip -->
+                <div id="summary-tooltip" class="summary-tooltip">
+                    <div class="selection-summary">
+                        <div><strong>Current Selection:</strong></div>
+                        <div>Mode: <span id="mode-summary">-</span></div>
+                        <div>Suction: <span id="suction-summary">-</span></div>
+                        <div>Water: <span id="water-summary">-</span></div>
+                        <div>Route: <span id="route-summary">-</span></div>
+                        <div>Repeat: <span id="repeat-summary">-</span></div>
                     </div>
                 </div>
 
@@ -4198,7 +5349,8 @@ class Dreamehome extends utils.Adapter {
                     const offsetY = ${offsetY};
                     const roomDataMap = ${JSON.stringify(roomDataMap, null, 2)};
 					const roomNameNumberMap = getRoomNameNumberMap();
-                    let posHistory = ${JSON.stringify(posHistoryForScript, null, 2)};
+                    let posHistory = {}; //  { JSON.stringify(posHistoryForScript, null, 2)};
+
 
                     let selectedRooms = [];
                     let selectedCarpets = [];
@@ -4206,6 +5358,9 @@ class Dreamehome extends utils.Adapter {
                     const canvasSize = ${canvasSize};
                     let robotPathPoints = [];
                     let showRobotPath = true;
+					let showHistoryPath = true;
+					let historyPathPoints = [];
+					let currentPathPoints = [];
                     let lastRobotPosition = null;
                     let xRotation = 0;
                     let yRotation = 0;
@@ -4227,7 +5382,7 @@ class Dreamehome extends utils.Adapter {
                     let currentStatusIndex = 0; // Keeps track of the current status index
 					let statusLoopTimeout; // To store the timeout reference
 
-                    const statusList = [
+					const statusList = [
                       'Sweeping',
                       'Mopping',
                       'sweeping-and-mopping',
@@ -4272,7 +5427,7 @@ class Dreamehome extends utils.Adapter {
                       17: "Returning install mop",
                       18: "Returning remove mop",
                       19: "Water check",
-                      20: "Clean add water",
+                      20: "Add clean water",
                       21: "Washing paused",
                       22: "Auto emptying",
                       23: "Remote control",
@@ -4285,6 +5440,3731 @@ class Dreamehome extends utils.Adapter {
                       98: "Monitoring",
                       99: "Monitoring paused"
                     };
+
+
+
+					// =============================================
+                    // Base station logic
+                    // =============================================
+					  let isChildLockActive = false;
+
+					  function initBaseControl() {
+					    // Load initial lock state
+					    getChildLockStatus();
+
+					    document.querySelectorAll(".cmd-Base-btn").forEach(btn => {
+					      btn.addEventListener("click", function() {
+					        const commandType = this.getAttribute("data-base-type");
+					        let commandValue = this.getAttribute("data-base-value");
+
+					        // Special treatment for ChildLock
+					        if (commandType === "ChildLock") {
+					          commandValue = isChildLockActive ? "0" : "1";
+					          this.setAttribute("data-base-value", commandValue);
+					        }
+
+					        sendBaseCommand(commandType, commandValue);
+
+					        // Button animation
+					        this.style.transform = "scale(0.9)";
+					        setTimeout(() => this.style.transform = "scale(1)", 200);
+					      });
+					    });
+
+					    // Toggle for Command-Options
+					    document.getElementById("command-Base-trigger")?.addEventListener("click", function() {
+					      const options = document.querySelector(".command-Base-options");
+					      const isVisible = options.style.display === "flex";
+					      options.style.display = isVisible ? "none" : "flex";
+					      options.style.opacity = isVisible ? "0" : "1";
+					    });
+					  }
+
+					  async function getChildLockStatus() {
+					    try {
+					      const response = await getState('${prefix}.control.ChildLock');
+					      isChildLockActive = response === 1;
+					      updateLockButton();
+					    } catch (err) {
+					      console.error('Error getting ChildLock status:', err);
+					    }
+					  }
+
+					  // Update the updateLockButton function
+					  function updateLockButton() {
+					    const lockBtn = document.getElementById("child-lock-btn");
+					    if (!lockBtn) return;
+
+					    const lockIcon = lockBtn.querySelector(".lock-icon");
+					    const lockText = lockBtn.querySelector("span");
+
+					    if (isChildLockActive) {
+					      lockBtn.classList.add("active");
+					      lockIcon.innerHTML = '<path fill="currentColor" d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>';
+					      lockText.textContent = "Unlock";
+					      lockIcon.classList.add("lock-animate");
+					      setTimeout(() => lockIcon.classList.remove("lock-animate"), 300);
+					    } else {
+					      lockBtn.classList.remove("active");
+					      lockIcon.innerHTML = '<path fill="currentColor" d="M12,3A4,4 0 0,0 8,7V8H6V7A6,6 0 0,1 12,1A6,6 0 0,1 18,7V8H16V7A4,4 0 0,0 12,3M12,5A2,2 0 0,1 14,7V8H10V7A2,2 0 0,1 12,5M19,10A1,1 0 0,0 18,9H6A1,1 0 0,0 5,10V20A2,2 0 0,0 7,22H17A2,2 0 0,0 19,20V10Z"/>';
+					      lockText.textContent = "Lock";
+					      lockIcon.classList.add("lock-animate");
+					      setTimeout(() => lockIcon.classList.remove("lock-animate"), 300);
+					    }
+					  }
+
+					  async function sendBaseCommand(commandType, value) {
+					    try {
+					      const fullId = '${prefix}.control.' + commandType;
+					      await setState(fullId, commandType === "ChildLock" ? parseInt(value) : value === "true");
+
+					      if (commandType === "ChildLock") {
+					        isChildLockActive = value === "1";
+					        updateLockButton();
+					      }
+
+					      console.log('Command sent: ' + commandType + ' = ' + value);
+					    } catch (err) {
+					      console.error('Error setting ' + commandType + ':', err);
+					    }
+					  }
+
+					  // initialization
+					  initBaseControl();
+
+					// =============================================
+                    // Cleaning logic
+                    // =============================================
+
+                    function initRobotControl() {
+                      document.querySelectorAll(".cmd-btn").forEach(btn => {
+                        btn.addEventListener("click", function() {
+                          const command = this.getAttribute("data-command");
+							if (command !== "CustomCleanSelected") {
+                             sendCommand(command);
+							} else {
+							startCustomCleanSelected();
+							}
+                          this.style.transform = "scale(0.9)";
+                          setTimeout(() => {
+                            this.style.transform = "scale(1)";
+                          }, 200);
+                        });
+                      });
+
+                      document.getElementById("command-trigger")?.addEventListener("click", function() {
+                        const options = document.querySelector(".command-options");
+                        options.style.display = options.style.display === "flex" ? "none" : "flex";
+                        options.style.opacity = options.style.opacity === "1" ? "0" : "1";
+                      });
+                      pollStatus();
+                    }
+
+                    async function sendCommand(command) {
+                      try {
+                        await setState('${prefix}.control.Command', command);
+                        console.log('Command sent: ' + command);
+                      } catch (err) {
+                        console.error('Error at ' + command + ':', err);
+                      }
+                    }
+
+                    function pollStatus() {
+                      updateBatteryStatus();
+					  setTimeout(pollStatus, 5000);
+                    }
+
+                    async function setState(id, value) {
+                      return new Promise((resolve, reject) => {
+                        try {
+                          vis.conn._socket.emit('setState', id, {
+                            val: value,
+                            ack: false,
+                            from: 'vis'
+                          }, function(err) {
+                            if (err) reject(err);
+                            else resolve();
+                          });
+                        } catch (e) {
+                          reject(e);
+                        }
+                      });
+                    }
+
+                    function updateBatteryStatus() {
+                      getState('${prefix}.state.BatteryLevel')
+                        .then(function(level) {
+                          const batteryLevel = document.getElementById("battery-level");
+                          const batteryPercent = document.getElementById("battery-percent");
+
+                          batteryLevel.style.width = level + "%";
+                          batteryPercent.textContent = level + "%";
+
+                          if (level < 20) {
+                            batteryLevel.classList.add('low-battery');
+                            batteryPercent.style.color = '#ff3300';
+                          } else {
+                            batteryLevel.classList.remove('low-battery');
+                            batteryPercent.style.color = '#00ffaa';
+                          }
+                        })
+                        .catch(err => console.error('Battery status error:', err));
+                    }
+
+					// =============================================
+                    // Clean selected logic
+                    // =============================================
+
+					                    async function startCustomCleanSelected() {
+                        try {
+                            // Check if any rooms are selected
+                            if (selectedRooms.length === 0) {
+                                console.log('No rooms selected - starting full cleaning');
+                                return await startFullCleaning();
+                            }
+
+                            console.log('Starting custom cleaning for selected rooms:', selectedRooms);
+
+                    		let cleanOrder = 0
+
+                            // Process all selected rooms with their individual settings
+                            const roomCommands = await Promise.all(selectedRooms.map(async (roomId) => {
+                                const roomLabel = document.querySelector('#room-label-' + roomId + '-fixed .label-content');
+
+                    			cleanOrder += 1;
+
+                                if (!roomLabel) {
+                                    console.warn('No label found for room ' + roomId + ', using defaults');
+                                    return [
+                                        parseInt(roomId, 10),
+                    				    1,  // Default repeat
+                                        1,  // Default suction
+                                        20, // Default water
+                    				    cleanOrder
+                                    ];
+                                }
+
+                                // Handle suction MaxPlus special case
+                                let suctionValue = parseInt(roomLabel.dataset.suction, 10);
+                                if (suctionValue === 4 || suctionValue === 3) {
+                                    const suctionMaxPlus = (suctionValue === 4) ? 1 : 0;
+                                    await setState('${prefix}.control.SuctionMaxPlus', suctionMaxPlus);
+                                    suctionValue = 3; // Normalize to Max
+                                }
+
+                                return [
+                                    parseInt(roomId, 10),
+                    				parseInt(roomLabel.dataset.repeat, 10),
+                                    suctionValue,
+                                    parseInt(roomLabel.dataset.water, 10),
+                    			    cleanOrder
+                                ];
+                            }));
+
+                            // Build complete command structure
+                            const customeClean = [
+                                {
+                                    piid: 1,
+                                    value: 18
+                                },
+                                {
+                                    piid: 10,
+                                    value: JSON.stringify({
+                                        selects: roomCommands
+                                    })
+                                }
+                            ];
+
+                            // Send the complete command
+                            await setState('${prefix}.control.StartCustom', JSON.stringify(customeClean));
+
+                            console.log('Complete custom clean command sent:', {
+                                command: 'customeClean',
+                                data: customeClean,
+                                rooms: selectedRooms.length
+                            });
+
+                            showNotification('Started cleaning ' + selectedRooms.length + ' selected rooms', 'success');
+
+                        } catch (error) {
+                            console.error('Error in startCustomCleanSelected:', {
+                                error: error,
+                                rooms: selectedRooms,
+                                stack: error.stack
+                            });
+                            showNotification('Failed to start cleaning: ' + error.message, 'error');
+                        }
+                    }
+
+                    async function startFullCleaning() {
+                        try {
+                            // Find all room label containers (not the content divs)
+                            const roomContainers = document.querySelectorAll('[id^="room-label-"]');
+
+                            if (roomContainers.length === 0) {
+                                throw new Error('No room labels found');
+                            }
+
+                            // Process all rooms with their individual settings
+                            const roomCommands = [];
+                            let globalSuctionMaxPlus = 0;
+                    		let cleanOrder = 0
+
+                            for (const container of roomContainers) {
+                                // Extract room ID from container ID
+                                const idMatch = container.id.match(/room-label-(\\d+)-fixed/);
+                                if (!idMatch) continue;
+
+                                const roomId = idMatch[1];
+                                const label = container.querySelector('.label-content');
+                                if (!label) continue;
+
+                                // Get settings from label (with fallback to defaults)
+                                const suction = parseInt(label.dataset.suction || '1', 10);
+                                const water = parseInt(label.dataset.water || '20', 10);
+                                const repeat = parseInt(label.dataset.repeat || '1', 10);
+                    			cleanOrder += 1
+
+                                // Handle MaxPlus suction
+                                let normalizedSuction = suction;
+                                if (suction === 4 || suction === 3) {
+                                    if (suction === 4) globalSuctionMaxPlus = 1;
+                                    normalizedSuction = 3;
+                                }
+
+                                roomCommands.push([
+                                    parseInt(roomId, 10),
+                    			    repeat,
+                                    normalizedSuction,
+                                    water,
+                                    cleanOrder
+                                ]);
+                            }
+
+                            if (roomCommands.length === 0) {
+                                throw new Error('No valid room configurations found');
+                            }
+
+                            // Set SuctionMaxPlus if needed
+                            if (globalSuctionMaxPlus === 1) {
+                                await setState('${prefix}.control.SuctionMaxPlus', '1');
+                            }
+
+                            // Build complete command structure
+                            const customeClean = [
+                                {
+                                    piid: 1,
+                                    value: 18
+                                },
+                                {
+                                    piid: 10,
+                                    value: JSON.stringify({
+                                        selects: roomCommands
+                                    })
+                                }
+                            ];
+
+                    		// Send the complete command
+                            await setState('${prefix}.control.StartCustom', JSON.stringify(customeClean));
+                            console.log('Full cleaning command sent for all rooms:', customeClean);
+                            showNotification('Starting full cleaning for ' + roomCommands.length + ' rooms', 'success');
+
+                        } catch (error) {
+                            console.error('Error in startFullCleaning:', error);
+                            showNotification('Failed to start full cleaning: ' + error.message, 'error');
+                        }
+                    }
+
+
+					// =============================================
+                    // Cleaning mode logic
+                    // =============================================
+                    // Global state for cleaning settings
+                    const VisCleaningState = {
+                        mode: null,
+                        Suction: null,
+                        Water: null,
+                        Route: null,
+                        Repeat: null
+                    };
+					// Global variable to store button references
+					const modeOptionButtons = {};
+
+                    // SVG icon library
+                    const iconLibrary = {
+                        Sweeping: {
+                            svg: \`<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                  					<path fill="#fff" d="M29.1 2.9q1.69.338 1.3 2A32.6 32.6 0 0 0 26 9.3a26.3 26.3 0 0 0-2.2 6q-1.246.851-2.2-.4.488-8.084 7.5-12"/>
+                  					<path fill="#fff" d="M29.7 8.1q1.423-.138 2.4.9 4.23 3.51 5.3 8.9a6.1 6.1 0 0 1 0 2.2q-.847.921-2 .4-.955-6.514-6.2-10.4-.567-1.176.5-2"/>
+                  					<path fill="#fff" d="M16.3 9.7q2.594-.207 1.7 2.2-7.31 4.714-8.4 13.4-.875 1.244-2.1.4-.441-.508-.4-1.2 1.266-9.542 9.2-14.8"/>
+                  					<path fill="#fff" d="M17.7 16.3q.707-.049 1.4.1 5.711 2.212 11.4-.1 1.825.249 1.2 2-2.285 1.447-5 1.7l-3.4.2q5.261 5.458 4.8 12.9-1.212.535-2.1-.4-.597-5.597-4-10a39.3 39.3 0 0 0-4.8-4.4q-.342-1.176.5-2"/>
+                  					<path fill="#fff" d="M1.7 27.9q.707-.049 1.4.1 8.117 3.338 16.3.1 1.321.072 1.3 1.4.033.562-.4.9-9.595 3.961-19-.4-.507-1.211.4-2.1"/>
+                  					</svg>\`
+                        },
+                        Mopping: {
+                            svg: \`<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                  					<path fill="#fff" d="M15.1 1.9q.846-.076 1.6.3A75 75 0 0 1 23 9.7q.888 2.477-1.7 2.1l-5.5-6.7q-5.93 6.254-9.8 14-3.723 7.738 2.7 13.5 6.843 5.237 13.8.2a22 22 0 0 1 2.6-2.4q1.47-.315 2 1.1-2.597 4.441-7.6 5.9-10.942 2.203-16.3-7.5-2.153-4.894-.6-10 4.564-10.207 12.5-18"/>
+                  					<path fill="#fff" d="M28.5 6.9q1.149-.075 2 .7 4.055 4.457 6.7 9.9 2.28 7.486-4.5 11.3-6.091 2.183-10.5-2.5-3.775-5.66 0-11.4 2.547-4.494 6.3-8m.4 3.4q.873.522 1.5 1.4a63 63 0 0 1 4.4 7q1.395 5.56-3.9 7.9-5.527 1.161-7.7-4.1-.701-2.999 1-5.6a46.3 46.3 0 0 1 4.7-6.6"/>
+                  					</svg>\`
+                  	  },
+                        SweepingAndMopping: {
+                            svg: \`<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                  					<path fill="#fff" d="M15.1 1.9q1.177 -0.129 2.1 0.6a99.2 99.2 0 0 1 4.8 5.8 14.8 14.8 0 0 1 1.9 3.1q-0.443 1.522 -2 1.2A172.2 172.2 0 0 1 15.8 5.1q-6.842 7.244 -10.8 16.4 -1.313 7.223 4.5 11.7 8.574 4.946 15.1 -2.5a20.08 20.08 0 0 1 1.9 -2.7q1.656 -0.398 2 1.3 -4.77 9.986 -15.8 8.3 -8.38 -2.28 -10.5 -10.7 -0.974 -6.303 2.6 -11.6 4.288 -7.381 10.3 -13.4"/>
+                  					<path fill="#fff" d="M28.5 8.9q2.181 -0.139 1.7 2 -3.774 2.605 -5.3 6.9a28.4 28.4 0 0 0 -0.9 3.5q-0.995 1.082 -2.2 0.2 -0.132 -8.134 6.7 -12.6"/>
+                  					<path fill="#fff" d="M29.5 14.3q1.542 -0.228 2.6 0.9 5.465 4.579 5.3 11.7 -1.274 1.172 -2.4 -0.2 -0.396 -4.996 -3.8 -8.6a15.68 15.68 0 0 1 -2.2 -2q-0.261 -1.048 0.5 -1.8"/>
+                  					<path fill="#fff" d="M18.1 22.5a120.4 120.4 0 0 1 3.8 1.1q4.539 0.885 8.8 -0.9 1.186 0.186 1.4 1.4 -0.907 1.608 -2.8 1.9 -5.993 1.714 -11.6 -1 -1.167 -1.454 0.4 -2.5"/>
+                  					</svg>\`
+                        },
+                        MoppingAfterSweeping: {
+                            svg: \`<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                  					<path fill="#fff" d="M23.1 4.7q.868-.137 1.5.4a66.5 66.5 0 0 1-.2 10.2q-.8.4-1.6 0l-.2-8a.73.73 0 0 0-.3-.2q-.87.735-2 .8-.105-1.069.4-2 1.144-.772 2.4-1.2"/>
+                  					<path fill="#fff" d="M12.7 5.5q1.856-.19 1.9 1.6a44 44 0 0 0-3.4 3.6 19 19 0 0 0-2 5.4q-.979.773-2 0-.435-4.199 2.2-7.6 1.529-1.681 3.3-3"/>
+                  					<path fill="#fff" d="M14.3 10.5q1.423-.138 2.4.9 4.072 3.393 4.6 8.7-.437 1.989-2.3 1.2a26 26 0 0 0-1.8-5.2L16 14.5a18.7 18.7 0 0 1-2.4-2.2q-.306-1.184.7-1.8"/>
+                  					<path style="opacity:.902" fill="#fff" d="M4.5 17.1q.728.007 1.4.3 2.545 1.736 5.6 1.2a21 21 0 0 0 3.4-1.3q1.94.529 1 2.3-6.148 3.821-12.2-.2-.826-1.572.8-2.3"/>
+                  					<path style="opacity:.6" fill="#fff" d="M28.3 17.1q.945-.087 1.8.3 3.445 3.244 5.5 7.5 2.276 6.373-3.7 9.5-6.714 1.967-9.7-4.3-.669-2.436.2-4.8 2.202-4.65 5.9-8.2m.4 3.8q1.141.384 1.9 1.4 1.602 2.002 2.6 4.4.402 5.698-5.3 5.1-3-.95-3.2-4.1 1.136-3.929 4-6.8"/>
+                  					<path style="opacity:.6" fill="#fff" d="M14.7 24.7q4.731-.219 3.7 4.4a29 29 0 0 1-3.5 4.4q1.882.046 3.8.1.8.9 0 1.8-3 .2-6 0-.774-.444-.5-1.3a28.2 28.2 0 0 1 3.8-4.2q1.011-1.232.8-2.8-.899-.829-2.1-.5a79 79 0 0 1-1.7.9q-1.162-.341-.4-1.4.946-.904 2.1-1.4"/>
+                  					</svg>\`
+                        },
+                        CustomRoomCleaning: {
+                            svg: \`<svg class="mode-option-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                  					<path fill="#fff" d="M8.7 3.5q5.061-.283 6.9 4.4 1.478 4.481 1.1 9.2-3.954.209-7.8-.7-7.3-2.05-5.1-9.3 1.649-2.944 4.9-3.6m.4 2q4.611.16 5.1 4.8a28 28 0 0 1 .7 4.8q-4.183-.027-8-1.7-2.64-2.71-.9-6.1 1.199-1.572 3.1-1.8"/>
+                  					<path fill="#fff" d="M28.1 3.7q8.944-.207 7.5 8.6-1.285 2.873-4.3 3.9-4.208 1.29-8.6 1-.681-4.746.9-9.3 1.358-3.11 4.5-4.2m.4 2q6.546-.203 5.1 6.2-.674 1.564-2.3 2.1a27.6 27.6 0 0 1-7 1.3q.102-4.207 1.9-8 .945-1.143 2.3-1.6"/>
+                  					<path fill="#fff" d="M13.1 22.3a16 16 0 0 1 3.5.2q.621 5.434-1.6 10.4-3.533 4.767-8.9 2.1-3.55-2.556-2.7-6.9.788-3.388 4.1-4.5 2.76-1.007 5.6-1.3m1.4 1.8q.399 4.258-1.5 8.2-1.892 2.131-4.7 1.5-4.123-1.757-2.7-6.1 1.156-2.053 3.5-2.5a59 59 0 0 1 5.4-1.1"/>
+                  					<path fill="#fff" d="M22.5 22.5q4.616-.354 9 1.1 5.308 2.064 4.3 7.7-2.011 5.631-7.9 4.5-3.214-.913-4.3-4.1-1.478-4.481-1.1-9.2m2 1.8q4.078.245 7.8 1.9 2.647 2.701.9 6.1-3.235 3.214-6.8.4-1.111-1.631-1.4-3.6-.591-2.413-.5-4.8"/>
+                  					</svg>\`
+                        }
+                    };
+
+					// Cleaning mode definitions with default settings
+					const VisCleaningModes = {
+					    Sweeping: {
+					        name: "Sweeping",
+					        options: ['Suction', 'Route', 'Repeat'],
+					        activeModes: ["SuctionQuit", "SuctionStandard", "SuctionTurbo", "SuctionMax", "SuctionMaxPlus", "RouteQuick", "RouteStandard", "Repeat1", "Repeat2", "Repeat3"],
+					        icon: iconLibrary.Sweeping.svg,
+					        lastSettings: { Suction: "Standard", Route: "Standard", Repeat: "1" }
+					    },
+					    Mopping: {
+					        name: "Mopping",
+					        options: ['Water', 'Route', 'Repeat'],
+					        activeModes: ["WaterLow", "WaterMiddle", "WaterHigh", "WaterUltra", "RouteQuick", "RouteStandard", "RouteIntensive", "RouteDeep", "Repeat1", "Repeat2", "Repeat3"],
+					        icon: iconLibrary.Mopping.svg,
+					        lastSettings: { Water: "Middle", Route: "Standard", Repeat: "1" }
+					    },
+					    SweepingAndMopping: {
+					        name: "Sweeping and mopping",
+					        options: ['Suction', 'Water', 'Route', 'Repeat'],
+					        activeModes: ["SuctionQuit", "SuctionStandard", "SuctionTurbo", "SuctionMax", "WaterLow", "WaterMiddle", "WaterHigh", "WaterUltra", "RouteQuick", "RouteStandard", "Repeat1", "Repeat2", "Repeat3"],
+					        icon: iconLibrary.SweepingAndMopping.svg,
+					        lastSettings: { Suction: "Standard", Water: "Middle", Route: "Standard", Repeat: "1" }
+					    },
+					    MoppingAfterSweeping: {
+					        name: "Mopping after sweeping",
+					        options: ['Suction', 'Water', 'Route', 'Repeat'],
+					        activeModes: ["SuctionQuit", "SuctionStandard", "SuctionTurbo", "SuctionMax", "SuctionMaxPlus", "WaterLow", "WaterMiddle", "WaterHigh", "WaterUltra", "RouteQuick", "RouteStandard", "RouteIntensive", "RouteDeep", "Repeat1", "Repeat2", "Repeat3"],
+					        icon: iconLibrary.MoppingAfterSweeping.svg + '<path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="red"/>',
+					        lastSettings: { Suction: "Standard", Water: "Middle", Route: "Standard", Repeat: "1" }
+					    },
+					    CustomRoomCleaning: {
+					        name: "Custom room cleaning",
+					        options: ['Suction', 'Water', 'Route', 'Repeat'],
+					        activeModes: ["SuctionQuit", "SuctionStandard", "SuctionTurbo", "SuctionMax", "SuctionMaxPlus", "WaterLow", "WaterMiddle", "WaterHigh", "WaterUltra", "RouteQuick", "RouteStandard", "RouteIntensive", "RouteDeep", "Repeat1", "Repeat2", "Repeat3"],
+					        icon: iconLibrary.CustomRoomCleaning.svg + '<path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" fill="red"/>',
+					        lastSettings: { Suction: "Standard", Water: "Middle", Route: "Standard", Repeat: "1" }
+					    }
+					};
+
+                    // Available options for each setting
+                    const VisCleaningOptions = {
+                        Suction: [
+                            { value: "Quit", label: "Quit", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								<style> .icon-suction-spin { animation: none; /* Disabled by default */ transform-origin: center; } @keyframes icon-suction-spinIt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } </style>
+								<g class="icon-suction-spin">
+								<g><path fill="#fff" d="M17.7 2.7q11.254 -0.699 17.1 8.8 5.655 12.425 -4.3 21.7 -10.096 7.033 -20.6 0.6Q0.561 26.384 3.4 14.7q3.74 -10.092 14.3 -12m0.2 2.8q10.505 -0.575 15.1 8.8 3.88 12.565 -7.7 18.7 -9.984 3.438 -16.9 -4.5 -5.448 -8.111 -0.6 -16.6 3.738 -5.293 10.1 -6.4"/></g>
+								<g><path fill="#fff" d="M12.1 18.1a593 593 0 0 1 15.4 0.1q1.571 0.982 0.7 2.7 -0.447 0.451 -1.1 0.5 -7.3 0.2 -14.6 0 -2.002 -0.467 -1.3 -2.5 0.419 -0.471 0.9 -0.8"/></g>
+								</g>
+								</svg>\` },
+                            { value: "Standard", label: "Standard", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								<style> .icon-suction-spin { animation: none; /* Disabled by default */ transform-origin: center; } @keyframes icon-suction-spinIt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } </style>
+								<g class="icon-suction-spin">
+								<g><path fill="#fff" d="M11.5 3.3q11.028 1.677 15.3 12a11.5 11.5 0 0 1 0.7 2.7q-0.029 1.579 -1.6 1.7 -0.783 -0.017 -1.3 -0.6 -1.652 -5.159 -5.5 -8.9a36 36 0 0 0 -3 -2A193.4 193.4 0 0 1 10.8 5.9q-0.7 -1.595 0.7 -2.6"/></g>
+								<g><path fill="#fff" d="M15.1 15.9q2.612 -0.139 2.1 2.4 -7.225 7.8 -4.6 18.2 -0.15 0.55 -0.7 0.7 -1.794 0.578 -2.5 -1.1 -3.129 -11.855 5.7 -20.2"/></g>
+								<g><path fill="#fff" d="M36.5 17.9q2.804 -0.05 2.1 2.6 -6.001 6.636 -15 6.4a20.26 20.26 0 0 1 -5.7 -0.7q-1.6 -1.4 0 -2.8 4.198 0.077 8.4 0 6.137 -0.9 10.2 -5.5"/></g>
+								</g>
+								</svg>\`},
+                            { value: "Turbo", label: "Turbo", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								<style> .icon-suction-spin { animation: none; /* Disabled by default */ transform-origin: center; } @keyframes icon-suction-spinIt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } </style>
+								<g class="icon-suction-spin">
+								<path fill="#fff" d="M23.9 1.9q1.638-.119 3.2.3 1.363 1.659-.4 2.8-7.819.132-11.9 6.7a70 70 0 0 0-2 5.6q-2.443 1.154-2.7-1.5Q12.047 3.903 23.9 1.9"/>
+								<path fill="#fff" d="M22.5 10.5q11.479.726 14.7 11.8.7 2.59.2 5.2-1.223 1.06-2.6.2a65 65 0 0 0-1.4-6.2q-3.21-6.988-10.9-8.1-1.531-1.436 0-2.9"/>
+								<path fill="#fff" d="M2.9 11.7q.83.089 1.5.6.393 3.965 2 7.6 1.75 2.95 4.7 4.7a35 35 0 0 0 5.6 2q1.447 2.161-1.1 2.9-11.87-1.97-14-13.8a9.9 9.9 0 0 1 0-2.8q.431-.883 1.3-1.2"/>
+								<path fill="#fff" d="M26.7 22.3q2.88-.268 2.3 2.6-2.286 10.787-13.1 12.9a12.6 12.6 0 0 1-3.8-.1q-1.054-1.182-.2-2.5a50 50 0 0 0 6.6-1.6q6.339-3.214 7.5-10.3a5.4 5.4 0 0 1 .7-1"/>
+								</g>
+								</svg>\` },
+                            { value: "Max", label: "Max", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								<style> .icon-suction-spin { animation: none; /* Disabled by default */ transform-origin: center; } @keyframes icon-suction-spinIt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } </style>
+								<g class="icon-suction-spin">
+								<g><path fill="#fff" d="M22.1 0.5q1.936 -0.125 3.8 0.3 0.579 0.977 0.3 2.1 -0.396 0.596 -1.1 0.7Q18.302 3.872 14.6 9.5a130.8 130.8 0 0 0 -2 5.4q-1.139 0.787 -2.3 0 -0.459 -0.662 -0.4 -1.5 1.077 -8.55 9 -12a29.2 29.2 0 0 1 3.2 -0.9"/></g>
+								<g><path fill="#fff" d="M2.9 6.5q1.918 -0.268 2.2 1.6 -1.975 6.472 2.1 11.8a47.2 47.2 0 0 0 4.6 3.6q0.692 2.908 -2.3 2.3Q2.571 22.504 1.2 14.9q-0.379 -3.565 0.6 -7 0.29 -0.936 1.1 -1.4"/></g>
+								<g><path fill="#fff" d="M22.7 9.3q11.873 -0.694 15.9 10.4 0.3 2.599 -2.3 2.1A179.6 179.6 0 0 1 33.4 16.9Q30.544 13.647 26.3 12.8a39.6 39.6 0 0 1 -5.4 -0.4q-1.276 -1.399 0.2 -2.6 0.843 -0.235 1.6 -0.5"/></g>
+								<g><path fill="#fff" d="M26.9 18.9q0.846 -0.076 1.6 0.3 3.057 4.48 2.3 9.9 -0.958 6.27 -6.1 9.9 -3.122 1.071 -2.5 -2.1 3.714 -2.908 5 -7.4a11.88 11.88 0 0 0 0.2 -3.8 59.8 59.8 0 0 0 -1.5 -5.3q0.099 -1.044 1 -1.5"/></g>
+								<g><path fill="#fff" d="M19.5 27.3q2.434 -0.414 2.3 2 -4.225 5.287 -11.1 5.4 -4.784 -0.045 -8.6 -2.9 -1.577 -1.523 0 -3l0.6 -0.1a54.6 54.6 0 0 0 5.8 2.3q3.862 0.734 7.4 -1a24.28 24.28 0 0 0 3.6 -2.7"/></g>
+								</g>
+								</svg>\`},
+                            { value: "MaxPlus", label: "Max Plus", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								<style> .icon-suction-spin { animation: none; /* Disabled by default */ transform-origin: center; } @keyframes icon-suction-spinIt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } </style>
+								<g class="icon-suction-spin">
+								<g><path fill="#fff" d="M22.1 0.5q1.936 -0.125 3.8 0.3 0.579 0.977 0.3 2.1 -0.396 0.596 -1.1 0.7Q18.302 3.872 14.6 9.5a130.8 130.8 0 0 0 -2 5.4q-1.139 0.787 -2.3 0 -0.459 -0.662 -0.4 -1.5 1.077 -8.55 9 -12a29.2 29.2 0 0 1 3.2 -0.9"/></g>
+								<g><path fill="#fff" d="M2.9 6.5q1.918 -0.268 2.2 1.6 -1.975 6.472 2.1 11.8a47.2 47.2 0 0 0 4.6 3.6q0.692 2.908 -2.3 2.3Q2.571 22.504 1.2 14.9q-0.379 -3.565 0.6 -7 0.29 -0.936 1.1 -1.4"/></g>
+								<g><path fill="#fff" d="M22.7 9.3q11.873 -0.694 15.9 10.4 0.3 2.599 -2.3 2.1A179.6 179.6 0 0 1 33.4 16.9Q30.544 13.647 26.3 12.8a39.6 39.6 0 0 1 -5.4 -0.4q-1.276 -1.399 0.2 -2.6 0.843 -0.235 1.6 -0.5"/></g>
+								<g><path fill="#fff" d="M26.9 18.9q0.846 -0.076 1.6 0.3 3.057 4.48 2.3 9.9 -0.958 6.27 -6.1 9.9 -3.122 1.071 -2.5 -2.1 3.714 -2.908 5 -7.4a11.88 11.88 0 0 0 0.2 -3.8 59.8 59.8 0 0 0 -1.5 -5.3q0.099 -1.044 1 -1.5"/></g>
+								<g><path fill="#fff" d="M19.5 27.3q2.434 -0.414 2.3 2 -4.225 5.287 -11.1 5.4 -4.784 -0.045 -8.6 -2.9 -1.577 -1.523 0 -3l0.6 -0.1a54.6 54.6 0 0 0 5.8 2.3q3.862 0.734 7.4 -1a24.28 24.28 0 0 0 3.6 -2.7"/></g>
+								</g>
+								<g><path style="opacity:0.9" fill="#ff0000" d="M36.9 15.7a19.4 19.4 0 0 0 -2.5 -0.2q-1.171 0.004 -2.1 0.4a4.14 4.14 0 0 0 -1 -0.2q0.05 3.002 -0.1 6 -0.209 0.625 -0.7 1 -1.741 1.205 -3.8 0.6 -1.103 -0.453 -1.5 -1.6a11.4 11.4 0 0 1 -0.3 -2.4 18.8 18.8 0 0 0 0.1 -3.6q-3.03 0.083 -6.1 -0.3 -2.559 -1.268 -1.9 -4.1 0.42 -1.021 1.3 -1.7a39 39 0 0 1 6.6 -0.3v-5.6a11.86 11.86 0 0 1 1.4 -2.2q4.069 -1.565 5.1 2.6 -0.151 2.605 0.1 5.2 2.411 0.081 4.8 -0.2 3.966 0.827 2.9 4.8a7.2 7.2 0 0 1 -0.7 0.9 48.8 48.8 0 0 0 -1.6 0.9m-7.2 -5.6q-1.577 -0.367 -3 -1 -0.05 -2.702 0.1 -5.4 0.74 -1.313 2.1 -0.7 0.596 0.396 0.7 1.1 0.097 3.03 0.1 6m-9.4 1q0.05 1.057 1 1.5 2.913 0.053 5.8 0.4 1.514 0.309 2.8 1.1a5.52 5.52 0 0 0 -0.3 1q-0.15 2.698 -0.1 5.4a12.6 12.6 0 0 1 -1 -1.3q-0.886 -0.516 -1.8 -0.1 -0.167 -2.397 -0.3 -4.8 -1.392 -0.617 -2.9 -0.2a27.6 27.6 0 0 1 -4.2 -0.5q-1.694 -1.466 0.2 -2.6 0.428 -0.174 0.8 0.1m11.2 -0.2a44.8 44.8 0 0 1 5.6 0.3q1.298 1.513 -0.4 2.6 -0.49 0.148 -1 0.1a47.6 47.6 0 0 0 -4.2 -3"/></g>
+								</svg>\` }
+                        ],
+                        Water: [
+                            { value: "Low", label: "Low", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
+								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
+								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+								  </style>
+								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
+								  <g class="icon-drop-container" clip-path="url(#dropClip)">
+								    <path fill="#fff" d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/>
+								  </g>
+								</svg>\` },
+							{ value: "Middle", label: "Middle", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
+									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; }
+								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
+								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+								  </style>
+								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
+								  <g class="icon-drop-container" clip-path="url(#dropClip)">
+								    <path fill="#fff" d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/>
+								    <path class="icon-drop-wave icon-drop-wave-1" fill="#fff" d="M21.3 28.5q3.568-.294 6.1 2.2.832 1.609-.9 1.5-1.775-1.687-4.2-2.1a380 380 0 0 1-6.6 2.5q-2.357.682-4.5-.5-.327-.924.5-1.4 1.664.538 3.4.3a2269 2269 0 0 1 6.2-2.5"/>
+								  </g>
+								</svg>\` },
+                            { value: "High", label: "High", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
+									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; }
+								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
+								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+								  </style>
+								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
+								  <g class="icon-drop-container" clip-path="url(#dropClip)">
+								    <path fill="#fff" d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/>
+								    <path class="icon-drop-wave icon-drop-wave-1" fill="#fff" d="M21.3 22.7q3.805-.249 6.3 2.6.395 1.088-.7 1.4a30 30 0 0 0-2.4-1.7 9.2 9.2 0 0 0-2.2-.7 41 41 0 0 0-5 2.1q-2.137.808-4.4.6-.959-.119-1.7-.7-.223-.582.1-1.1 1.995.092 4 0a124 124 0 0 0 6-2.5"/>
+								    <path class="icon-drop-wave icon-drop-wave-2" fill="#fff" d="M21.3 28.5q3.568-.294 6.1 2.2.832 1.609-.9 1.5-1.775-1.687-4.2-2.1a380 380 0 0 1-6.6 2.5q-2.357.682-4.5-.5-.327-.924.5-1.4 1.664.538 3.4.3a2269 2269 0 0 1 6.2-2.5"/>
+								  </g>
+								</svg>\` },
+							{ value: "Ultra", label: "Ultra", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
+									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; } .icon-drop-wave-3 { animation-delay: -1.5s; }
+								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
+								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+								  </style>
+								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
+								  <g class="icon-drop-container" clip-path="url(#dropClip)">
+								    <path fill="#fff" d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/>
+								    <path class="icon-drop-wave icon-drop-wave-1" fill="#fff" d="M21.9 16.9q3.432.041 5.7 2.6-.188 2.486-1.9.5-2.234-1.879-5-1-3.665 2.389-8 2.2-1.893-.083-1.4-1.8 1.416-.081 2.8.3a26 26 0 0 1 1.4-.3q3.138-1.523 6.4-2.5"/>
+								    <path class="icon-drop-wave icon-drop-wave-2" fill="#fff" d="M21.3 22.7q3.805-.249 6.3 2.6.395 1.088-.7 1.4a30 30 0 0 0-2.4-1.7 9.2 9.2 0 0 0-2.2-.7 41 41 0 0 0-5 2.1q-2.137.808-4.4.6-.959-.119-1.7-.7-.223-.582.1-1.1 1.995.092 4 0a124 124 0 0 0 6-2.5"/>
+								    <path class="icon-drop-wave icon-drop-wave-3" fill="#fff" d="M21.3 28.5q3.568-.294 6.1 2.2.832 1.609-.9 1.5-1.775-1.687-4.2-2.1a380 380 0 0 1-6.6 2.5q-2.357.682-4.5-.5-.327-.924.5-1.4 1.664.538 3.4.3a2269 2269 0 0 1 6.2-2.5"/>
+								  </g>
+								</svg>\` }
+
+                        ],
+                        Route: [
+                            { value: "Quick", label: "Quick", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-route-path { animation: none; /* Disabled by default */  stroke: #fff; stroke-width: 0.5; }
+								    .icon-route-path1 { animation-delay: 0.5s; }
+								    @keyframes icon-route-draw { 0% { stroke-dashoffset: 1000; fill-opacity: 0; } 30% { stroke-dashoffset: 0; fill-opacity: 1; } 100% { stroke-dashoffset: 0; fill-opacity: 1; } }
+								  </style>
+								  <path class="icon-route-path1 icon-route-path" fill="#fff" d="M23.5 5.9q3.876-.657 6.7 2a12 12 0 0 1 1 1.8 486 486 0 0 1 .3 23.8h-2.2a625 625 0 0 1 .2-22.3q-.853-3.2-4.2-3.5-3.033.186-4.1 3L21 27.9q-.1 4.251-4.1 5.7-4.413 1.262-7.5-2.1-.791-1.072-1-2.4a1300 1300 0 0 1-.1-22.8h2.2q-.05 11 .1 22 1.109 4.781 5.9 3.5 1.668-.769 2.3-2.5.005-5.348-.1-10.7-.03-4.16.3-8.3 1.029-3.479 4.5-4.4"/>
+								</svg>\` },
+                            { value: "Standard", label: "Standard", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-route-path { animation: none; /* Disabled by default */  stroke: #fff; stroke-width: 0.5; }
+								    .icon-route-path1 { animation-delay: 0.5s; }
+								    .icon-route-path2 { animation-delay: 1s; }
+								    @keyframes icon-route-draw { 0% { stroke-dashoffset: 1000; fill-opacity: 0; } 30% { stroke-dashoffset: 0; fill-opacity: 1; } 100% { stroke-dashoffset: 0; fill-opacity: 1; } }
+								  </style>
+								  <path class="icon-route-path1 icon-route-path" fill="#fff" d="M6.1 4.5q13.7-.05 27.4.1 1.257.357 1.3 1.7.2 13.4 0 26.8-.07.971-.9 1.5-14 .2-28 0a1.4 1.4 0 0 1-.7-.5A508 508 0 0 1 5 5.7q.408-.757 1.1-1.2m.6 1.6h26.4v27H6.7z"/>
+								  <path class="icon-route-path2 icon-route-path" fill="#fff" d="M24.1 7.1q6.728.229 6.4 7a420 420 0 0 0-.2 18h-2q.05-10.501-.1-21-2.971-4.009-6.6-.6a4.1 4.1 0 0 0-.6 1.6l-.2 15.6q-.759 4.757-5.6 4.8-4.433.066-5.6-4.2Q9.45 18 9.5 7.7h2q-.05 10.1.1 20.2.645 2.83 3.6 3 2.336-.238 3.6-2.2l.2-16.6q.737-4.387 5.1-5"/>
+								</svg>\` },
+                            { value: "Intensive", label: "Intensive", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-route-path { animation: none; /* Disabled by default */  stroke: #fff; stroke-width: 0.5; }
+								    .icon-route-path1 { animation-delay: 0.5s; }
+								    .icon-route-path2 { animation-delay: 1s; }
+								    @keyframes icon-route-draw { 0% { stroke-dashoffset: 1000; fill-opacity: 0; } 30% { stroke-dashoffset: 0; fill-opacity: 1; } 100% { stroke-dashoffset: 0; fill-opacity: 1; } }
+								  </style>
+								  <path class="icon-route-path1 icon-route-path" fill="#fff" d="M5.9 4.1q13.8-.05 27.6.1.549.082.9.5.664 10.681.7 21.4l-.1 6.8q-.02 1.519-1.5 1.7a701 701 0 0 1-26.8.4q-1.196-.07-1.7-1.1a1409 1409 0 0 1-.5-21.7q-.009-3.458.3-6.9.408-.757 1.1-1.2m.8 2h26.2v26.8H6.7z"/>
+								  <path class="icon-route-path2 icon-route-path" fill="#fff" d="M19.7 6.9q2.454-.123 4.2 1.6a4.7 4.7 0 0 1 .5 1.2 308 308 0 0 1 .6 18.8q.634 2.644 3 1.4a7.3 7.3 0 0 0 .8-2.2L29 8.1q.8-1.2 2-.4a304 304 0 0 1 .2 20.6 6 6 0 0 1-.6 2.4l-2.3 1.5q-4.466.996-5.7-3.3a795 795 0 0 1-.4-16.8q-.003-2.108-1.7-3.2-1.924.575-1.9 2.6l-.2 17q-.69 4.079-4.9 4-2.049-.372-3.8-1.6a5.2 5.2 0 0 1-.7-1 32 32 0 0 1-.6-6 167 167 0 0 1 .2-16.2q1.434-.768 2.6.4l.2 19.2q.121 1.691 1.3 2.9 2.083.717 3.3-1.1.239-9.911.8-19.8a3 3 0 0 1 .3-.9q1.231-.914 2.6-1.5"/>
+								</svg>\` },
+                            { value: "Deep", label: "Deep", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .icon-route-path { animation: none; /* Disabled by default */  stroke: #fff; stroke-width: 0.5; }
+								    .icon-route-path1 { animation-delay: 0.5s; }
+								    .icon-route-path2 { animation-delay: 1s; }
+									.icon-route-path3 { animation-delay: 1.6s; }
+								    @keyframes icon-route-draw { 0% { stroke-dashoffset: 1000; fill-opacity: 0; } 30% { stroke-dashoffset: 0; fill-opacity: 1; } 100% { stroke-dashoffset: 0; fill-opacity: 1; } }
+								  </style>
+								  <path class="icon-route-path1 icon-route-path" fill="#fff" d="M6.3 4.3q13.7-.05 27.4.1a2.3 2.3 0 0 1 .9.7 615 615 0 0 1 .5 21.5l-.1 6.7q-.155.76-.7 1.3a1190 1190 0 0 1-24.5.5L6.7 35q-.887-.069-1.5-.7a530 530 0 0 1-.4-28.2q.274-1.322 1.5-1.8m.4 1.8h26.4v27H6.7z"/>
+								  <path class="icon-route-path2 icon-route-path" fill="#fff" d="M20 7q4 0 4.3 3.8.012 9.112.4 18.2 1.394 2.673 3.8.8.623-1.018.7-2.2h1.6a18 18 0 0 1-.5 2.6q-1.3 1.8-3.4 2-3.639-.718-4-4.4l-.2-16.6Q22.366 9.733 21 9q-2.531-.508-3 2v18.1q0 2.9-4.3 3.4-2.7-.5-3.9-2a10 10 0 0 1-.6-1.8A299 299 0 0 1 9 8.1q.9-.8 1.8 0l.2 19.8q2 4.1 5 1.1a3.6 3.6 0 0 0 0-1V11a8.6 8.6 0 0 1 1-3q1-1 3-1"/>
+								  <path class="icon-route-path3 icon-route-path" fill="#fff" d="M29.9 7.7q.493-.064.9.2c.067 4.467.133 8.933.2 13.7h1.6c.2 0 .2 0 0 .4s-.4 1-.8 1.8l-.6 1.2c-1.2 1.6-1.2.4-1.7 0-.5-.8-.9-1.8-1.3-2.6-.2-.4-.2-.6-.3-.9h1.6q-.05-6.701.1-13.4q.215-.163.3-.4"/>
+								</svg>\` }
+                        ],
+                        Repeat: [
+                            { value: "1", label: "1x", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .repeatpath3 { animation: none; /* Disabled by default */ }
+								    .repeatpath2 { animation: none; /* Disabled by default */ }
+								    .repeatpath1 { animation: none; /* Disabled by default */ }
+								    .repeatnumber { fill: #fff; animation: none; /* Disabled by default */ transform-origin: center; }
+								    @keyframes draw-and-hide { 0% { stroke-dashoffset: 40; opacity: 0; } 25% { stroke-dashoffset: 40; opacity: 0; } 50% { stroke-dashoffset: 80; opacity: 1; } 75% { stroke-dashoffset: 80; opacity: 1; fill: #fff; } 100% { stroke-dashoffset: 40; opacity: 1; fill: none; } }
+								    @keyframes repeatfloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-2px) rotate(0.3deg); } 50% { transform: translateY(1px) rotate(-0.2deg); } 75% { transform: translateY(-1px) rotate(0.1deg); } }
+								  </style>
+								  <g>
+								    <path class="repeatpath1" fill="#fff" stroke="#fff" stroke-width="0.7" d="M24.5 2.9q1.718-.234 2 1.5-.472 1.573-2 2.2a194 194 0 0 0 12 .4l.3.3a27.7 27.7 0 0 1 0 8q-.873.868-2.1.5a2.3 2.3 0 0 1-.7-.9q-.15-2.698-.1-5.4-4.704-.027-9.4-.1 1.266.816 2 2.1-.653 2.015-2.4.9a41 41 0 0 1-3.5-3.3q-.437-.86-.2-1.8a42.5 42.5 0 0 0 4.1-4.4"/>
+								    <path class="repeatpath2" fill="#fff" stroke="#fff" stroke-width="0.7" d="M34.9 23.3q.707-.049 1.4.1.35.15.5.5a59 59 0 0 1-.1 8.4q-.463.374-.9 0l.3.3q-3.6.2-7.2 0-2.043-1.403.2-2.6 2.698-.15 5.4-.1-.05-2.802.1-5.6.308-.656.9-1"/>
+								    <path class="repeatpath3" fill="#fff" stroke="#fff" stroke-width="0.7" d="M3.7 25.9a8.2 8.2 0 0 1 1.8.1l.3.3q.15 1.797.1 3.6 6.601.05 13.2-.1-1.284-.733-1.8-2.1.348-1.677 2-1.1a51 51 0 0 1 3.9 3.7q.6 1 0 2a50 50 0 0 0-3.7 3.9q-2.81.608-1.9-2.1.672-.871 1.7-1.3l-15.2-.2a1.46 1.46 0 0 0-.6-.4 29.5 29.5 0 0 1-.1-5.9q.215-.163.3-.4"/>
+								    <path class="repeatnumber" fill="#fff" d="M11.3 1.7q.493-.064.9.2l.2 19.8a24 24 0 0 0 3.9.6v1.6h-12a3.1 3.1 0 0 1 .2-1.4 236 236 0 0 0 3.9-1q.25-8.002-.1-16a49 49 0 0 0-4.2-.3q-.323-.518-.1-1.1 1.437-.88 3.1-1.3a99 99 0 0 1 4.2-1.1"/>
+								  </g>
+								</svg>\` },
+                            { value: "2", label: "2x", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .repeatpath3 { animation: none; /* Disabled by default */ }
+								    .repeatpath2 { animation: none; /* Disabled by default */ }
+								    .repeatpath1 { animation: none; /* Disabled by default */ }
+								    .repeatnumber { fill: #fff; animation: none; /* Disabled by default */ transform-origin: center; }
+								    @keyframes draw-and-hide { 0% { stroke-dashoffset: 40; opacity: 0; } 25% { stroke-dashoffset: 40; opacity: 0; } 50% { stroke-dashoffset: 80; opacity: 1; } 75% { stroke-dashoffset: 80; opacity: 1; fill: #fff; } 100% { stroke-dashoffset: 40; opacity: 1; fill: none; } }
+								    @keyframes repeatfloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-2px) rotate(0.3deg); } 50% { transform: translateY(1px) rotate(-0.2deg); } 75% { transform: translateY(-1px) rotate(0.1deg); } }
+								  </style>
+								  <g>
+								    <path class="repeatpath1" fill="#fff" stroke="#fff" stroke-width="0.7" d="M24.5 2.9q1.718-.234 2 1.5-.472 1.573-2 2.2a194 194 0 0 0 12 .4l.3.3a27.7 27.7 0 0 1 0 8q-.873.868-2.1.5a2.3 2.3 0 0 1-.7-.9q-.15-2.698-.1-5.4-4.704-.027-9.4-.1 1.266.816 2 2.1-.653 2.015-2.4.9a41 41 0 0 1-3.5-3.3q-.437-.86-.2-1.8a42.5 42.5 0 0 0 4.1-4.4"/>
+								    <path class="repeatpath2" fill="#fff" stroke="#fff" stroke-width="0.7" d="M34.9 23.3q.707-.049 1.4.1.35.15.5.5a59 59 0 0 1-.1 8.4q-.463.374-.9 0l.3.3q-3.6.2-7.2 0-2.043-1.403.2-2.6 2.698-.15 5.4-.1-.05-2.802.1-5.6.308-.656.9-1"/>
+								    <path class="repeatpath3" fill="#fff" stroke="#fff" stroke-width="0.7" d="M3.7 25.9a8.2 8.2 0 0 1 1.8.1l.3.3q.15 1.797.1 3.6 6.601.05 13.2-.1-1.284-.733-1.8-2.1.348-1.677 2-1.1a51 51 0 0 1 3.9 3.7q.6 1 0 2a50 50 0 0 0-3.7 3.9q-2.81.608-1.9-2.1.672-.871 1.7-1.3l-15.2-.2a1.46 1.46 0 0 0-.6-.4 29.5 29.5 0 0 1-.1-5.9q.215-.163.3-.4"/>
+								    <path class="repeatnumber" fill="#fff" d="M10.5 1.7q4.267-.497 6.9 2.8 1.528 3.686-.4 7.2l-1.6 2.4A105 105 0 0 1 7.9 22a68 68 0 0 0 7.4 0 51 51 0 0 0 1.7-3.3q.852-.601 1.9-.3a1 1 0 0 1 .2.5 103 103 0 0 0-.5 5.2q-7.682.596-15.5.4a6.4 6.4 0 0 1 .3-2.4 149 149 0 0 0 8.8-9.6q2.071-2.808 1.4-6.2-1.489-2.866-4.7-2.1-.38.093-.7.3-1.051 2.155-2.1 4.3a12 12 0 0 1-2.2.1q.018-2.521.4-5 2.899-1.766 6.2-2.2"/>
+								  </g>
+								</svg>\` },
+                            { value: "3", label: "3x", svg: \`<svg class="mode-option-buttons-svg" width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+								  <style>
+								    .repeatpath3 { animation: none; /* Disabled by default */ }
+								    .repeatpath2 { animation: none; /* Disabled by default */ }
+								    .repeatpath1 { animation: none; /* Disabled by default */ }
+								    .repeatnumber { fill: #fff; animation: none; /* Disabled by default */ transform-origin: center; }
+								    @keyframes draw-and-hide { 0% { stroke-dashoffset: 40; opacity: 0; } 25% { stroke-dashoffset: 40; opacity: 0; } 50% { stroke-dashoffset: 80; opacity: 1; } 75% { stroke-dashoffset: 80; opacity: 1; fill: #fff; } 100% { stroke-dashoffset: 40; opacity: 1; fill: none; } }
+								    @keyframes repeatfloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-2px) rotate(0.3deg); } 50% { transform: translateY(1px) rotate(-0.2deg); } 75% { transform: translateY(-1px) rotate(0.1deg); } }
+								  </style>
+								  <g>
+								    <path class="repeatpath1" fill="#fff" stroke="#fff" stroke-width="0.7" d="M24.5 2.9q1.718-.234 2 1.5-.472 1.573-2 2.2a194 194 0 0 0 12 .4l.3.3a27.7 27.7 0 0 1 0 8q-.873.868-2.1.5a2.3 2.3 0 0 1-.7-.9q-.15-2.698-.1-5.4-4.704-.027-9.4-.1 1.266.816 2 2.1-.653 2.015-2.4.9a41 41 0 0 1-3.5-3.3q-.437-.86-.2-1.8a42.5 42.5 0 0 0 4.1-4.4"/>
+								    <path class="repeatpath2" fill="#fff" stroke="#fff" stroke-width="0.7" d="M34.9 23.3q.707-.049 1.4.1.35.15.5.5a59 59 0 0 1-.1 8.4q-.463.374-.9 0l.3.3q-3.6.2-7.2 0-2.043-1.403.2-2.6 2.698-.15 5.4-.1-.05-2.802.1-5.6.308-.656.9-1"/>
+								    <path class="repeatpath3" fill="#fff" stroke="#fff" stroke-width="0.7" d="M3.7 25.9a8.2 8.2 0 0 1 1.8.1l.3.3q.15 1.797.1 3.6 6.601.05 13.2-.1-1.284-.733-1.8-2.1.348-1.677 2-1.1a51 51 0 0 1 3.9 3.7q.6 1 0 2a50 50 0 0 0-3.7 3.9q-2.81.608-1.9-2.1.672-.871 1.7-1.3l-15.2-.2a1.46 1.46 0 0 0-.6-.4 29.5 29.5 0 0 1-.1-5.9q.215-.163.3-.4"/>
+								    <path class="repeatnumber" fill="#fff" d="M10.1 1.7q3.863-.598 6.7 2 2.777 4.927-1.5 8.6 4.408 2.319 3.1 7.2-1.265 4.063-5.5 4.7-4.41.698-8.2-1.6a2.3 2.3 0 0 1-.7-.9 371 371 0 0 0-.3-3.5 4 4 0 0 1 .2-1.2q.978-.235 1.9.1L8 21.5q2.087.912 4.3.3 2.779-1.524 2.1-4.7-.314-2.614-2.9-3.1l-2.4-.2q-.382-1.228.2-2.4 2.189.209 3.9-1.1 1.643-3.113-.7-5.7-1.733-.718-3.6-.4a69 69 0 0 0-2.4 4.4q-1.077.237-2.1-.1.032-2.417.5-4.8 2.425-1.54 5.2-2"/>
+								  </g>
+								</svg>\` }
+                        ]
+                    };
+
+					// Initialize cleaning UI (runs once on page load)
+					function initializeCleaningUI() {
+					    const container = document.querySelector('.settings-container');
+					    container.innerHTML = '';
+
+					    // Create all possible option groups and buttons initially
+					    Object.keys(VisCleaningOptions).forEach(optionType => {
+					        const group = document.createElement('div');
+					        group.className = 'option-group';
+					        group.dataset.optionType = optionType;
+					        group.style.display = 'none'; // Hide by default
+
+					        // Add option title
+					        const title = document.createElement('div');
+					        title.className = 'option-title';
+					        title.textContent = optionType.toUpperCase();
+					        group.appendChild(title);
+
+					        // Create button container div
+					        const buttonContainer = document.createElement('div');
+					        buttonContainer.className = 'option-buttons-container';
+
+					        // Store button container reference
+					        modeOptionButtons[optionType] = buttonContainer;
+
+					        // Create all possible buttons for this option type
+					        VisCleaningOptions[optionType].forEach(opt => {
+					            const btn = document.createElement('button');
+					            btn.className = 'mode-option-buttons';
+					            btn.dataset.optionType = optionType;
+					            btn.dataset.value = opt.value;
+					            btn.style.display = 'none'; // Hide by default
+
+					            btn.innerHTML = '<i> ' + opt.svg + '</i>';
+					            buttonContainer.appendChild(btn);
+
+					            btn.addEventListener('click', handleOptionClick);
+					        });
+
+					        group.appendChild(buttonContainer);
+					        container.appendChild(group);
+					    });
+
+					    // Set initial mode
+					    switchCleaningMode(VisCleaningState.mode || "Sweeping");
+					}
+
+					// Switch between cleaning modes
+					function switchCleaningMode(newMode) {
+					    VisCleaningState.mode = newMode;
+					    const modeConfig = VisCleaningModes[newMode];
+
+					    // Show/hide option groups based on current mode
+					    Object.keys(VisCleaningOptions).forEach(optionType => {
+					        const shouldShow = modeConfig.options.includes(optionType);
+					        document.querySelector('.option-group[data-option-type="' + optionType + '"]')
+					            .style.display = shouldShow ? 'flex' : 'none';
+					    });
+
+					    // Show/hide individual buttons based on activeModes
+					    Object.keys(VisCleaningOptions).forEach(optionType => {
+					        const buttonContainer = modeOptionButtons[optionType];
+					        Array.from(buttonContainer.children).forEach(btn => {
+					            const optionValue = btn.dataset.value;
+					            const optionKey = optionType + optionValue;
+					            const shouldShow = modeConfig.activeModes.includes(optionKey);
+					            btn.style.display = shouldShow ? 'block' : 'none';
+					        });
+					    });
+
+					    // Restore last settings for this mode
+					    Object.keys(modeConfig.lastSettings).forEach(opt => {
+					        VisCleaningState[opt] = modeConfig.lastSettings[opt];
+					    });
+
+					    updateButtonStates();
+					    updateSummaryDisplay();
+					}
+
+                    // Handle option button clicks
+                    function handleOptionClick(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const btn = e.currentTarget;
+                        const optionType = btn.dataset.optionType;
+                        const value = btn.dataset.value;
+
+                        // Update state
+                        VisCleaningState[optionType] = value;
+                        VisCleaningModes[VisCleaningState.mode].lastSettings[optionType] = value;
+
+                        // Update UI
+                        updateButtonStates();
+                        updateSummaryDisplay();
+                        handleInteraction(); // Reset menu timeout
+                    }
+
+                    // Update active states of all buttons
+                    function updateButtonStates() {
+                        document.querySelectorAll('.mode-option-buttons').forEach(btn => {
+                            const optionType = btn.dataset.optionType;
+                            const isActive = VisCleaningState[optionType] === btn.dataset.value;
+                            btn.classList.toggle('active', isActive);
+                        });
+                    }
+
+                    // Update the summary display
+                    function updateSummaryDisplay() {
+                        const modeName = VisCleaningState.mode ? VisCleaningModes[VisCleaningState.mode].name : "-";
+                        document.getElementById('mode-summary').textContent = modeName;
+                        document.getElementById('suction-summary').textContent = VisCleaningState.Suction || "-";
+                        document.getElementById('water-summary').textContent = VisCleaningState.Water || "-";
+                        document.getElementById('route-summary').textContent = VisCleaningState.Route || "-";
+                        document.getElementById('repeat-summary').textContent = VisCleaningState.Repeat || "-";
+
+                        // Automatically display summary tooltip when settings change
+                        if (document.getElementById('clean-menu').classList.contains('active')) {
+                            document.getElementById('summary-tooltip').classList.add('active');
+                        }
+						console.log("Selected cleaning Mode:", VisCleaningState);
+						document.getElementById('current-mode-display').textContent = VisCleaningState.mode ? VisCleaningModes[VisCleaningState.mode].name : "Not selected";
+                    }
+
+                    // Initialize menu
+                    function initCleaningMenu() {
+                        initializeCleaningUI();
+
+                    	// Mode selection buttons
+                        document.querySelectorAll('[data-mode]').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                switchCleaningMode(this.dataset.mode);
+
+                                // Highlight active mode
+                                document.querySelectorAll('.mode-option').forEach(b => {
+                                    b.classList.remove('active');
+                                });
+                                this.classList.add('active'); // IMPORTANT: Activates the clicked button
+                            });
+                        });
+
+                        // Set first button as active (sweeping)
+                        const sweepingBtn = document.querySelector('[data-mode="Sweeping"]');
+                        if (sweepingBtn) sweepingBtn.classList.add('active');
+                    }
+
+					// =============================================
+                    // Changing the map settings
+                    // =============================================
+                    // Initialize color map for click detection
+                    function initializeColorMap() {
+                        // Clear canvas
+                        colorMapCtx.clearRect(0, 0, canvasSize, canvasSize);
+
+                        // Draw rooms with their unique colors
+                        ${elements.rooms.map(room => {
+    const color = ColorsItems[room.room_id % ColorsItems.length];
+    const walls = room.walls.map(w => toCanvas(w.beg_pt_x, w.beg_pt_y));
+    const pathData = walls.map(([x,y], i) => (i === 0 ? 'M' : 'L') + x + ' ' + y).join(' ') + ' Z';
+
+    return `
+                                colorMapCtx.fillStyle = '${color}';
+                                colorMapCtx.beginPath();
+                                ${walls.map(([x,y], i) => (i === 0 ? 'colorMapCtx.moveTo(' + x + ',' + y + ');' : 'colorMapCtx.lineTo(' + x + ',' + y + ');')).join(' ')}
+                                colorMapCtx.closePath();
+                                colorMapCtx.fill();`;
+						    }).join('')}
+
+                        // Draw carpets with their unique colors
+                        ${Object.entries(elements.carpets).map(([id, rect]) => {
+    const color = ColorsCarpet[id % ColorsCarpet.length];
+    const [x1, y1, x2, y2] = rect;
+    const [tx1, ty1] = toCanvas(x1, y1);
+    const width = (x2-x1)*scale;
+    const height = (y2-y1)*scale;
+
+    return `
+                                colorMapCtx.fillStyle = '${color}';
+                                colorMapCtx.fillRect(${tx1}, ${ty1}, ${width}, ${height});`;
+  }).join('')}
+					}
+
+					// Change and reloading map size
+					document.getElementById('map-size-range').addEventListener('change', function() {
+                        const newSize = Math.min(2048, Math.max(256, parseInt(this.value)));
+						const minSize = 256;
+						const maxSize = 2048;
+
+						if (isNaN(newSize) || newSize < minSize || newSize > maxSize) {
+							console.error('Invalid size:', newSize);
+							showNotification('Reload failed', 'Invalid size ' + newSize + '. Keeping current.');
+                            return;
+						}
+                        // Save new map size
+                        vis.conn._socket.emit('setState', '${prefix}.map.MapSize${DH_CurMap}', {
+                            val: newSize,
+                            ack: false,
+                            from: 'vis'
+                        }, (err) => {
+                            if (err) {
+                                console.error('Size save error:', err);
+                                showNotification('Save failed', 'error');
+                                return;
+                            }
+
+                            // Trigger map reload
+                            vis.conn._socket.emit('setState', '${prefix}.map.NewMap', {
+                                val: true,
+                                ack: false,
+                                from: 'vis'
+                            }, (reloadErr) => {
+                                if (reloadErr) {
+                                    console.error('Reload error:', reloadErr);
+                                    showNotification('Reload failed', 'error');
+                                    return;
+                                }
+
+                                showNotification('Reloading map...');
+                            });
+                        });
+                    });
+
+                    // Centered notification helper function
+                    function showNotification(message, type = 'success', options = {}) {
+                        // Remove existing notifications
+                        const existingNotifs = document.querySelectorAll('.centered-notification');
+                        if (options.removeExisting !== false && existingNotifs.length > 0) {
+                            existingNotifs.forEach(notif => {
+                                notif.style.opacity = '0';
+                                setTimeout(() => notif.remove(), 300);
+                            });
+                        }
+
+                        // Create notification element
+                        const notification = document.createElement('div');
+                        notification.className = 'centered-notification ' + type;
+
+                        const typeStyles = {
+                            success: { bg: '#4CAF50', icon: '&#10004;' },
+                            error: { bg: '#ff4444', icon: '&#10008;' },
+                            warning: { bg: '#FF9800', icon: '&#9888;' },
+                            info: { bg: '#2196F3', icon: 'i' }
+                        };
+
+                        const style = typeStyles[type] || typeStyles.success;
+
+                        Object.assign(notification.style, {
+                            position: 'fixed',
+                            bottom: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%) translateY(20px)',
+                            padding: '12px 24px',
+                            background: style.bg,
+                            color: 'white',
+                            borderRadius: '5px',
+                            zIndex: '10000',
+                            transition: 'all 0.3s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            opacity: '0',
+                            maxWidth: '90%',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap'
+                        });
+
+                        notification.innerHTML =
+                            '<span class="notification-icon" style="' +
+                                'font-weight: bold;' +
+                                'font-size: 16px;' +
+                            '">' + style.icon + '</span>' +
+                            '<span class="notification-text" style="' +
+                                'flex: 1;' +
+                                'overflow: hidden;' +
+                                'text-overflow: ellipsis;' +
+                            '">' + message + '</span>' +
+                            (options.persistent ? '' : (
+                                '<span class="notification-close" style="' +
+                                    'margin-left: 15px;' +
+                                    'cursor: pointer;' +
+                                    'font-size: 18px;' +
+                                    'opacity: 0.8;' +
+                                    'transition: opacity 0.2s;' +
+                                '">&times;</span>'
+                            ));
+
+                        document.body.appendChild(notification);
+
+                        // Trigger animation
+                        setTimeout(() => {
+                            notification.style.opacity = '1';
+                            notification.style.transform = 'translateX(-50%) translateY(0)';
+                        }, 10);
+
+                        const closeBtn = notification.querySelector('.notification-close');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', () => {
+                                notification.style.opacity = '0';
+                                setTimeout(() => notification.remove(), 300);
+                            });
+                            closeBtn.addEventListener('mouseover', () => {
+                                closeBtn.style.opacity = '1';
+                            });
+                            closeBtn.addEventListener('mouseout', () => {
+                                closeBtn.style.opacity = '0.8';
+                            });
+                        }
+
+                        // Automatic closing
+                        if (!options.persistent) {
+                            const duration = options.duration || 3000;
+                            setTimeout(() => {
+                                notification.style.opacity = '0';
+                                setTimeout(() => notification.remove(), 300);
+                            }, duration);
+                        }
+
+                        if (options.onClick) {
+                            notification.style.cursor = 'pointer';
+                            notification.addEventListener('click', options.onClick);
+                        }
+                    }
+
+					document.getElementById('map-size-range').addEventListener('input', function() {
+                        document.getElementById('map-size-value').textContent = parseInt(this.value) + 'px';
+                    });
+
+                    // Update slider values
+                    function updateSliderValues() {
+                        document.getElementById('x-rotation-value').textContent = xRotation + '°';
+                        document.getElementById('y-rotation-value').textContent = yRotation + '°';
+                        document.getElementById('z-rotation-value').textContent = zRotation + '°';
+                        document.getElementById('perspective-value').textContent = perspective;
+                    }
+
+					// Update CSS 3D transformation
+                    function updateTransformation() {
+                        const zoomScale = zoomLevel / 100;
+                        let transform = '';
+                        transform += 'perspective(' + perspective + 'px) ';
+                        transform += 'rotateX(' + xRotation + 'deg) ';
+                        transform += 'rotateY(' + yRotation + 'deg) ';
+                        transform += 'rotateZ(' + zRotation + 'deg)';
+                        transform += 'scale(' + zoomScale + ')';
+                        transform += 'translate(' + xPosition + 'px, ' + yPosition + 'px)';
+                        mapContent.style.transform = transform;
+                    }
+
+                    const debouncedStabilizeLabels = debounce(stabilizeLabels, 500); // e.g. 500ms delay
+
+					function debounce(func, delay) {
+                        let timeout;
+                        return function(...args) {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(() => func.apply(this, args), delay);
+                        };
+                    }
+
+					// Change background color
+					document.getElementById('bg-color-picker').addEventListener('input', function(e) {
+                        document.documentElement.style.setProperty('--map-background-color', e.target.value);
+					});
+
+					// Set default value
+					document.documentElement.style.setProperty('--map-background-color', '#ffffff');
+
+                    document.getElementById('x-rotation').addEventListener('input', function() {
+                        xRotation = parseInt(this.value);
+                        updateTransformation();
+                        updateSliderValues();
+						debouncedStabilizeLabels();
+                    });
+
+                    document.getElementById('y-rotation').addEventListener('input', function() {
+                        yRotation = parseInt(this.value);
+                        updateTransformation();
+                        updateSliderValues();
+						debouncedStabilizeLabels();
+                    });
+
+                    document.getElementById('z-rotation').addEventListener('input', function() {
+                        zRotation = parseInt(this.value);
+                        updateTransformation();
+                        updateSliderValues();
+						debouncedStabilizeLabels();
+                    });
+
+                    document.getElementById('perspective').addEventListener('input', function() {
+                        perspective = parseInt(this.value);
+                        updateTransformation();
+                        updateSliderValues();
+						debouncedStabilizeLabels();
+                    });
+
+					document.getElementById('zoom-level').addEventListener('input', function() {
+                        zoomLevel = parseInt(this.value);
+                        updateTransformation();
+                        document.getElementById('zoom-value').textContent = zoomLevel + '%';
+						debouncedStabilizeLabels();
+					});
+
+					document.getElementById('x-position').addEventListener('input', function() {
+                        xPosition = parseInt(this.value);
+                        updateTransformation();
+                        document.getElementById('x-position-value').textContent = xPosition + 'px';
+						debouncedStabilizeLabels();
+					});
+
+					document.getElementById('y-position').addEventListener('input', function() {
+                        yPosition = parseInt(this.value);
+                        updateTransformation();
+                        document.getElementById('y-position-value').textContent = yPosition + 'px';
+						debouncedStabilizeLabels();
+					});
+
+                    document.getElementById('reset-selection-btn').addEventListener('click', () => {
+						document.getElementById('reset-selection-btn').classList.toggle('active', true);
+                        selectedRooms.forEach(id => document.getElementById('room-' + id)?.classList.remove('selected'));
+                        selectedCarpets.forEach(id => document.getElementById('carpet-' + id)?.classList.remove('selected'));
+                        selectedRooms = [];
+                        selectedCarpets = [];
+                        document.getElementById('current-room').textContent = '-';
+						debouncedSaveSettings();
+
+                        setTimeout(() => {
+                            document.getElementById('reset-selection-btn').classList.toggle('active', false);
+                        }, 300); // 500ms Animation
+                    });
+
+                    document.getElementById('reset-view-btn').addEventListener('click', function() {
+                        xRotation = 0;
+                        yRotation = 0;
+                        zRotation = 0;
+                        perspective = 1200;
+                        zoomLevel = 100;
+                        xPosition = 0;
+                        yPosition = 0;
+
+                        document.getElementById('x-rotation').value = 0;
+                        document.getElementById('y-rotation').value = 0;
+                        document.getElementById('z-rotation').value = 0;
+                        document.getElementById('perspective').value = 1200;
+                        document.getElementById('zoom-level').value = 100;
+                        document.getElementById('zoom-value').textContent = '100%';
+                        document.getElementById('x-position').value = 0;
+                        document.getElementById('y-position').value = 0;
+                        document.getElementById('x-position-value').textContent = '0px';
+                        document.getElementById('y-position-value').textContent = '0px';
+
+                        updateTransformation();
+                        updateSliderValues();
+                        debouncedStabilizeLabels();
+                    });
+
+					function sendStartCleaning() {
+					    if (selectedRooms.length > 0) {
+					        console.log("Start cleaning in rooms:", selectedRooms);
+					    }
+					    if (selectedCarpets.length > 0) {
+					        console.log("Consider carpets:", selectedCarpets);
+					    }
+					}
+
+
+					// =============================================
+					// customeClean Room Settings Radial Menu logic
+					// =============================================
+
+					// Global variables
+					let currentRoomId = null;
+					let activeMainOption = null;
+					let isMenuOpen = false;
+					let radialMenu = null;
+					let lastRoomId = null;
+					let autoCloseTimeout; // for automatic closing
+					let actionDetected = false; // Flag to track if any action has been detected
+
+					// Main options
+					const mainOptions = [
+					  {
+					    name: 'Mode',
+					    icon: '',
+					    options: Object.keys(VisCleaningModes).map(key => ({
+					      value: key,
+					      label: VisCleaningModes[key].name,
+					      svg: VisCleaningModes[key].icon
+					    }))
+					  },
+					  { name: 'Suction', icon: '', options: VisCleaningOptions.Suction },
+					  { name: 'Water', icon: '', options: VisCleaningOptions.Water },
+					  { name: 'Route', icon: '', options: VisCleaningOptions.Route },
+					  { name: 'Repeat', icon: '', options: VisCleaningOptions.Repeat }
+					];
+
+					// Toggle menu visibility
+					function toggleRadialMenu(x, y, roomId) {
+					    if (isMenuOpen && currentRoomId === roomId) {
+					        closeRadialMenu();
+					    } else {
+					        currentRoomId = roomId;
+					        updateRadialMenu(roomId);
+					        openRadialMenu(x, y);
+					    }
+					}
+
+					// Open the radial menu
+					function openRadialMenu(x, y) {
+					    radialMenu.style.left = x + 'px';
+					    radialMenu.style.top = y + 'px';
+					    radialMenu.classList.add('active');
+					    isMenuOpen = true;
+
+					    // Start the timeout for auto-closing
+					    autoCloseTimeout = setTimeout(() => {
+					        if (!actionDetected) {
+					            closeRadialMenu();
+					        }
+					    }, 15000); // Menu will close after 15 seconds if no action is detected
+
+					    // Add event listener for clicks outside the menu
+					    document.addEventListener('click', outsideClickListener);
+					    radialMenu.addEventListener('click', resetTimeout); // Reset timeout if clicked inside the menu
+					}
+
+					// Close the radial menu
+					function closeRadialMenu() {
+					    clearTimeout(autoCloseTimeout); // Stop the timeout if the menu is manually closed
+
+					    // Hide all sub-options
+					    document.querySelectorAll('.sub-options').forEach(el => el.classList.remove('active'));
+
+					    // Deactivate the current main option
+					    if (activeMainOption) {
+					        activeMainOption.classList.remove('active');
+					        activeMainOption = null;
+					    }
+
+					    // Remove the menu
+					    if (radialMenu) {
+					        radialMenu.classList.remove('active');
+					        radialMenu.classList.add('closing');
+					        setTimeout(() => {
+					            radialMenu.classList.remove('closing');
+					        }, 300);
+					    }
+
+					    isMenuOpen = false;
+
+					    // Remove the listener for clicks outside the menu
+					    document.removeEventListener('click', outsideClickListener);
+					    radialMenu.removeEventListener('click', resetTimeout); // Remove reset listener
+					}
+
+					// Open a sub-menu for a main option
+					function openSubMenu(mainBtn, subOptions) {
+					    document.querySelectorAll('.sub-options').forEach(el => el.classList.remove('active'));
+					    document.querySelectorAll('.main-option').forEach(btn => {
+					        if (btn !== mainBtn) btn.classList.add('hidden');
+					    });
+
+					    mainBtn.classList.add('active');
+					    activeMainOption = mainBtn;
+
+					    setTimeout(() => subOptions.classList.add('active'), 300);
+					}
+
+					// Close the sub-menu
+					function closeSubMenu() {
+					    document.querySelectorAll('.sub-options').forEach(el => el.classList.remove('active'));
+
+					    if (activeMainOption) {
+					        activeMainOption.classList.remove('active');
+					        activeMainOption = null;
+					    }
+
+					    setTimeout(() => {
+					        document.querySelectorAll('.main-option').forEach(btn => btn.classList.remove('hidden'));
+					    }, 150);
+					}
+
+					// Function only for debugging all elements from the fixed label
+					function getAllIconClasses(roomId) {
+					    const label = document.querySelector('#room-label-' + roomId + '-fixed');
+					    if (!label) {
+					        console.error('Label not found for room:', roomId);
+					        return [];
+					    }
+
+					    // 1. Collect all elements with classes
+					    const allElements = label.querySelectorAll('*[class]');
+					    const iconClasses = new Set();
+
+					    // 2. Browse classes
+					    allElements.forEach(el => {
+					        try {
+					            if (el.classList) { // Ensure that classList exists
+					                el.classList.forEach(className => {
+					                   // if (className.startsWith('icon-')) {
+					                        iconClasses.add(className);
+					                   // }
+					                });
+					            }
+					        } catch (e) {
+					            console.warn('Error reading classes of Element:', el, e);
+					        }
+					    });
+
+					    console.log('Found icon Classes:', Array.from(iconClasses));
+					    return Array.from(iconClasses);
+					}
+
+					function updateRadialMenu(roomId) {
+					    try {
+					        if (!roomId) throw new Error("No room ID provided");
+
+					        const labelContent = document.querySelector('#room-label-' + roomId + '-fixed .label-content');
+					        if (!labelContent) throw new Error("Label content not found");
+
+					        // Set default mode if not already set
+					        if (!labelContent.dataset.mode) {
+					            labelContent.dataset.mode = 'Sweeping'; // Default mode
+					        }
+
+					        // Re-create the menu
+					        if (radialMenu) radialMenu.remove();
+
+					        radialMenu = document.createElement('div');
+					        radialMenu.className = 'radial-menu';
+					        document.body.appendChild(radialMenu);
+					        lastRoomId = roomId;
+
+					        // Create mode selection button first
+					        createModeButton(roomId, labelContent);
+
+					        // Then create other buttons based on current mode
+					        createModeSpecificButtons(roomId, labelContent);
+
+					    } catch (error) {
+					        console.error("Error updating radial menu:", error);
+					    }
+					}
+
+					function createModeButton(roomId, labelContent) {
+					    const modeOption = {
+					        name: 'Mode',
+					        icon: '',
+					        options: Object.keys(VisCleaningModes).map(key => ({
+					            value: key,
+					            label: VisCleaningModes[key].name,
+					            svg: VisCleaningModes[key].icon
+					        }))
+					    };
+
+					    createMainButton(modeOption, 0, 4, roomId, labelContent, true);
+					}
+
+					function createMainButton(option, index, totalOptions, roomId, labelContent, isModeButton) {
+					    const angle = (index / totalOptions) * Math.PI * 2;
+					    const radius = 70;
+					    const tx = Math.cos(angle) * radius - 50 + 'px';
+					    const ty = Math.sin(angle) * radius - 50 + 'px';
+
+					    const btn = document.createElement('div');
+					    btn.className = 'main-option';
+					    btn.style.setProperty('--tx', tx);
+					    btn.style.setProperty('--ty', ty);
+					    btn.dataset.optionType = option.name;
+
+					    // Set icon
+					    const currentValue = labelContent.dataset[option.name.toLowerCase()];
+					    const matchedOption = option.options && option.options.find(opt => opt.value.toString() === currentValue);
+					    const labelIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + option.name.toLowerCase() + ' svg');
+					    btn.innerHTML = labelIcon ? labelIcon.outerHTML : (matchedOption ? matchedOption.svg : '');
+
+					    const subOptions = document.createElement('div');
+					    subOptions.className = 'sub-options';
+
+					    if (option.options) {
+					        option.options.forEach((subOpt, subIndex) => {
+					            const subAngle = (subIndex / option.options.length) * Math.PI * 2;
+					            const subRadius = 70;
+					            const subTx = Math.cos(subAngle) * subRadius - 25 + 'px';
+					            const subTy = Math.sin(subAngle) * subRadius - 25 + 'px';
+
+					            const subBtn = document.createElement('div');
+					            subBtn.className = 'sub-option';
+					            subBtn.innerHTML = subOpt.svg || subOpt.label[0];
+					            subBtn.style.setProperty('--tx', subTx);
+					            subBtn.style.setProperty('--ty', subTy);
+					            subBtn.dataset.value = subOpt.value;
+					            subBtn.title = subOpt.label;
+
+					            subBtn.addEventListener('click', function(e) {
+					                e.stopPropagation();
+					                actionDetected = true;
+
+					                if (isModeButton) {
+					                    // Handle mode change
+										const commandModeName = subOpt.value;
+										const commandModeCode = getModeCode(commandModeName);
+					                    labelContent.dataset.mode = commandModeCode;
+										console.log("Mode change -> name: " + commandModeName + ", code: " + commandModeCode + ", old: " + labelContent.dataset.mode + ", labelContent:", labelContent);
+
+					                    // Update icon
+					                    const labelIconContainer = document.querySelector('#room-label-' + roomId + '-fixed .icon-mode');
+					                    if (labelIconContainer) {
+					                        labelIconContainer.innerHTML = subOpt.svg;
+					                    }
+
+					                    // Update button
+					                    btn.innerHTML = subOpt.svg;
+
+					                    // Recreate other buttons for new mode
+					                    recreateModeSpecificButtons(roomId, labelContent);
+
+										// Send commands to (.control.UpdateMapData)
+										sendCleaningCommand(roomId, labelContent);
+
+					                } else {
+					                    // Handle other options
+					                    handleOptionSelection(option.name, subOpt.value, roomId, labelContent, btn);
+					                }
+
+					                closeSubMenu();
+					            });
+
+					            subOptions.appendChild(subBtn);
+					        });
+					    }
+
+					    btn.addEventListener('click', function(e) {
+					        e.stopPropagation();
+					        actionDetected = true;
+					        if (activeMainOption === btn) {
+					            closeSubMenu();
+					        } else {
+					            openSubMenu(btn, subOptions);
+					        }
+					    });
+
+					    radialMenu.appendChild(btn);
+					    radialMenu.appendChild(subOptions);
+					}
+
+					function recreateModeSpecificButtons(roomId, labelContent) {
+					    // Remove existing buttons (except mode button)
+					    const buttons = radialMenu.querySelectorAll('.main-option');
+					    buttons.forEach((btn, index) => {
+					        if (index > 0) { // Keep mode button (index 0)
+					            btn.remove();
+					            // Remove corresponding sub-options
+					            const subOptions = radialMenu.querySelectorAll('.sub-options')[index];
+					            if (subOptions) subOptions.remove();
+					        }
+					    });
+
+					    // Create new buttons for current mode
+					    createModeSpecificButtons(roomId, labelContent);
+					}
+
+					function createModeSpecificButtons(roomId, labelContent) {
+					    const currentMode = getModeNameFromCode(labelContent.dataset.mode);
+					    const availableOptions = getAvailableOptionsForMode(currentMode);
+
+					    availableOptions.forEach((option, index) => {
+					        createMainButton(option, index + 1, availableOptions.length + 1, roomId, labelContent, false);
+					    });
+					}
+
+					function getAvailableOptionsForMode(modeName) {
+					    const mode = VisCleaningModes[modeName];
+					    if (!mode) return [];
+
+					    return mode.options.map(optionName => {
+					        const fullOptions = {
+					            'Suction': VisCleaningOptions.Suction,
+					            'Water': VisCleaningOptions.Water,
+					            'Route': VisCleaningOptions.Route,
+					            'Repeat': VisCleaningOptions.Repeat
+					        }[optionName];
+
+					        return {
+					            name: optionName,
+					            icon: '',
+					            options: fullOptions.filter(opt =>
+					                mode.activeModes.includes(optionName + opt.value)
+					            )
+					        };
+					    });
+					}
+
+					function handleOptionSelection(optionName, value, roomId, labelContent, btn) {
+					    let convertedValue = value;
+
+					    if (optionName === 'Suction') {
+					        convertedValue = getSuctionCode(value);
+					    } else if (optionName === 'Water') {
+					        convertedValue = getWaterCode(value);
+					    } else if (optionName === 'Route') {
+					        convertedValue = getRouteCode(value);
+					    }
+
+					    labelContent.dataset[optionName.toLowerCase()] = convertedValue;
+
+					    const labelIconContainer = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + optionName.toLowerCase());
+					    if (labelIconContainer) {
+					        const selectedOption = VisCleaningOptions[optionName].find(opt => opt.value === value);
+					        if (selectedOption) {
+					            labelIconContainer.innerHTML = selectedOption.svg;
+					        }
+					    }
+
+					    btn.innerHTML = VisCleaningOptions[optionName].find(opt => opt.value === value)?.svg || '';
+
+						// Send commands to (.control.UpdateMapData)
+						sendCleaningCommand(roomId, labelContent);
+
+
+					}
+
+					// Function to send commands (.control.UpdateMapData)
+					function sendCleaningCommand(roomId, labelContent) {
+						// Log current settings
+					    console.log('Updated settings:', {
+							room: roomId,
+					        suction: labelContent.dataset.suction,
+					        water: labelContent.dataset.water,
+					        repeat: labelContent.dataset.repeat,
+					        mode: labelContent.dataset.mode,
+							route: labelContent.dataset.route,
+					    });
+
+						// Adjusting the suction power Max Plus
+					    let normalizeSuctionValue = parseInt(labelContent.dataset.suction, 10);
+					    let suctionMaxPlus = 0;
+					    if ((normalizeSuctionValue == 4) || (normalizeSuctionValue == 3)) {
+					        suctionMaxPlus = (normalizeSuctionValue === 4) ? 1 : 0;
+					        (async () => {
+					            try {
+					                await setState('${prefix}.control.SuctionMaxPlus', suctionMaxPlus);
+					                console.log('Suction Power Max Plus has been changed to ', suctionMaxPlus);
+					            } catch (err) {
+					                console.error('Error setting the suction power Max Plus', err);
+					            }
+					        })();
+					        normalizeSuctionValue = 3;
+					    }
+
+						// Push the extracted values into the result array (converting strings to numbers)
+					    const result = [];
+					    result.push([
+					        parseInt(roomId, 10),
+					        normalizeSuctionValue,
+					        parseInt(labelContent.dataset.water, 10),
+					        parseInt(labelContent.dataset.repeat, 10),
+					        parseInt(labelContent.dataset.mode, 10),
+					        parseInt(labelContent.dataset.route, 10)
+					    ]);
+
+					    const updateData = [{
+					        piid: 4,
+					        value: JSON.stringify({
+					            customeClean: result
+					        })
+					    }];
+
+					    (async () => {
+					        try {
+					            const fullId = '${prefix}.control.UpdateMapData';
+					            await setState(fullId, JSON.stringify(updateData));
+					            console.log('Command sent:', JSON.stringify(updateData));
+					        } catch (err) {
+					            console.error('Error setting UpdateMapData:', err);
+					        }
+					    })();
+
+						//closeSubMenu();
+						//updateButtonStates();
+						//updateSummaryDisplay();
+					}
+
+					// Function to reset the timeout
+					function resetTimeout() {
+					    clearTimeout(autoCloseTimeout); // Stop the current timeout
+					    actionDetected = true; // Action detected
+					    // Restart the timeout when the user clicks inside the menu
+					    autoCloseTimeout = setTimeout(() => {
+					        if (!actionDetected) {
+					            closeRadialMenu();
+					        }
+					    }, 15000); // Menu will close after 15 seconds if no action is detected
+					}
+
+					// Close the menu if clicked outside
+					function outsideClickListener(e) {
+					    if (!radialMenu.contains(e.target)) {
+					        closeRadialMenu();
+					    }
+					}
+
+					// Function: =============> Reverse mapping functions for Suction
+					function getSuctionCode(name) {
+					    const suctionReverseMap = {
+					        'Quiet': 0,
+					        'Standard': 1,
+					        'Turbo': 2,
+					        'Max': 3,
+					        'MaxPlus': 4
+					    };
+
+					    return (name in suctionReverseMap) ? suctionReverseMap[name] : 2;
+					}
+
+					// Function: =============> Reverse mapping functions for Water
+					function getWaterCode(name) {
+					    const waterReverseMap = {
+					        'Low': 10,
+					        'Middle': 20,
+					        'High': 30,
+					        'Ultra': 31
+					    };
+
+					    return (name in waterReverseMap) ? waterReverseMap[name] : 20;
+					}
+
+					// Function: =============> Reverse mapping functions for Route
+					function getRouteCode(name) {
+					    const routeReverseMap = {
+					        'Standard': 1, // 'Standard': 546 ?? Intelligent
+					        'Intensive': 2,
+					        'Deep': 3, // 'Deep': 768
+					        'Quick': 4 // 'Quick': 512 ?? Intelligent
+					    };
+
+					    return (name in routeReverseMap) ? routeReverseMap[name] : 2;
+					}
+
+					// Function: =============> Reverse mapping functions for Mode
+					function getModeCode(name) {
+					    const modeReverseMap = {
+					        'Sweeping': 0,
+					        'Mopping': 1,
+					        'SweepingAndMopping': 2,
+					        'MoppingAfterSweeping': 3,
+					        'CustomRoomCleaning': 4
+					    };
+
+					    return (name in modeReverseMap) ? modeReverseMap[name] : 1;
+					}
+
+					// Function: =============> Reverse mapping functions for Mode
+					function getModeNameFromCode(code) {
+					    const modeMap = {
+					        0: 'Sweeping',
+					        1: 'Mopping',
+					        2: 'SweepingAndMopping',
+					        3: 'MoppingAfterSweeping',
+					        4: 'CustomRoomCleaning'
+					    };
+
+					    return (code in modeMap) ? modeMap[code] : 'Sweeping';
+					}
+
+
+					// =============================================
+                    // Changing the robot vacuum position
+                    // =============================================
+                    // Transformation function for the script part
+                    function toCanvas(x, y) {
+                        return [
+                            Math.round(x * scale + offsetX),
+                            Math.round(y * scale + offsetY)
+                        ];
+                    }
+
+					// Variables to virtualize the rotation of the robot
+                    let lastPosition = { x: null, y: null };
+                    let lastAngle = 0;
+                    const BRUSH_ANGLE = 270; //Brush points in SVG at 45� to the top right
+
+                    function updateRobotPosition(x, y) {
+                        const [canvasX, canvasY] = toCanvas(x, y);
+                        const robotSvg = document.getElementById('robot-position');
+
+                        if (!robotSvg) return;
+
+                        // Only calculate if we have a previous position
+                        if (lastPosition.x !== null && lastPosition.y !== null) {
+                            const deltaX = canvasX - lastPosition.x;
+                            const deltaY = canvasY - lastPosition.y;
+                            const distanceMoved = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+
+                            // Only when movement is noticeable (>2 pixels)
+                            if (distanceMoved > 2) {
+                                let movementDirection = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+                                let robotRotation = movementDirection - BRUSH_ANGLE;
+
+                                // Normalize angles (0-360�)
+                                robotRotation = (robotRotation + 360) % 360;
+
+                                // Smooth rotation (80% new angle, 20% previous)
+                                lastAngle = 0.8 * robotRotation + 0.2 * lastAngle;
+
+                                // Apply with correct centering
+                                robotSvg.style.transform = 'translate(-32px, -32px) rotate(' + lastAngle + 'deg)';
+                            }
+                        }
+
+                        // Update position
+                        lastPosition = { x: canvasX, y: canvasY };
+                        robotSvg.style.left = canvasX + 'px';
+                        robotSvg.style.top = canvasY + 'px';
+                        robotSvg.style.display = 'block';
+
+                        // Path update
+                        currentPathPoints.push([canvasX, canvasY]);
+                        updateCurrentPath();
+
+                    	if (currentPathPoints.length > 4000) {
+                            historyPathPoints = historyPathPoints.concat(currentPathPoints.slice(0, -2000));
+                            currentPathPoints = currentPathPoints.slice(-2000);
+                            updateHistoryPath();
+                        }
+                    }
+
+                    function updateCurrentPath() {
+                        const pathElement = document.getElementById('robot-path-current');
+                        if (!pathElement || currentPathPoints.length === 0) return;
+
+                        let pathData = 'M ' + currentPathPoints[0][0] + ' ' + currentPathPoints[0][1];
+                        for (let i = 1; i < currentPathPoints.length; i++) {
+                            pathData += ' L ' + currentPathPoints[i][0] + ' ' + currentPathPoints[i][1];
+                        }
+
+                        pathElement.innerHTML = '<path d="' + pathData + '" ' +
+                                               'stroke="rgba(0,150,255,0.8)" ' +
+                                               'stroke-width="4" ' +
+                                               'fill="none" />';
+                    }
+
+                    function updateHistoryPath() {
+                        const pathElement = document.getElementById('robot-path-history');
+                        if (!pathElement || historyPathPoints.length === 0) return;
+
+                        let pathData = 'M ' + historyPathPoints[0][0] + ' ' + historyPathPoints[0][1];
+                        for (let i = 1; i < historyPathPoints.length; i++) {
+                            pathData += ' L ' + historyPathPoints[i][0] + ' ' + historyPathPoints[i][1];
+                        }
+
+                        pathElement.innerHTML = '<path d="' + pathData + '" ' +
+                                               'stroke="rgba(255,50,50,0.6)" ' +
+                                               'stroke-width="4" ' +
+                                               'fill="none" />';
+                    }
+
+                    // Draw robot path
+                    function updatePathFromHistory(historyData) {
+                        historyPathPoints = [];
+                        currentPathPoints = [];
+
+                        if (!historyData || Object.keys(historyData).length === 0) {
+                            hideRobotPosition();
+                            return;
+                        }
+                        try {
+                            Object.values(historyData).forEach(entry => {
+                                try {
+                                    let x, y;
+                                    if (Array.isArray(entry)) {
+                                        x = entry[0];
+                                        y = entry[1];
+                                    } else if (typeof entry === 'object' && entry.position) {
+                                        x = entry.position.x;
+                                        y = entry.position.y;
+                                    }
+                                    if (!isNaN(x) && !isNaN(y)) {
+                                        const [canvasX, canvasY] = toCanvas(x, y);
+                                        historyPathPoints.push([canvasX, canvasY]);
+                                    }
+                                } catch (e) {
+                                    console.error('Error processing position:', entry, e);
+                                }
+                            });
+
+                            updateHistoryPath();
+                        } catch (e) {
+                            console.error('Failed to process history:', e);
+                            hideRobotPosition();
+                        }
+                    }
+
+                    function hideRobotPosition() {
+                        const robotPos = document.getElementById('robot-position');
+                        if (robotPos) robotPos.style.display = 'none';
+                    }
+
+                    // Helper function for path update
+                    function updateRobotPath() {
+                        const pathElement = document.getElementById('robot-path-current');
+                        if (!pathElement) return;
+
+                        pathElement.innerHTML = '';
+
+                        if (robotPathPoints.length === 0 && (!posHistory || posHistory.length === 0)) {
+                            return;
+                        }
+
+                        if (robotPathPoints.length > 0) {
+                            let pathData = 'M ' + robotPathPoints[0][0] + ' ' + robotPathPoints[0][1];
+                            for (let i = 1; i < robotPathPoints.length; i++) {
+                                pathData += ' L ' + robotPathPoints[i][0] + ' ' + robotPathPoints[i][1];
+                            }
+
+                            pathElement.innerHTML += '<path d="' + pathData + '" ' +
+                                                    'stroke="rgba(255,0,0,0.7)" ' +
+                                                    'stroke-width="4" ' +
+                                                    'fill="none" />';
+                        }
+                    }
+
+					document.getElementById('toggle-history-path').addEventListener('click', function() {
+                        showHistoryPath = !showHistoryPath;
+                        document.getElementById('robot-path-history').style.display = showHistoryPath ? 'block' : 'none';
+						this.classList.toggle('active', showHistoryPath);
+                        //this.textContent = showHistoryPath ? 'Hide History Path' : 'Show History Path';
+						debouncedSaveSettings();
+                    });
+
+                    document.getElementById('toggle-robot-path').addEventListener('click', function() {
+                        showRobotPath = !showRobotPath;
+                        document.getElementById('robot-path-current').style.display = showRobotPath ? 'block' : 'none';
+                        //this.textContent = showRobotPath ? 'Hide Robot Path' : 'Show Robot Path';
+						this.classList.toggle('active', showRobotPath);
+						debouncedSaveSettings();
+                    });
+
+                    document.getElementById('toggle-room-label').addEventListener('click', function() {
+                        areHiddenState = !areHiddenState;
+                        stabilizeLabels();
+                        //this.textContent = areHiddenState ? 'Hide room labels' : 'Show room labels';
+						this.classList.toggle('active', areHiddenState);
+						debouncedSaveSettings();
+                    });
+
+					// =============================================
+                    // Update and change room and carpet settings
+                    // =============================================
+
+                    // Precise click detection with 3D transformation
+                    function handleClick(event) {
+                        const rect = clickLayer.getBoundingClientRect();
+                        let x = event.clientX - rect.left;
+                        let y = event.clientY - rect.top;
+
+                        // 1. Get the current transformation matrix of the map container
+                        const style = window.getComputedStyle(mapContent);
+                        const matrix = new WebKitCSSMatrix(style.transform);
+
+                        // 2. Create inverse matrix for the back transformation
+                        let det = matrix.a * matrix.d - matrix.b * matrix.c;
+                        if (det === 0) return; // No inverse possible
+
+                        // Inverse of the 2D components
+                        const inv = {
+                            a: matrix.d / det,
+                            b: -matrix.b / det,
+                            c: -matrix.c / det,
+                            d: matrix.a / det,
+                            e: (matrix.c * matrix.f - matrix.d * matrix.e) / det,
+                            f: (matrix.b * matrix.e - matrix.a * matrix.f) / det
+                        };
+
+                        // 3. Transform click position back
+                        const tx = x - canvasSize/2;
+                        const ty = y - canvasSize/2;
+                        x = inv.a * tx + inv.c * ty + inv.e + canvasSize/2;
+                        y = inv.b * tx + inv.d * ty + inv.f + canvasSize/2;
+
+                        // 4. Check boundaries
+                        x = Math.max(0, Math.min(canvasSize-1, x));
+                        y = Math.max(0, Math.min(canvasSize-1, y));
+
+                        // Original color query
+                        const pixel = colorMapCtx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+                        const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+
+                        // Rest of the existing logic
+                        if (colorMappings.rooms[hex]) {
+                            const roomId = colorMappings.rooms[hex];
+                            const element = document.getElementById('room-' + roomId);
+                            const index = selectedRooms.indexOf(roomId);
+							const fixedLabel = document.getElementById('room-label-' + roomId + '-fixed');
+                            if (index === -1) {
+                                selectedRooms.push(roomId); // Add room
+                                element.classList.add('selected');
+								labelManager.activateLabelAnimations(fixedLabel); // Enables animations for a specific label
+                            } else {
+                                selectedRooms.splice(index, 1); // Remove room
+                                element.classList.remove('selected');
+								labelManager.deactivateLabelAnimations(fixedLabel); // Disables animations for a specific label
+                            }
+                            updateCurrentRoomDisplay(roomId);
+                        }
+                        else if (colorMappings.carpets[hex]) {
+                            const carpetId = colorMappings.carpets[hex];
+                            const element = document.getElementById('carpet-' + carpetId);
+                            const index = selectedCarpets.indexOf(carpetId);
+                            if (index === -1) {
+                                selectedCarpets.push(carpetId); // Add carpet
+                                element.classList.add('selected');
+                            } else {
+                                selectedCarpets.splice(index, 1); // Remove carpet
+                                element.classList.remove('selected');
+                            }
+                        }
+                        console.log("Selected rooms:", selectedRooms);
+                        console.log("Selected carpets:", selectedCarpets);
+						debouncedSaveSettings();
+                    }
+
+					// Helper function RGB to Hex
+                    function rgbToHex(r, g, b) {
+                        return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+                    }
+
+                    // Update current room display
+                    function updateCurrentRoomDisplay(roomId) {
+                        document.getElementById('current-room').textContent = roomId;
+                    }
+
+					// Function for the room name to find out which number belongs to it
+					function getRoomNameNumberMap() {
+                        const nameNumberMap = {};
+						for (const [roomNumber, roomData] of Object.entries(roomDataMap)) {
+                            nameNumberMap[roomData.name] = Number(roomNumber);
+						}
+                      return nameNumberMap;
+                    }
+
+					clickLayer.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const event = new MouseEvent('click', {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY
+                        });
+                        handleClick(event);
+                    }, { passive: false });
+
+					// =============================================
+                    // Show and update room settings
+                    // =============================================
+                    // Global style ID for label CSS
+                    // 1. CSS for contained labels
+                    var fixLabelCSS = \`
+                    #map-labels-container {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        pointer-events: none;
+                        overflow: hidden;
+                        z-index: 110;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;  /* Centers the content both horizontally and vertically */
+                    }
+
+                    .room-label-fixed {
+                        position: absolute;
+                        transform: translate(-50%, -50%) scale(var(--scale, 1));
+                        transition: transform 0.2s ease-out, opacity 0.2s ease;
+                        will-change: transform;
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                        border: 1px solid rgba(0,0,0,0.1);
+                        font-size: 10px;
+                        font-weight: bold;
+                        white-space: nowrap;
+                        backdrop-filter: blur(1px);
+                        min-width: 145px;
+                        max-width: 175px;
+                        min-height: 80px;
+                        text-align: center;
+                        color: #000000;
+                        contain: content;
+                    }
+
+                    .room-label-fixed .label-content {
+                        white-space: normal;
+                        word-break: break-word;
+						z-index: 110;
+                    }
+
+                    .icon-scale {
+                        width: 18px;
+                        height: 18px;
+                        transform: scale(0.65);
+                        flex-shrink: 0;
+                    }
+
+                    .setting-item {
+                        display: flex;
+                        align-items: center;
+                        font-size: 8px;
+                        margin: 0 5px; /* Additional horizontal spacing */
+                        margin-left: 5px;
+                    }
+
+                    .icon-container {
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;  /* Centers the icons horizontally */
+                        align-items: center;
+                        margin-top: 2px;
+                        margin-bottom: 10px; /* Space below the icons to separate from the progress bar */
+                    }
+
+                    .progress-container {
+                        display: flex;
+                        flex-direction: column;  /* Ensures the progress bar is vertically below the icons */
+                        align-items: center;  /* Centers the progress bar horizontally */
+                        margin-top: 19px;
+                    }
+
+                    .progress-bar {
+                        background: rgba(0,0,0,0.1);
+                        height: 5px;
+                        border-radius: 2px;
+                        width: 100%;
+                    }
+
+                    .progress-fill {
+                        background: #4CAF50;
+                        height: 100%;
+                        border-radius: 2px;
+                    }
+
+                    .progress-text {
+                        font-size: 10px;
+                        text-align: center;
+                        font-weight: 400;
+                    }
+
+                    .last-update-text {
+                        font-size: 10px;
+                        text-align: center;
+                        font-weight: 600;
+                    }
+                    \`;
+
+                    // =============================================
+                    // Room Label Management System
+                    // =============================================
+
+                    // Reads cleaning data for defined rooms from the Dreame structure
+                    async function getRoomCleaningData(roomDataMap) {
+                        try {
+                            const roomData = {};
+
+                            // Retrieve data for each room
+                            await Promise.all(Object.keys(roomDataMap).map(async (roomId) => {
+                                const roomName = roomDataMap[roomId].name;
+                                const basePath = '${prefix}.state.cleaninginfo.${DH_CurMap}.' + roomName;
+
+                                roomData[roomId] = {
+                                    ...roomDataMap[roomId],
+                                    stats: await getRoomStats(basePath)
+                                };
+                            }));
+
+                            return roomData;
+                        } catch (error) {
+                            console.error('Error loading room data:', error);
+                            return {};
+                        }
+                    }
+
+                    // Get statistics for a specific room
+                    async function getRoomStats(basePath) {
+                        const stats = {};
+                        const properties = ['CleanedArea', 'TotalArea', 'CoveragePercent', 'LastUpdate'];
+
+                        await Promise.all(properties.map(async (prop) => {
+                            const stateId = basePath + '.' + prop;
+                            stats[prop] = await getStateValue(stateId, prop);
+                        }));
+
+                        // Add calculated metric
+                        stats.cleaningRatio = stats.TotalArea > 0
+                            ? (stats.CleanedArea / stats.TotalArea * 100).toFixed(1)
+                            : 0;
+
+                        return stats;
+                    }
+
+                    // Gets a single state value with type conversion
+                    async function getStateValue(stateId, property) {
+                        try {
+                            const value = await getState(stateId);
+
+                            if (property === 'LastUpdate') {
+                                return value ? new Date(value) : null;
+                            }
+
+                            const numValue = parseFloat(value);
+                            return isNaN(numValue) ? 0 : numValue;
+                        } catch (error) {
+                            console.error('Error reading from ' + stateId + ': ', error);
+                            return 0;
+                        }
+                    }
+
+                    // ioBroker State Helper with Promise
+                    function getState(stateId) {
+                        return new Promise((resolve) => {
+                            vis.conn._socket.emit('getState', stateId, (err, res) => {
+                                resolve(err ? null : res?.val);
+                            });
+                        });
+                    }
+
+                    // Format time manually
+                    function formatDate(date) {
+                        if (!date) return 'Never';
+
+                        // Format Date
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = String(date.getFullYear()).slice(-2);
+
+                        // Format time
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                        return day + '.' + month + '.' + year + ' ' + hours + ':' + minutes;
+                    }
+
+                    // Cache for frequently used elements and data
+                    const labelCache = {
+                      container: null,
+                      styleElement: null,
+                      roomSettings: {},
+                      roomStats: {},
+                      routeTypes: {}
+                    };
+
+                    // Shared utility functions
+                    const utils = {
+                      // Get element with caching
+                      getElement: function(id) {
+                        return labelCache.elements && labelCache.elements[id]
+                          ? labelCache.elements[id]
+                          : document.getElementById(id);
+                      },
+
+                      // Safe JSON parsing
+                      parseJSON: function(data) {
+                        try {
+                          return typeof data === 'string' ? JSON.parse(data) : data;
+                        } catch (e) {
+                          console.error('JSON parse error:', e);
+                          return null;
+                        }
+                      },
+
+                      // Throttle function to limit execution rate
+                      throttle: function(fn, delay) {
+                        let lastCall = 0;
+                        return function() {
+                          const now = Date.now();
+                          if (now - lastCall >= delay) {
+                            lastCall = now;
+                            fn.apply(this, arguments);
+                          }
+                        };
+                      }
+                    };
+
+                    // =============================================
+                    // Data Service Module
+                    // =============================================
+                    const dataService = {
+                      // Get multiple states in one request
+                      getStates: function(stateIds) {
+                        return new Promise(function(resolve) {
+                          vis.conn._socket.emit('getStates', stateIds, function(err, res) {
+                            resolve(err ? {} : res);
+                          });
+                        });
+                      },
+
+                      // Get cleaning stats for a room
+                      getRoomStats: async function(basePath) {
+                        const properties = ['CleanedArea', 'TotalArea', 'CoveragePercent', 'LastUpdate'];
+                        const stateIds = properties.map(function(prop) {
+                          return basePath + '.' + prop;
+                        });
+
+                        const results = await this.getStates(stateIds);
+                        const stats = {};
+
+                        properties.forEach(function(prop, index) {
+                          const stateId = stateIds[index];
+                          const value = results[stateId] ? results[stateId].val : null;
+
+                          if (prop === 'LastUpdate') {
+                            stats[prop] = value ? new Date(value) : null;
+                          } else {
+                            const numValue = parseFloat(value);
+                            stats[prop] = isNaN(numValue) ? 0 : numValue;
+                          }
+                        });
+
+                        stats.cleaningRatio = stats.TotalArea > 0
+                          ? (stats.CleanedArea / stats.TotalArea * 100).toFixed(1)
+                          : 0;
+
+                        return stats;
+                      },
+
+                      // Fetch room settings from server
+                      fetchRoomSettings: async function() {
+                        try {
+                          const [saData, cleansetData] = await Promise.all([
+                            new Promise(function(resolve) {
+                              vis.conn._socket.emit('getState', '${prefix}.mqtt.sa', function(err, res) {
+                                resolve(err ? null : res ? res.val : null);
+                              });
+                            }),
+                            new Promise(function(resolve) {
+                              vis.conn._socket.emit('getState', '${prefix}.mqtt.cleanset', function(err, res) {
+                                resolve(err ? null : res ? res.val : null);
+                              });
+                            })
+                          ]);
+
+                          return this.parseRoomSettings(saData, cleansetData);
+                        } catch (error) {
+                          console.error('Error fetching room settings:', error);
+                          return {};
+                        }
+                      },
+
+                      // Parse room settings from different sources
+                      parseRoomSettings: function(saData, cleansetData) {
+                        const settings = {};
+
+                        // Process sa data (original format)
+                        const parsedSa = utils.parseJSON(saData);
+                        if (Array.isArray(parsedSa)) {
+                          parsedSa.forEach(function(room) {
+                            if (Array.isArray(room) && room.length >= 6) {
+                              settings[room[0]] = {
+                                water: room[1],
+                                repeat: room[2],
+                                order: room[4],
+                                route: room[5],
+                                source: 'sa'
+                              };
+                            }
+                          });
+                        }
+
+                        // Process cleanset data (room ID as key)
+                        const parsedCleanset = utils.parseJSON(cleansetData);
+                        if (parsedCleanset && typeof parsedCleanset === 'object') {
+                          Object.entries(parsedCleanset).forEach(function([roomId, clean]) {
+                            if (Array.isArray(clean) && clean.length >= 6) {
+                              roomId = parseInt(roomId);
+                              settings[roomId] = settings[roomId] || {};
+                              Object.assign(settings[roomId], {
+                                suction: clean[0],
+                                preciseWater: clean[1],
+                                preciseRepeats: clean[2],
+                                mode: clean[4],
+                                preciseRoute: clean[5],
+                                source: 'cleanset'
+                              });
+                            }
+                          });
+                        }
+
+                        return settings;
+                      }
+                    };
+
+                    // =============================================
+                    // Label Manager Module
+                    // =============================================
+
+                    const labelManager = {
+                      trackedLabels: [],  // Saves all active labels
+                      callbacks: [],     // Event listener callbacks
+                      observer: null,    // Mutation observer
+                      observers: [], // For Mutation observer
+
+
+                      // Function: =============> Initialize label container
+                      initContainer: function() {
+                        if (!labelCache.container) {
+                          const container = document.createElement('div');
+                          container.id = 'map-labels-container';
+                          document.querySelector('.map-container').appendChild(container);
+                          labelCache.container = container;
+
+                          if (!utils.getElement(fixLabelCSS)) {
+                            const style = document.createElement('style');
+                            style.id = fixLabelCSS;
+                            style.textContent = fixLabelCSS;
+                            document.head.appendChild(style);
+                            labelCache.styleElement = style;
+                          }
+                        }
+                        return labelCache.container;
+                      },
+
+                      // Function: =============> Create label HTML content
+                     createLabelContent: function(roomInfo, settings, stats) {
+                         // Settings SVG Icon
+                         const settingsIcon = \`
+                             <svg class="settings-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                 <circle cx="12" cy="12" r="3"></circle>
+                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                             </svg>
+                         \`;
+
+                         // Get all values with defaults
+                         const values = {
+                             suction: this.getSuctionLevel(settings.suction || 1),
+                             water: this.getWaterLevel(settings.preciseWater || settings.water || 0),
+                             route: this.getRouteType(settings.preciseRoute || settings.route || 2),
+                             repeat: settings.preciseRepeats || settings.repeat || 1,
+                             mode: settings.mode || 0
+                         };
+
+                         // Get icons
+                         const icons = {
+                             mode: this.getModeIcon(values.mode),
+                             suction: this.getSettingIcon('Suction', values.suction),
+                             water: this.getSettingIcon('Water', values.water),
+                             route: this.getSettingIcon('Route', values.route),
+                             repeat: this.getSettingIcon('Repeat', values.repeat)
+                         };
+
+                        // Create data attributes string with converted values
+                        const dataAttributes = Object.entries(values)
+                            .map(function([key, value]) {
+                                // Convert only the corresponding values ??for the data attributes
+                                let convertedValue = value;
+
+                                if (key === 'suction') {
+                                    convertedValue = getSuctionCode(value);
+                                } else if (key === 'water') {
+                                    convertedValue = getWaterCode(value);
+                                } else if (key === 'route') {
+                                    convertedValue = getRouteCode(value);
+                                }
+
+                                return 'data-' + key + '="' + convertedValue + '"';
+                            })
+                            .join(' ');
+
+                        // Assemble HTML with data attributes
+                        return '<div class="label-content" ' + dataAttributes + '>' +
+                          '<div class="label-header">' +
+                            '<strong>' + (roomInfo.name || 'Unknown') + '</strong>' +
+                            '<span> ' + (stats.TotalArea || '0') + ' m²</span>' +
+                            '<div class="settings-button"> ' + settingsIcon + '</div>' +
+                          '</div>' +
+                          '<div class="icon-container">' +
+                            // Mode icon with data attribute
+                            '<div class="setting-item" title="Mode" data-setting="mode">' +
+                              '<div class="icon-scale icon-mode">' + icons.mode + '</div>' +
+                            '</div>' +
+                            // Other icons with data attributes
+                            this.createIconItem('Suction', values.suction, 0, icons.suction) +
+                            this.createIconItem('Water', values.water, 1, icons.water) +
+                            this.createIconItem('Route', values.route, 2, icons.route) +
+                            this.createIconItem('Repeat', values.repeat, 3, icons.repeat) +
+                          '</div>' +
+                          '<div class="progress-container">' +
+                            '<div class="progress-bar">' +
+                              '<div class="progress-fill" style="width:' + stats.CoveragePercent + '%"></div>' +
+                            '</div>' +
+                            '<div class="progress-text">' + stats.CleanedArea + ' m² ' + stats.CoveragePercent + '% covered</div>' +
+                            '<div class="last-update-text">' + formatDate(stats.LastUpdate) + '</div>' +
+                          '</div>' +
+                        '</div>';
+
+                     },
+
+                     // Function: =============> Get icon for a specific setting
+                     getSettingIcon: function(settingType, value) {
+                         const iconSets = {
+                             Suction: VisCleaningOptions.Suction,
+                             Water: VisCleaningOptions.Water,
+                             Route: VisCleaningOptions.Route,
+                             Repeat: VisCleaningOptions.Repeat
+                         };
+
+                         const iconSet = iconSets[settingType];
+                         if (!iconSet) return '';
+
+                         const icon = iconSet.find(item => item.value === value);
+                         return icon ? icon.svg : '';
+                     },
+
+                     // Updated createIconItem function with data attributes
+                     createIconItem: function(title, value, index, iconSvg) {
+                         return '<div class="setting-item" title="' + title + '" data-setting="' + title.toLowerCase() + '">' +
+                                '<div class="icon-scale icon-' + title.toLowerCase() + '">' + iconSvg + '</div>' +
+                                '</div>';
+                     },
+
+					  // Function: =============> Update label content and progress
+                      updateLabelContent: function(roomId, stats, shouldAnimate = true) {
+                        const fixedLabel = document.getElementById('room-label-' + roomId + '-fixed');
+                        if (!fixedLabel) return;
+
+						// Control animations
+                        if (shouldAnimate) {
+                            labelManager.activateLabelAnimations(fixedLabel);
+                        } else {
+                            labelManager.deactivateLabelAnimations(fixedLabel);
+                        }
+
+                        // Update progress bar
+                        const progressFill = fixedLabel.querySelector('.progress-fill');
+                        if (progressFill) {
+                          progressFill.style.width = stats.CoveragePercent + '%';
+                        }
+
+                        // Update progress text
+                        const progressText = fixedLabel.querySelector('.progress-text');
+                        if (progressText) {
+                          progressText.textContent = stats.CleanedArea + ' m² ' + stats.CoveragePercent + '% covered';
+                        }
+
+                        // Update last update text
+                        const lastUpdateText = fixedLabel.querySelector('.last-update-text');
+                        if (lastUpdateText) {
+                          lastUpdateText.textContent = formatDate(stats.LastUpdate);
+                        }
+                      },
+
+                      // Function: =============> Create icon HTML element
+                      createIconItem: function(title, value, index) {
+                        const iconSets = [
+                          VisCleaningOptions.Suction,
+                          VisCleaningOptions.Water,
+                          VisCleaningOptions.Route,
+                          VisCleaningOptions.Repeat
+                        ];
+                        const icon = iconSets[index] ? iconSets[index].find(function(item) {
+                          return item.value == value;
+                        }) : null;
+
+                        return '<div class="setting-item" title="' + title + '">' +
+                          '<div class="icon-scale icon-' + title.toLowerCase() + '">' + (icon ? icon.svg : '') + '</div>' +
+                        '</div>';
+                      },
+
+					  // Function: =============> Enables animations for a specific label
+                      activateLabelAnimations: function(labelElement) {
+						if (!labelElement) return;
+                          // Suction (icon-suction-spin)
+                          labelElement.querySelectorAll('.icon-suction-spin').forEach(el => {
+                              el.style.animation = 'icon-suction-spinIt 2s linear infinite';
+                          });
+
+                          // Water (icon-drop-container and icon-drop-wave)
+                          labelElement.querySelectorAll('.icon-drop-container').forEach(el => {
+                              el.style.animation = 'icon-drop-wobble 4s ease-in-out infinite';
+                          });
+
+                          labelElement.querySelectorAll('.icon-drop-wave').forEach((el, i) => {
+                              el.style.animation = 'icon-drop-wave 4s ease-in-out ' + (i * -0.5) + 's infinite';
+							  el.style.fill = '#4287f5';
+                          });
+
+                          // Route (icon-route-path with different delays)
+                          labelElement.querySelectorAll('.icon-route-path1').forEach(el => {
+                              el.style.animation = 'icon-route-draw 7s ease-in-out 0.5s infinite';
+                              el.style.strokeDashoffset = '1000';
+                              el.style.opacity = '1';
+                          });
+                          labelElement.querySelectorAll('.icon-route-path2').forEach(el => {
+                              el.style.animation = 'icon-route-draw 7s ease-in-out 1s infinite';
+							  el.style.strokeDasharray = '1000';
+                              el.style.strokeDashoffset = '1000';
+                              el.style.opacity = '1';
+                          });
+                          labelElement.querySelectorAll('.icon-route-path3').forEach(el => {
+                              el.style.animation = 'icon-route-draw 7s ease-in-out 1.6s infinite';
+                              el.style.strokeDashoffset = '1000';
+                              el.style.opacity = '1';
+                          });
+
+                          // Repeat paths
+                          labelElement.querySelectorAll('.repeatpath1').forEach(el => {
+                              el.style.animation = 'draw-and-hide 5s ease-in-out 1s infinite';
+                              el.style.strokeDashoffset = '40';
+							  el.style.strokeDasharray = '40';
+							  el.style.fill = 'none';
+                          });
+                          labelElement.querySelectorAll('.repeatpath2').forEach(el => {
+                              el.style.animation = 'draw-and-hide 5s ease-in-out 0.5s infinite';
+                              el.style.strokeDashoffset = '40';
+							  el.style.strokeDasharray = '40';
+							  el.style.fill = 'none';
+                          });
+                          labelElement.querySelectorAll('.repeatpath3').forEach(el => {
+                              el.style.animation = 'draw-and-hide 5s ease-in-out 0s infinite';
+                              el.style.strokeDashoffset = '40';
+							  el.style.strokeDasharray = '40';
+							  el.style.fill = 'none';
+                          });
+
+                          // Repeat number
+                          labelElement.querySelectorAll('.repeatnumber').forEach(el => {
+                              el.style.animation = 'repeatfloat 4s ease-in-out infinite';
+                          });
+                      },
+
+                      // Function: =============> Disables animations for a specific label
+                      deactivateLabelAnimations: function(labelElement){
+                          if (!labelElement) return;
+                          const allAnimated = labelElement.querySelectorAll(
+                              '.icon-suction-spin, ' +
+                              '.icon-drop-container, ' +
+                              '.icon-drop-wave, ' +
+                              '.icon-route-path1, ' +
+                              '.icon-route-path2, ' +
+                              '.icon-route-path3, ' +
+                              '.repeatpath1, ' +
+                              '.repeatpath2, ' +
+                              '.repeatpath3, ' +
+                              '.repeatnumber'
+                      		);
+
+                          allAnimated.forEach(el => {
+                              el.style.animation = 'none';
+
+							  if (el.classList.contains('icon-drop-wave')) {
+							     el.style.fill = '#fff';
+							  }
+
+                              // Reset specific properties
+                              if (el.classList.contains('icon-route-path1') ||
+                                  el.classList.contains('icon-route-path2') ||
+                                  el.classList.contains('icon-route-path3')) {
+								  el.style.strokeDasharray = '1000';
+                                  el.style.strokeDashoffset = '1000';
+                                  el.style.opacity = '1';
+                                  el.style.fillOpacity = '1';
+                              }
+
+                              if (el.classList.contains('repeatpath1') ||
+                                  el.classList.contains('repeatpath2') ||
+                                  el.classList.contains('repeatpath3')) {
+                                  el.style.strokeDasharray = '40';
+                                  el.style.strokeDashoffset = '40';
+                                  el.style.opacity = '1';
+								  el.style.fill = '#fff';
+                              }
+                          });
+                      },
+
+                      // Function: =============> Update position of a single label
+                      updateLabelPosition: function(origLabel, fixedLabel) {
+                        const mapRect = labelCache.container.getBoundingClientRect();
+                        const labelRect = origLabel.getBoundingClientRect();
+
+                        const relX = labelRect.left - mapRect.left + labelRect.width / 2;
+                        const relY = labelRect.top - mapRect.top + labelRect.height / 2;
+
+                        const scale = Math.min(1, 1200 / (window.innerHeight * 0.5));
+                        fixedLabel.style.setProperty('--scale', scale);
+                        fixedLabel.style.left = Math.max(20, Math.min(mapRect.width - 20, relX)) + 'px';
+                        fixedLabel.style.top = Math.max(20, Math.min(mapRect.height - 20, relY)) + 'px';
+                        fixedLabel.style.opacity = scale > 0.3 ? '1' : '0';
+                      },
+
+                      // Function: =============> Clean up all labels and event listeners
+                      cleanup: function() {
+                        this.callbacks.forEach(function(cb) {
+                          window.removeEventListener('resize', cb);
+                          window.removeEventListener('scroll', cb);
+                        });
+                        this.callbacks = [];
+
+                        if (this.observer) {
+                          this.observer.disconnect();
+                          this.observer = null;
+                        }
+
+                        document.querySelectorAll('.room-label-fixed').forEach(function(el) {
+                          el.remove();
+                        });
+
+                        if (labelCache.container) {
+                          labelCache.container.remove();
+                          labelCache.container = null;
+                        }
+                      },
+
+                      // Function: =============> Get suction level description
+                      getSuctionLevel: function(code) {
+                        return ['Quiet', 'Standard', 'Turbo', 'Max'][code] || 'Standard';
+                      },
+
+                      // Function: =============> Get water level description
+                      getWaterLevel: function(code) {
+                        if (!code && code !== 0) return 'Low';
+                        return code > 30 ? 'Ultra' :
+                               code > 20 ? 'High' :
+                               code > 10 ? 'Middle' : 'Low';
+                      },
+
+					  // Function: =============> Get mode information from mode code
+                      getModeIcon: function(modeCode) {
+                          // Convert modeCode to string if it's a number
+                          const code = typeof modeCode === 'number' ? modeCode.toString() : modeCode;
+
+                          // Map of mode codes to cleaning modes
+                          const modeMap = {
+                              '0': VisCleaningModes.Sweeping,
+                              '1': VisCleaningModes.Mopping,
+                              '2': VisCleaningModes.SweepingAndMopping,
+                              '3': VisCleaningModes.MoppingAfterSweeping,
+                              '4': VisCleaningModes.CustomRoomCleaning
+                          };
+
+                          return modeMap[code] ? modeMap[code].icon : '';
+                      },
+
+                      // Function: =============> Get route type description
+                      getRouteType: function(code) {
+                        if (code in labelCache.routeTypes) {
+                          return labelCache.routeTypes[code];
+                        }
+
+                        const routeMap = {
+						  1: 'Standard', 546: 'Standard',
+						  2: 'Intensive',
+						  3: 'Deep',  768: 'Deep',
+						  4: 'Quick', 512: 'Quick'
+                        };
+
+                        labelCache.routeTypes[code] = routeMap[code] || 'Standard';
+                        return labelCache.routeTypes[code];
+                      }
+
+                    };
+
+                    // =============================================
+                    // Main Functions
+                    // =============================================
+                    // 1. stabilizeLabels - Main function to create and position labels
+                    function stabilizeLabels() {
+
+                      // 0. Remember currently animated room
+                      const currentlyAnimatedRoomId = lastRoomAnimationsId;
+                      // 1. Cleaning up old labels
+                      labelManager.cleanup();
+
+                      // 2. Only continue if labels should be visible
+                      if (!areHiddenState) return;
+
+                      // 3. Load data asynchronously
+                      Promise.all([
+                        dataService.fetchRoomSettings(),
+                        getRoomCleaningData(roomDataMap)
+                      ]).then(function(results) {
+                        const [roomSettings, roomStats] = results;
+
+                        // 4. Initialize containers
+                        const container = labelManager.initContainer();
+                        const mapContainer = document.querySelector('.map-container');
+
+						// 5. Remove any existing fixed labels before adding new ones
+						document.querySelectorAll('.room-label-fixed').forEach(el => el.remove());
+
+                        // 6. For each label in the DOM
+                        document.querySelectorAll('.room-label').forEach(function(origLabel) {
+                          const roomId = origLabel.id.replace('room-label-', '');
+                          const roomInfo = roomDataMap[roomId];
+
+                          if (!roomInfo) return;
+
+                          // 7. Create fixed label
+                          const fixedLabel = document.createElement('div');
+                          fixedLabel.className = 'room-label-fixed';
+                          //fixedLabel.id = origLabel.id + '-fixed';
+						  fixedLabel.id = 'room-label-' + roomId + '-fixed';  // Unique based on roomId
+
+                          // 8. INSERT GENERATED CONTENT (most important part!)
+                          fixedLabel.innerHTML = labelManager.createLabelContent(
+                            roomInfo,
+                            roomSettings[roomId] || {},
+                            roomStats[roomId]?.stats || {}
+                          );
+
+                          container.appendChild(fixedLabel);
+
+                          // 9. Initialize positioning
+                          const updatePosition = function() {
+                            const mapRect = mapContainer.getBoundingClientRect();
+                            const labelRect = origLabel.getBoundingClientRect();
+
+                            const relX = labelRect.left - mapRect.left + labelRect.width/2;
+                            const relY = labelRect.top - mapRect.top + labelRect.height/2;
+
+                            fixedLabel.style.left = relX + 'px';
+                            fixedLabel.style.top = relY + 'px';
+                          };
+
+                          // 10. Add event listeners
+                          const throttledUpdate = utils.throttle(updatePosition, 50);
+                          window.addEventListener('resize', throttledUpdate);
+                          window.addEventListener('scroll', throttledUpdate);
+                          labelManager.callbacks.push(throttledUpdate);
+
+                          // 11. Observer for changes to the original label
+                          const observer = new MutationObserver(throttledUpdate);
+                          observer.observe(origLabel, { attributes: true });
+                          labelManager.observers.push(observer);
+
+                          // 12. Set initial position
+                          updatePosition();
+
+                          // 13. Restore animation if necessary
+                          if (currentlyAnimatedRoomId) {
+                              const newLabel = document.getElementById('room-label-' + currentlyAnimatedRoomId + '-fixed');
+                              if (newLabel) {
+                                  labelManager.activateLabelAnimations(newLabel);
+                                  lastRoomAnimationsId = currentlyAnimatedRoomId; // Update state
+                              }
+                          }
+                        });
+
+                        // Here the radial menu is called when you press Settings in the room-label-x-fixed
+                        document.querySelectorAll('.room-label-fixed').forEach(label => {
+                            const settingsBtn = label.querySelector('.settings-button');
+                            if (!settingsBtn) return;
+
+                            settingsBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                e.preventDefault();
+
+                                const roomId = label.id.replace('room-label-', '').replace('-fixed', '');
+                                const labelRect = label.getBoundingClientRect();
+                                const x = labelRect.left + labelRect.width; // / 2;
+                                const y = labelRect.top + labelRect.height; // / 2;
+
+                                toggleRadialMenu(x, y, roomId);
+                            });
+                        });
+
+                      }).catch(function(error) {
+                        console.error('Error loading label data:', error);
+                      });
+                    };
+
+					let lastRoomAnimationsId = null; // save animations for the previous label
+                    // 2. updateRoomInfo - Room info updater
+                    const updateRoomInfo = (function() {
+                      const roomElementsCache = new Map();
+
+                      return utils.throttle(function(data) {
+                        if (!data || !data.currentRoom) return;
+
+
+
+                        const currentRoom = data.currentRoom;
+                        const coverage = data.CoveragePercent || 0;
+
+
+                        if (!roomElementsCache.has(currentRoom)) {
+                          const roomNumber = roomNameNumberMap ? roomNameNumberMap[currentRoom] : null;
+                          if (roomNumber) {
+                            const element = document.getElementById('room-' + roomNumber);
+                            if (element) roomElementsCache.set(currentRoom, element);
+
+						        if (lastRoomAnimationsId !== roomNumber) {
+						            const fixedLabel = document.getElementById('room-label-' + roomNumber + '-fixed');
+						            if (fixedLabel) {
+						                // Disables animations of the previous label, if one exists
+						                if (lastRoomAnimationsId !== null) {
+						                    const previousLabel = document.getElementById('room-label-' + lastRoomAnimationsId + '-fixed');
+						                    if (previousLabel) {
+						                        labelManager.deactivateLabelAnimations(previousLabel); // Disables animations for the previous label
+						                    }
+						                }
+						                // Enables animations for the new label
+						                labelManager.activateLabelAnimations(fixedLabel);
+						            }
+						            lastRoomAnimationsId = roomNumber;
+						        }
+						  }
+						}
+
+						updateRoomProgress(roomNameNumberMap[currentRoom]).then(roomStats => {
+						const coverageRatio = roomStats.CoveragePercent / 100;
+
+						  const roomElement = roomElementsCache.get(currentRoom);
+						  document.getElementById('current-room').textContent = currentRoom + ' ' + roomStats.CoveragePercent + ' %';
+						  document.getElementById('current-CleanedArea').textContent = roomStats.CleanedArea + ' m² / ' + roomStats.TotalArea + ' ';
+
+                          if (roomElement) {
+                            const path = roomElement.querySelector('path');
+                            if (path) {
+                              roomElement.style.opacity = 0.3 + (coverageRatio * 0.7);
+                              path.style.fill = 'hsla(' + (120 * coverageRatio) + ', 100%, 50%, 0.5)';
+                            }
+                          }
+
+						});
+
+
+                      }, 100);
+                    })();
+
+                    // 3. updateFixedLabelsWithNewData - Update labels with new position data
+                    function updateFixedLabelsWithNewData(newPosHistory) {
+                      const latestRoomData = getLatestRoomDataFromHistory(newPosHistory || posHistory);
+
+                      document.querySelectorAll('.room-label-fixed').forEach(function(fixedLabel) {
+                        const roomId = fixedLabel.id.replace('room-label-', '').replace('-fixed', '');
+                        const roomName = roomDataMap[roomId] ? roomDataMap[roomId].name : null;
+                        const roomData = latestRoomData[roomName] || {};
+
+                        fixedLabel.innerHTML = '<div class="label-content">' +
+                          '<strong style="font-size: 14px">' + roomName + '</strong>' +
+                          (roomData.TotalArea ? ' <span style="font-size: 12px">' + roomData.TotalArea + ' m²</span>' : '') +
+                          '<br>' +
+                          (roomData.CoveragePercent ? roomData.CoveragePercent + '% covered' : 'No data') + '<br>' +
+                          (roomData.CleanedArea ? roomData.CleanedArea + ' m² cleaned' : '') +
+                        '</div>';
+                      });
+                    }
+
+                    // 4. getLatestRoomDataFromHistory - Process position history
+                    function getLatestRoomDataFromHistory(posHistory) {
+                      const roomData = {};
+
+                      if (!Array.isArray(posHistory)) {
+                        return roomData;
+                      }
+
+                      posHistory.forEach(function(entry) {
+                        if (entry.room) {
+                          const key = entry.room;
+                          if (!roomData[key] || (roomData[key].timestamp < entry.timestamp)) {
+                            roomData[key] = {
+                              CleanedArea: entry.CleanedArea,
+                              CoveragePercent: entry.CoveragePercent,
+                              TotalArea: entry.TotalArea,
+                              timestamp: entry.timestamp
+                            };
+                          }
+                        }
+                      });
+
+                      return roomData;
+                    }
+
+                    // Function to update progress and labels
+					async function updateRoomProgress(roomId) {
+                        try {
+                            const roomInfo = roomDataMap[roomId];
+                            if (!roomInfo) return getDefaultStats(); // Return defaults if room not found
+                            const basePath = '${prefix}.state.cleaninginfo.${DH_CurMap}.' + roomInfo.name;
+
+                            const stats = await getRoomStats(basePath);
+
+                            // Update visual label with new data
+                            labelManager.updateLabelContent(roomId, stats);
+
+                            return {
+                                ...getDefaultStats(), // Default values as base
+                                ...stats              // Override with actual values
+                            };
+                        } catch (error) {
+                            console.error('Error updating room progress:', error);
+                            return getDefaultStats();
+                        }
+                    }
+
+                    function getDefaultStats() {
+                        return {
+                            CleanedArea: 0,         // Already cleaned area in m�
+                            TotalArea: 0,           // Total room area in m�
+                            CoveragePercent: 0,     // Percentage of area covered
+                            cleaningRatio: 0,       // Cleaned/Total ratio
+                            LastUpdate: null        // Timestamp of last update
+                        };
+                    }
+
+
+
+                    // Clean up on window unload
+                    window.addEventListener('beforeunload', function() {
+                      labelManager.cleanup();
+                    });
+
+					// =============================================
+                    // WebSocket
+                    // =============================================
+
+					// WebSocket for real-time updates
+                    function setupUpdates() {
+                        console.log('Initializing robot updates...');
+                        let lastStatusPoll = 0;
+						let lastPositionPoll = 0;
+						let lastHistoryPoll = 0;
+
+                        // 1. Polling as fallback
+						const pollInterval = setInterval(() => {
+							// Query status less frequently
+							if (Date.now() - lastStatusPoll > 2000) {
+							fetchLiveStatus()
+								.then(processStatusUpdate)
+								.catch(console.error);
+								lastStatusPoll = Date.now();
+							}
+
+
+                            // Check position more often
+                            if (Date.now() - lastPositionPoll > 2000) {
+								fetchRobotStatus().then(data => {
+                                    if (data?.position) {
+                                        updateRobotPosition(data.position.x, data.position.y);
+                                        updateRoomInfo(data);
+                                    }
+                                }).catch(console.error);
+                                lastPositionPoll = Date.now();
+                            }
+
+							// Query History less frequently
+                            if (Date.now() - lastHistoryPoll > 120000) {
+								//fetchInitialHistory().catch(() => null)
+								fetchInitialHistory().then(updatePathFromHistory);
+                                lastHistoryPoll = Date.now();
+                            }
+                        }, 1000);
+
+                        // 2. WebSocket Listener
+                        if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                            console.log('WebSocket connection established');
+
+                            // Position updates
+                            vis.conn._socket.on('${prefix}.vis.robotUpdate', (data) => {
+                                try {
+                                    const update = typeof data === 'string' ? JSON.parse(data) : data;
+                                    if (update?.position) {
+                                        processPositionUpdate(update);
+                                    }
+                                } catch (e) {
+                                    console.error('Position update error:', e);
+                                }
+                            });
+
+                            // History updates
+                            vis.conn._socket.on('${prefix}.vis.PosHistory${DH_CurMap}', (data) => {
+                                try {
+                                    const history = typeof data === 'string' ? JSON.parse(data) : data;
+                                    posHistory = Object.values(history);
+                                    updatePathFromHistory(history);
+                                    updateFixedLabelsWithNewData(posHistory);
+                                } catch (e) {
+                                    console.error('History update error:', e);
+                                }
+                            });
+
+                            // Status updates
+                            vis.conn._socket.on('${prefix}.vis.State', (data) => {
+                                try {
+                                    processStatusUpdate(data);
+                                } catch (e) {
+                                    console.error('Status update error:', e);
+                                }
+                            });
+
+                            // Connection handling
+                            vis.conn._socket.on('connect', () => {
+                                console.log('WebSocket reconnected');
+                                fetchInitialHistory().then(updatePathFromHistory);
+                            });
+
+                            vis.conn._socket.on('disconnect', () => {
+                                console.warn('WebSocket disconnected');
+                            });
+                        }
+
+                        // Initial data load
+                        fetchInitialData();
+                    }
+
+                    // Helper functions for Position updates
+					function processPositionUpdate(update) {
+                        const {x, y} = update.position;
+                        updateRobotPosition(x, y);
+
+                        if (update.currentRoom || update.TotalArea) {
+                            updateRoomInfo(update);
+                        }
+                    }
+
+
+                    function processStatusUpdate(state) {
+                        if (!state) return;
+
+                        const statusUpdate = typeof state === 'string' ? JSON.parse(state) : state;
+                        const statusNumber = parseInt(statusUpdate?.val ?? statusUpdate);
+
+                        if (!isNaN(statusNumber)) {
+                            const statusText = statusMapping[statusNumber] || "Unknown";
+                            updateChargerStatus(statusText);
+                        } else {
+                            console.warn('Invalid status number received:', statusUpdate);
+                        }
+                    }
+
+                    async function fetchInitialData() {
+                        try {
+                            const [positionData, history] = await Promise.all([
+                                fetchRobotStatus().catch(() => null),
+                                fetchInitialHistory().catch(() => null)
+                            ]);
+
+                            if (positionData?.position) {
+                                updateRobotPosition(positionData.position.x, positionData.position.y);
+                                updateRoomInfo(positionData);
+                            }
+
+                            if (history) {
+                                updatePathFromHistory(history);
+                            } else {
+                                hideRobotPosition();
+                            }
+
+                            // Initial status
+                            const status = await fetchLiveStatus().catch(() => null);
+                            processStatusUpdate(status);
+                        } catch (e) {
+                            console.error('Initial data loading error:', e);
+                        }
+                    }
+
+                    // Helper function to fetch Robot position
+                    function fetchRobotStatus() {
+                        return new Promise((resolve) => {
+                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                                vis.conn._socket.emit('getState', '${prefix}.vis.robotUpdate', (err, res) => {
+                                    if (!err && res && res.val) {
+                                        try {
+                                            resolve(typeof res.val === 'string' ? JSON.parse(res.val) : res.val);
+                                        } catch (e) {
+                                            console.error('Parsing error:', e);
+                                            resolve({});
+                                        }
+                                    } else {
+                                        resolve({});
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    // Helper function to fetch live Status
+                    function fetchLiveStatus() {
+                        return new Promise((resolve) => {
+                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                                vis.conn._socket.emit('getState', '${prefix}.vis.State', (err, res) => {
+                                    if (!err && res && res.val) {
+                                        try {
+                                            resolve(typeof res.val === 'string' ? JSON.parse(res.val) : res.val);
+                                        } catch (e) {
+                                            console.error('Parsing error:', e);
+                                            resolve({});
+                                        }
+                                    } else {
+                                        resolve({});
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+					// Helper function to fetch Robot History
+                    function fetchInitialHistory() {
+                        return new Promise((resolve) => {
+                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                                vis.conn._socket.emit('getState', '${prefix}.vis.PosHistory${DH_CurMap}', (err, res) => {
+                                    if (!err && res && res.val) {
+                                        try {
+                                            const historyData = typeof res.val === 'string' ? JSON.parse(res.val) : res.val;
+                                            updatePathFromHistory(historyData);
+                                            console.log('Initial history loaded'+ JSON.stringify(historyData));
+                                            resolve(historyData);
+                                        } catch (e) {
+                                            console.error('Error parsing history data:', e);
+                                            resolve(null);
+                                        }
+                                    } else {
+                                        console.error('Error fetching history:', err);
+                                        resolve(null);
+                                    }
+                                });
+                            } else {
+                                console.error('Socket connection not available');
+                                resolve(null);
+                            }
+                        });
+                    }
+
+					// =============================================
+                    // Load, save and apply the settings
+                    // =============================================
+					let debouncedSaveSettings;
+
+					// 1. Define debounce function in global scope
+					function debounce(func, delay) {
+					    let timeout;
+					    return function(...args) {
+					        clearTimeout(timeout);
+					        timeout = setTimeout(() => func.apply(this, args), delay);
+					    };
+					}
+
+					async function setupPerspectiveSettings() {
+                        console.log('Initializing all view settings...');
+                        let lastSaveTime = 0;
+
+                        // 1. Polling as a fallback
+                        const pollInterval = setInterval(() => {
+                            if (Date.now() - lastSaveTime > 30000) { // Synchronize every 30 seconds
+                                fetchAllSettings()
+                                    .then(applyAllSettings)
+                                    .catch(console.error);
+                                lastSaveTime = Date.now();
+                            }
+                        }, 1000);
+
+                        // 2. WebSocket Listener
+                        if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                            vis.conn._socket.on('${prefix}.vis.ViewSettings${DH_CurMap}', (data) => {
+                                try {
+                                    const settings = typeof data === 'string' ? JSON.parse(data) : data;
+                                    applyAllSettings(settings);
+                                } catch (e) {
+                                    console.error('View settings update error:', e);
+                                }
+                            });
+
+                            vis.conn._socket.on('connect', () => {
+                                console.log('WebSocket reconnected, loading view settings');
+                                fetchAllSettings().then(applyAllSettings);
+                            });
+                        }
+
+                        // 3. Initial load
+                        fetchAllSettings()
+                            .then(applyAllSettings)
+                            .catch(console.error);
+
+                        // Helper functions
+                        async function fetchAllSettings() {
+                            return new Promise((resolve) => {
+                                if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                                    vis.conn._socket.emit('getState', '${prefix}.vis.ViewSettings${DH_CurMap}', (err, res) => {
+                                        if (!err && res && res.val) {
+                                            try {
+                                                resolve(typeof res.val === 'string' ? JSON.parse(res.val) : res.val);
+                                            } catch (e) {
+                                                console.error('Parsing error:', e);
+                                                resolve(getDefaultSettings());
+                                            }
+                                        } else {
+                                            resolve(getDefaultSettings());
+                                        }
+                                    });
+                                } else {
+                                    resolve(getDefaultSettings());
+                                }
+                            });
+                        }
+
+						let lastSettings = null;
+                        function applyAllSettings(settings) {
+                            if (!settings) return;
+
+							if (JSON.stringify(settings) === JSON.stringify(lastSettings)) {
+								return
+							}
+							lastSettings = settings;
+
+                            console.log('Applying all view settings:', settings);
+
+                            // 1. Apply perspective settings
+                            if (settings.perspective) {
+                                xRotation = settings.perspective.xRotation || 0;
+                                yRotation = settings.perspective.yRotation || 0;
+                                zRotation = settings.perspective.zRotation || 0;
+                                perspective = settings.perspective.perspective || 1200;
+                                zoomLevel = settings.perspective.zoom || 100;
+                                xPosition = settings.perspective.xPosition || 0;
+                                yPosition = settings.perspective.yPosition || 0;
+
+                                // Update UI elements
+                                document.getElementById('x-rotation').value = xRotation;
+                                document.getElementById('y-rotation').value = yRotation;
+                                document.getElementById('z-rotation').value = zRotation;
+                                document.getElementById('perspective').value = perspective;
+                                document.getElementById('zoom-level').value = zoomLevel;
+                                document.getElementById('x-position').value = xPosition;
+                                document.getElementById('y-position').value = yPosition;
+
+                                if (settings.perspective.bgColor) {
+                                    document.getElementById('bg-color-picker').value = settings.perspective.bgColor;
+                                    document.documentElement.style.setProperty('--map-background-color', settings.perspective.bgColor);
+                                }
+
+                                // Apply transformation
+                                updateTransformation();
+                                updateSliderValues();
+                            }
+
+                            // 2. Visibility settings
+                            if (settings.visibility) {
+                                showRobotPath = settings.visibility.showRobotPath !== false;
+                                showHistoryPath = settings.visibility.showHistoryPath !== false;
+                                areHiddenState = settings.visibility.labelsHidden || false;
+
+								document.getElementById('toggle-robot-path').classList.toggle('active', showRobotPath);
+                                //document.getElementById('toggle-robot-path').textContent = showRobotPath ? 'Hide Robot Path' : 'Show Robot Path';
+								document.getElementById('toggle-history-path').classList.toggle('active', showHistoryPath);
+                                //document.getElementById('toggle-history-path').textContent = showHistoryPath ? 'Hide History Path' : 'Show History Path';
+								document.getElementById('toggle-room-label').classList.toggle('active', areHiddenState);
+                                //document.getElementById('toggle-room-label').textContent = areHiddenState ? 'Hide Room Labels' : 'Show Room Labels';
+
+								stabilizeLabels();
+
+                                document.getElementById('robot-path-current').style.display = showRobotPath ? 'block' : 'none';
+                                document.getElementById('robot-path-history').style.display = showHistoryPath ? 'block' : 'none';
+                            }
+
+                            // 3. Choice states
+                            if (settings.selections) {
+                                selectedRooms = settings.selections.rooms || [];
+                                selectedCarpets = settings.selections.carpets || [];
+
+                                // Mark rooms
+                                selectedRooms.forEach(id => {
+                                    const el = document.getElementById('room-' + id);
+                                    if (el) el.classList.add('selected');
+                                });
+
+                                // Mark carpets
+                                selectedCarpets.forEach(id => {
+                                    const el = document.getElementById('carpet-' + id);
+                                    if (el) el.classList.add('selected');
+                                });
+
+                                if (selectedRooms.length > 0) {
+                                    updateCurrentRoomDisplay(selectedRooms[0]);
+                                }
+                            }
+
+                            // Update UI
+                            updateSliderValues();
+                            updateTransformation();
+                            document.documentElement.style.setProperty('--map-background-color', settings.perspective?.bgColor || '#ffffff');
+                            stabilizeLabels();
+                        }
+
+                        function getDefaultSettings() {
+                            return {
+                                perspective: {
+                                    xRotation: 0,
+                                    yRotation: 0,
+                                    zRotation: 0,
+                                    perspective: 1200,
+                                    zoom: 100,
+                                    xPosition: 0,
+                                    yPosition: 0,
+                                    bgColor: '#ffffff'
+                                },
+                                visibility: {
+                                    showRobotPath: true,
+                                    showHistoryPath: true,
+                                    labelsHidden: false
+                                },
+                                selections: {
+                                    rooms: [],
+                                    carpets: []
+                                }
+                            };
+                        }
+
+                        // Debounced Save function
+                        debouncedSaveSettings = debounce(async () => {
+                            const settings = {
+                                perspective: {
+                                    xRotation: parseInt(document.getElementById('x-rotation').value),
+                                    yRotation: parseInt(document.getElementById('y-rotation').value),
+                                    zRotation: parseInt(document.getElementById('z-rotation').value),
+                                    perspective: parseInt(document.getElementById('perspective').value),
+                                    zoom: parseInt(document.getElementById('zoom-level').value),
+                                    xPosition: parseInt(document.getElementById('x-position').value),
+                                    yPosition: parseInt(document.getElementById('y-position').value),
+                                    bgColor: document.getElementById('bg-color-picker').value
+                                },
+                                visibility: {
+                                    showRobotPath: showRobotPath,
+                                    showHistoryPath: showHistoryPath,
+                                    labelsHidden: areHiddenState
+                                },
+                                selections: {
+                                    rooms: selectedRooms,
+                                    carpets: selectedCarpets
+                                }
+                            };
+
+                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
+                                vis.conn._socket.emit('setState', '${prefix}.vis.ViewSettings${DH_CurMap}', {
+                                    val: JSON.stringify(settings),
+                                    ack: true
+                                }, (err) => {
+                                    if (!err) {
+                                        lastSaveTime = Date.now();
+                                        console.log('All view settings saved');
+                                    } else {
+                                        console.error('Error saving view settings:', err);
+                                    }
+                                });
+                            }
+                        }, 1000);
+
+                        // Event listener for all changes
+                        function setupChangeListeners() {
+                            // Perspective elements
+                            const perspectiveElements = [
+                                'x-rotation', 'y-rotation', 'z-rotation',
+                                'perspective', 'zoom-level', 'x-position',
+                                'y-position', 'bg-color-picker'
+                            ];
+
+                            perspectiveElements.forEach(id => {
+                                const element = document.getElementById(id);
+                                if (element) element.addEventListener('change', debouncedSaveSettings);
+                            });
+
+                            // Visibility buttons
+                            ['toggle-robot-path', 'toggle-history-path', 'toggle-room-label'].forEach(id => {
+                                const element = document.getElementById(id);
+                                if (element) element.addEventListener('click', debouncedSaveSettings);
+                            });
+
+                            // Room/Carpet Selection
+                            clickLayer.addEventListener('click', debouncedSaveSettings);
+                        }
+
+                        // initialization
+                        setupChangeListeners();
+                    }
+
+
+					// =============================================
+                    // Start Menu Animation System
+                    // =============================================
+
+                    // Global variables
+                    let menuTimeout;
+                    const MENU_TIMEOUT_DURATION = 120000; // 120 seconds
+                    let isMenuInteracting = false;
+                    let lastInteractionTime = Date.now();
+                    let isClosing = false;
+
+
+
+                    // Improved timer system
+                    function resetMenuTimer() {
+                        clearTimeout(menuTimeout);
+                        lastInteractionTime = Date.now();
+
+                        menuTimeout = setTimeout(() => {
+                            const inactiveDuration = Date.now() - lastInteractionTime;
+                            if (inactiveDuration >= MENU_TIMEOUT_DURATION - 100 && !isClosing) {
+                                closeAllMenusWithAnimation();
+                            }
+                        }, MENU_TIMEOUT_DURATION);
+                    }
+
+                    // Closing (for auto-close)
+                    function closeAllMenusWithAnimation() {
+                        if (isClosing) return;
+                        isClosing = true;
+
+                        const activeMenus = document.querySelectorAll('.menu-level.active');
+                        if (activeMenus.length === 0) {
+                            isClosing = false;
+                            return;
+                        }
+
+                        // Animation for each active menu
+                        activeMenus.forEach(menu => {
+                            menu.style.transform = 'translateX(20px) rotateY(20deg)';
+                            menu.style.opacity = '0';
+
+                            setTimeout(() => {
+                                menu.classList.remove('active');
+                                isClosing = false;
+                            }, 500);
+                        });
+
+                        // Reset main button
+                        const mainBtn = document.getElementById('main-menu-btn');
+                        mainBtn.classList.remove('active');
+                        mainBtn.style.transform = 'rotate(0) scale(1)';
+                    }
+
+                    // Manual closing function
+                    function manuallyCloseAllMenus() {
+                        if (isClosing) return;
+                        isClosing = true;
+
+                        const activeMenus = document.querySelectorAll('.menu-level.active');
+                        if (activeMenus.length === 0) {
+                            isClosing = false;
+                            return;
+                        }
+
+                        activeMenus.forEach(menu => {
+                            menu.style.transform = 'translateX(20px) rotateY(20deg)';
+                            menu.style.opacity = '0';
+
+                            setTimeout(() => {
+                                menu.classList.remove('active');
+                                // Hide the summary tooltip regardless of which menu is closed
+                                document.getElementById('summary-tooltip').classList.remove('active');
+
+                                isClosing = false;
+                            }, 500);
+                        });
+
+                        const mainBtn = document.getElementById('main-menu-btn');
+                        mainBtn.classList.remove('active');
+                        mainBtn.style.transform = 'rotate(0) scale(1)';
+
+						document.getElementById('summary-tooltip').classList.remove('active');
+                    }
+
+                    // Interaction handler
+                    function handleInteraction() {
+                        isMenuInteracting = true;
+                        lastInteractionTime = Date.now();
+                        resetMenuTimer();
+
+                        setTimeout(() => {
+                            isMenuInteracting = false;
+                        }, 300);
+                    }
+
+                    // Show menu function
+                    function showMenu(menuId) {
+                        handleInteraction();
+
+                        // Close only other menus
+                        document.querySelectorAll('.menu-level').forEach(menu => {
+                            if (menu.id !== menuId && menu.classList.contains('active')) {
+                                menu.style.transform = 'translateX(20px) rotateY(20deg)';
+                                menu.style.opacity = '0';
+                                setTimeout(() => {
+                                    menu.classList.remove('active');
+                                    // Hide the summary when we leave the clean menu
+                                    if (menu.id === 'clean-menu') {
+										hideSummaryTooltip();
+                                    }
+                                }, 500);
+                            }
+                        });
+
+                        const menu = document.getElementById(menuId);
+                        if (menu) {
+                            menu.classList.add('active');
+                            setTimeout(() => {
+                                menu.style.transform = 'translateX(0) rotateY(0)';
+                                menu.style.opacity = '1';
+
+								// Show the summary only for the Clean menu
+								if (menuId === 'clean-menu') {
+                                    document.getElementById('summary-tooltip').style.display = 'block';
+                                    setTimeout(() => {
+										document.getElementById('summary-tooltip').classList.add('active');
+										positionSummaryTooltip();
+                                    }, 10);
+								}
+								// Automatically scroll up
+								menu.scrollTo(0, 0);
+                            }, 10);
+                        }
+                    }
+
+					// Function to position the summary
+					function positionSummaryTooltip() {
+                        const tooltip = document.getElementById('summary-tooltip');
+                        const coverageInfo = document.querySelector('.coverage-info');
+                    	tooltip.style.opacity = '1';
+                        if (tooltip && coverageInfo) {
+                            const rect = coverageInfo.getBoundingClientRect();
+                            tooltip.style.top = (rect.bottom + 10) + 'px';
+                            tooltip.style.left = rect.left + 'px';
+                        }
+                    }
+
+                    function hideSummaryTooltip() {
+                        const tooltip = document.getElementById('summary-tooltip');
+                        if (tooltip) {
+                            tooltip.style.opacity = '0';
+                            setTimeout(() => {
+                                tooltip.classList.remove('active');
+                            }, 300); // Match the transition duration
+                        }
+                    }
+
+                    // Event listener for the summary resize:
+                    window.addEventListener('resize', positionSummaryTooltip);
+
+
+                    // Event listeners for menu items
+                    document.querySelectorAll('.menu-level, .menu-item, .back-button, .slider-container, input, label, button, .icon-hide-show-menu, .hide-show-option, hide-show-option-svg, .icon-clean-menu, .mode-option-buttons, .mode-option, mode-option-svg, .option-label, .selection-summary, .mode-option-svg').forEach(element => {
+                        element.addEventListener('mouseenter', handleInteraction);
+                        element.addEventListener('mouseleave', () => {
+                            isMenuInteracting = false;
+                            resetMenuTimer();
+                        });
+                        element.addEventListener('click', handleInteraction);
+                    });
+
+                    // Improved touch support
+                    document.querySelectorAll('.menu-level, .menu-item, .back-button, .slider-container, input, label, button, .icon-hide-show-menu, .hide-show-option, hide-show-option-svg, .icon-clean-menu, .mode-option-buttons, .mode-option, mode-option-svg, .option-label, .selection-summary, .mode-option-svg').forEach(item => {
+                        item.addEventListener('touchstart', handleInteraction, { passive: true });
+                        item.addEventListener('touchend', () => {
+                            isMenuInteracting = false;
+                            resetMenuTimer();
+                        }, { passive: true });
+                    });
+
+                    // Main button event handler
+                    document.getElementById('main-menu-btn').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        handleInteraction();
+
+                        const mainMenu = document.getElementById('main-menu');
+                        const wasActive = mainMenu.classList.contains('active');
+
+                        if (wasActive) {
+                            manuallyCloseAllMenus();
+                        } else {
+                            showMenu('main-menu');
+                            this.style.transform = 'rotate(135deg) scale(1.1)';
+                        }
+                        this.classList.toggle('active');
+                    });
+
+                    // Menu navigation
+                    document.querySelectorAll('[data-next]').forEach(button => {
+                        button.addEventListener('click', function() {
+                            handleInteraction();
+                            setTimeout(() => {
+                                const nextMenu = this.getAttribute('data-next');
+                                showMenu(nextMenu);
+                            }, 200);
+                        });
+                    });
+
+                    document.querySelectorAll('[data-back]').forEach(button => {
+                        button.addEventListener('click', function() {
+                            handleInteraction();
+                            setTimeout(() => {
+                                const backMenu = this.getAttribute('data-back');
+                                showMenu(backMenu);
+                            }, 200);
+                        });
+                    });
+
+                    // Click outside closes menu
+                    document.addEventListener('click', function(e) {
+						// Close the menu ONLY when clicked outside
+                        if (
+						    !e.target.closest('.control-panel') &&
+						    !e.target.closest('.mode-option') &&
+						    !e.target.closest('.mode-option-buttons')
+						    ) {
+                                manuallyCloseAllMenus();
+								hideSummaryTooltip();
+                        }
+                    });
+
+                    function startSpectacularAnimation() {
+
+                        // PREPARE ELEMENTS
+                        const controls = {
+                            xRotation: document.getElementById('x-rotation'),
+                            yRotation: document.getElementById('y-rotation'),
+                            zRotation: document.getElementById('z-rotation'),
+                            perspective: document.getElementById('perspective'),
+                            zoom: document.getElementById('zoom-level'),
+                            xPos: document.getElementById('x-position'),
+                            yPos: document.getElementById('y-position')
+                        };
+
+                        // ANIMATION CONTROLLER
+                        const AnimationMaster = {
+                            phase: 0,
+                            speed: 0.002,
+                            running: false,
+                            requestId: null,
+                            startTime: null,
+
+                            // Spectacular effect compositions
+                            effects: {
+                                // 1. "Orbit" flight around the map
+                                orbitalFlight: (progress) => {
+                                    const angle = progress * Math.PI * 2;
+                                    return {
+                                        x: Math.sin(angle * 1.3) * 45,
+                                        y: progress * 360,
+                                        z: Math.cos(angle * 0.7) * 20,
+                                        perspective: 800 + Math.sin(angle * 2) * 600,
+                                        zoom: 80 + Math.sin(angle * 4) * 20,
+                                        xPos: Math.sin(angle * 1.5) * 150,
+                                        yPos: Math.cos(angle * 0.5) * 100
+                                    };
+                                },
+
+                                // 2. "Drone flight" simulation
+                                droneFlight: (progress) => {
+                                    const angle = progress * Math.PI * 4;
+                                    return {
+                                        x: 15 + Math.sin(angle) * 10,
+                                        y: progress * 720,
+                                        z: Math.cos(angle * 0.3) * 5,
+                                        perspective: 500 + Math.sin(angle * 3) * 400,
+                                        zoom: 60 + Math.sin(angle * 2) * 40,
+                                        xPos: Math.sin(angle * 2) * 200,
+                                        yPos: Math.cos(angle) * 80
+                                    };
+                                },
+
+                                // 3. "Action cam" mode
+                                actionCam: (progress) => {
+                                    const angle = progress * Math.PI * 8;
+                                    return {
+                                        x: Math.sin(angle * 2) * 60,
+                                        y: progress * 1440,
+                                        z: Math.cos(angle * 3) * 15,
+                                        perspective: 300 + Math.sin(angle * 5) * 700,
+                                        zoom: 30 + Math.sin(angle * 8) * 70,
+                                        xPos: Math.sin(angle * 4) * 300,
+                                        yPos: Math.cos(angle * 2) * 150
+                                    };
+                                }
+                            },
+
+                            // Main animation loop
+                            animate: (timestamp) => {
+                                if (!AnimationMaster.startTime) AnimationMaster.startTime = timestamp;
+                                const elapsed = timestamp - AnimationMaster.startTime;
+                                AnimationMaster.phase = (AnimationMaster.phase + AnimationMaster.speed) % 1;
+
+                                // Dynamic effect switching
+                                let effect;
+                                if (AnimationMaster.phase < 0.33) {
+                                    effect = AnimationMaster.effects.orbitalFlight(AnimationMaster.phase * 3);
+                                } else if (AnimationMaster.phase < 0.66) {
+                                    effect = AnimationMaster.effects.droneFlight((AnimationMaster.phase - 0.33) * 3);
+                                } else {
+                                    effect = AnimationMaster.effects.actionCam((AnimationMaster.phase - 0.66) * 3);
+                                }
+
+                                // Apply values
+                                controls.xRotation.value = effect.x;
+                                controls.yRotation.value = effect.y;
+                                controls.zRotation.value = effect.z;
+                                controls.perspective.value = effect.perspective;
+                                controls.zoom.value = effect.zoom;
+                                controls.xPos.value = effect.xPos;
+                                controls.yPos.value = effect.yPos;
+
+                                // Trigger events
+                                Object.values(controls).forEach(control => {
+                                    control.dispatchEvent(new Event('input'));
+                                });
+
+                                // Special effects
+                                if (AnimationMaster.phase > 0.5 && AnimationMaster.phase < 0.55) {
+                                    document.querySelector('.map-content').style.filter = 'brightness(1.5)';
+                                } else {
+                                    document.querySelector('.map-content').style.filter = '';
+                                }
+
+                                AnimationMaster.requestId = requestAnimationFrame(AnimationMaster.animate);
+                            },
+
+                            start: () => {
+                                if (!AnimationMaster.running) {
+                                    AnimationMaster.running = true;
+                                    AnimationMaster.startTime = null;
+                                    AnimationMaster.requestId = requestAnimationFrame(AnimationMaster.animate);
+                                }
+                            },
+
+                            stop: () => {
+                                if (AnimationMaster.running) {
+                                    cancelAnimationFrame(AnimationMaster.requestId);
+                                    AnimationMaster.running = false;
+                                    document.querySelector('.map-content').style.filter = '';
+                                }
+                            },
+
+                            toggle: function(event) {
+                                if (AnimationMaster.running) {
+                                    AnimationMaster.stop();
+                                    event.target.textContent = 'Start Map Spectacle';
+                                } else {
+                                    areHiddenState = false;
+                                    stabilizeLabels();
+                                    //document.getElementById('toggle-room-label').textContent = 'Show room labels';
+									document.getElementById('toggle-room-label').classList.toggle('active', areHiddenState);
+                                    AnimationMaster.start();
+                                    event.target.textContent = 'Stop Map Spectacle';
+                                }
+                            }
+                        };
+
+                        // Event listeners for Animation
+                        document.getElementById('animation-toggle').addEventListener('click', AnimationMaster.toggle);
+                        document.getElementById('animation-speed').addEventListener('input', (e) => {
+                            AnimationMaster.speed = e.target.value * 0.0005;
+                            document.getElementById('speed-value').textContent = e.target.value + 'x';
+                        });
+                    }
+
+					// =============================================
+                    // Update the charging station status system
+                    // =============================================
+
+                    // Function that loops through all statuses continuously with delay
+                    function loopChargerStatus() {
+                        if (stopStatusLoop) {
+                            console.log('Status loop stopped');
+                            return; // Exit the function if stop flag is set
+                        }
+                        updateChargerStatus(statusList[currentStatusIndex]);
+                        // Move to the next status or restart from beginning
+                        currentStatusIndex = (currentStatusIndex + 1) % statusList.length;
+                        statusLoopTimeout = setTimeout(loopChargerStatus, 5000);
+                    }
+
+                    // Event handler for the toggle button
+                    document.getElementById('Base-station-toggle').addEventListener('click', function() {
+                        const button = this;
+                        const robotPos = document.getElementById('robot-position');
+
+                        if (stopStatusLoop) {
+                            // Reset index when starting fresh
+                            //currentStatusIndex = 0;
+                            stopStatusLoop = false;
+                            console.log('Starting status loop');
+                            button.textContent = 'Stop Base Spectacle';
+                            if (robotPos) robotPos.style.opacity = 0;
+                            loopChargerStatus();
+                        } else {
+                            // Stop the loop
+                            stopStatusLoop = true;
+                            clearTimeout(statusLoopTimeout); // Clear any pending timeout
+                            console.log('Stopping status loop');
+                            button.textContent = 'Start Base Spectacle';
+                            if (robotPos) robotPos.style.opacity = 1;
+                        }
+                    });
 
                     function getStatusColor(status) {
                         if (status.includes('charging')) return '#4a90e2';
@@ -5137,7 +10017,7 @@ class Dreamehome extends utils.Adapter {
                                         }\`;
                                     break;
 
-                        		case 'clean-add-water':
+                        		case 'add-clean-water':
                                     effectsHTML = \`
                                         <div class="status-effect add-water-effect">
                                             <div class="filling-water"></div>
@@ -5878,760 +10758,9 @@ class Dreamehome extends utils.Adapter {
                         });
                     }
 
-                    // Initialize color map for click detection
-                    function initializeColorMap() {
-                        // Clear canvas
-                        colorMapCtx.clearRect(0, 0, canvasSize, canvasSize);
-
-                        // Draw rooms with their unique colors
-                        ${elements.rooms.map(room => {
-    const color = ColorsItems[room.room_id % ColorsItems.length];
-    const walls = room.walls.map(w => toCanvas(w.beg_pt_x, w.beg_pt_y));
-    const pathData = walls.map(([x,y], i) => (i === 0 ? 'M' : 'L') + x + ' ' + y).join(' ') + ' Z';
-
-    return `
-                                colorMapCtx.fillStyle = '${color}';
-                                colorMapCtx.beginPath();
-                                ${walls.map(([x,y], i) => (i === 0 ? 'colorMapCtx.moveTo(' + x + ',' + y + ');' : 'colorMapCtx.lineTo(' + x + ',' + y + ');')).join(' ')}
-                                colorMapCtx.closePath();
-                                colorMapCtx.fill();`;
-						    }).join('')}
-
-                        // Draw carpets with their unique colors
-                        ${Object.entries(elements.carpets).map(([id, rect]) => {
-    const color = ColorsCarpet[id % ColorsCarpet.length];
-    const [x1, y1, x2, y2] = rect;
-    const [tx1, ty1] = toCanvas(x1, y1);
-    const width = (x2-x1)*scale;
-    const height = (y2-y1)*scale;
-
-    return `
-                                colorMapCtx.fillStyle = '${color}';
-                                colorMapCtx.fillRect(${tx1}, ${ty1}, ${width}, ${height});`;
-  }).join('')}
-					}
-
-                    // Transformation function for the script part
-                    function toCanvas(x, y) {
-                        return [
-                            Math.round(x * scale + offsetX),
-                            Math.round(y * scale + offsetY)
-                        ];
-                    }
-
-                    // Update robot position
-                    function updateRobotPosition(x, y) {
-                        const [canvasX, canvasY] = toCanvas(x, y);
-                        const robotPos = document.getElementById('robot-position');
-
-                        if (!robotPos) {
-                            console.error('Robot position element not found');
-                            return;
-                        }
-
-                        robotPos.style.left = canvasX + 'px';
-                        robotPos.style.top = canvasY + 'px';
-                        robotPos.style.display = 'block';
-
-                        // Add new point only if it is significantly different
-                        if (robotPathPoints.length === 0 ||
-                            Math.abs(robotPathPoints[robotPathPoints.length - 1][0] - canvasX) > 5 ||
-                            Math.abs(robotPathPoints[robotPathPoints.length - 1][1] - canvasY) > 5) {
-                            robotPathPoints.push([canvasX, canvasY]);
-                            updateRobotPath();
-                        }
-                    }
-
-                    // Draw robot path
-                    function updatePathFromHistory(historyData) {
-                        robotPathPoints = [];
-
-                        if (!historyData || Object.keys(historyData).length === 0) {
-                            console.log('Empty history data received');
-                            hideRobotPosition();
-                            return;
-                        }
-
-                        try {
-                            // Process all history entries
-                            Object.values(historyData).forEach(entry => {
-                                try {
-                                    let x, y;
-
-                                    // Handle both old [x,y] format and new object format
-                                    if (Array.isArray(entry)) {
-                                        x = entry[0];
-                                        y = entry[1];
-                                    } else if (typeof entry === 'object' && entry.position) {
-                                        x = entry.position.x;
-                                        y = entry.position.y;
-                                    } else if (typeof entry === 'string') {
-                                        // Fallback for old string format
-                                        const matches = entry.match(/\\[([^,]+),([^\\]]+)\\]/);
-                                        if (matches && matches.length === 3) {
-                                            x = parseFloat(matches[1]);
-                                            y = parseFloat(matches[2]);
-                                        }
-                                    }
-
-                                    if (!isNaN(x) && !isNaN(y)) {
-                                        const [canvasX, canvasY] = toCanvas(x, y);
-                                        robotPathPoints.push([canvasX, canvasY]);
-                                    }
-                                } catch (e) {
-                                    console.error('Error processing position:', entry, e);
-                                }
-                            });
-
-                            // Redraw the path
-                            updateRobotPath();
-
-                            // Set the last robot position
-                            if (robotPathPoints.length > 0) {
-                                const lastPoint = robotPathPoints[robotPathPoints.length - 1];
-                                const robotPos = document.getElementById('robot-position');
-
-                                if (robotPos) {
-                                    robotPos.style.left = lastPoint[0] + 'px';
-                                    robotPos.style.top = lastPoint[1] + 'px';
-                                    robotPos.style.display = 'block';
-                                    console.log('Robot position set to:', lastPoint);
-                                }
-                            } else {
-                                hideRobotPosition();
-                            }
-
-                        } catch (e) {
-                            console.error('Failed to process history:', e);
-                            hideRobotPosition();
-                        }
-                    }
-
-                    function hideRobotPosition() {
-                        const robotPos = document.getElementById('robot-position');
-                        if (robotPos) robotPos.style.display = 'none';
-                    }
-
-                    // Helper function for path update
-                    function updateRobotPath() {
-                        const pathElement = document.getElementById('robot-path');
-                        if (!pathElement) return;
-
-                        pathElement.innerHTML = '';
-
-                        if (robotPathPoints.length === 0 && (!posHistory || posHistory.length === 0)) {
-                            return;
-                        }
-
-                        if (robotPathPoints.length > 0) {
-                            let pathData = 'M ' + robotPathPoints[0][0] + ' ' + robotPathPoints[0][1];
-                            for (let i = 1; i < robotPathPoints.length; i++) {
-                                pathData += ' L ' + robotPathPoints[i][0] + ' ' + robotPathPoints[i][1];
-                            }
-
-                            pathElement.innerHTML += '<path d="' + pathData + '" ' +
-                                                    'stroke="rgba(255,0,0,0.7)" ' +
-                                                    'stroke-width="4" ' +
-                                                    'fill="none" />';
-                        }
-                    }
-
-
-					// Change and reloading map size
-					document.getElementById('map-size-range').addEventListener('change', function() {
-                        const newSize = Math.min(2048, Math.max(256, parseInt(this.value)));
-						const minSize = 256;
-						const maxSize = 2048;
-
-						if (isNaN(newSize) || newSize < minSize || newSize > maxSize) {
-							console.error('Invalid size:', newSize);
-							showNotification('Reload failed', 'Invalid size ' + newSize + '. Keeping current.');
-                            return;
-						}
-                        // Save new map size
-                        vis.conn._socket.emit('setState', '${prefix}.map.MapSize${DH_CurMap}', {
-                            val: newSize,
-                            ack: false,
-                            from: 'vis'
-                        }, (err) => {
-                            if (err) {
-                                console.error('Size save error:', err);
-                                showNotification('Save failed', 'error');
-                                return;
-                            }
-
-                            // Trigger map reload
-                            vis.conn._socket.emit('setState', '${prefix}.map.NewMap', {
-                                val: true,
-                                ack: false,
-                                from: 'vis'
-                            }, (reloadErr) => {
-                                if (reloadErr) {
-                                    console.error('Reload error:', reloadErr);
-                                    showNotification('Reload failed', 'error');
-                                    return;
-                                }
-
-                                showNotification('Reloading map...');
-                            });
-                        });
-                    });
-
-                    // Notification helper function
-                    function showNotification(message, type = 'success') {
-                        const existingNotif = document.querySelector('.size-change-notification');
-                        if (existingNotif) existingNotif.remove();
-
-                        const notification = document.createElement('div');
-                        notification.className = 'size-change-notification';
-                        notification.textContent = message;
-                        notification.style.position = 'fixed';
-                        notification.style.bottom = '20px';
-                        notification.style.right = '20px';
-                        notification.style.padding = '10px 20px';
-                        notification.style.background = type === 'error' ? '#ff4444' : '#4CAF50';
-                        notification.style.color = 'white';
-                        notification.style.borderRadius = '5px';
-                        notification.style.zIndex = '10000';
-                        notification.style.transition = 'opacity 0.5s';
-                        document.body.appendChild(notification);
-
-                        setTimeout(() => {
-                            notification.style.opacity = '0';
-                            setTimeout(() => notification.remove(), 500);
-                        }, 3000);
-                    }
-
-					document.getElementById('map-size-range').addEventListener('input', function() {
-                        document.getElementById('map-size-value').textContent = parseInt(this.value) + 'px';
-                    });
-
-                    // Update slider values
-                    function updateSliderValues() {
-                        document.getElementById('x-rotation-value').textContent = xRotation + '°';
-                        document.getElementById('y-rotation-value').textContent = yRotation + '°';
-                        document.getElementById('z-rotation-value').textContent = zRotation + '°';
-                        document.getElementById('perspective-value').textContent = perspective;
-                    }
-
-                    // Update CSS 3D transformation
-                    function updateTransformation() {
-                        const zoomScale = zoomLevel / 100;
-                        let transform = '';
-                        transform += 'perspective(' + perspective + 'px) ';
-                        transform += 'rotateX(' + xRotation + 'deg) ';
-                        transform += 'rotateY(' + yRotation + 'deg) ';
-                        transform += 'rotateZ(' + zRotation + 'deg)';
-                        transform += 'scale(' + zoomScale + ')';
-                        transform += 'translate(' + xPosition + 'px, ' + yPosition + 'px)';
-                        mapContent.style.transform = transform;
-                    }
-
-                    // Precise click detection with 3D transformation
-                    function handleClick(event) {
-                        const rect = clickLayer.getBoundingClientRect();
-                        let x = event.clientX - rect.left;
-                        let y = event.clientY - rect.top;
-
-                        // 1. Get the current transformation matrix of the map container
-                        const style = window.getComputedStyle(mapContent);
-                        const matrix = new WebKitCSSMatrix(style.transform);
-
-                        // 2. Create inverse matrix for the back transformation
-                        let det = matrix.a * matrix.d - matrix.b * matrix.c;
-                        if (det === 0) return; // No inverse possible
-
-                        // Inverse of the 2D components
-                        const inv = {
-                            a: matrix.d / det,
-                            b: -matrix.b / det,
-                            c: -matrix.c / det,
-                            d: matrix.a / det,
-                            e: (matrix.c * matrix.f - matrix.d * matrix.e) / det,
-                            f: (matrix.b * matrix.e - matrix.a * matrix.f) / det
-                        };
-
-                        // 3. Transform click position back
-                        const tx = x - canvasSize/2;
-                        const ty = y - canvasSize/2;
-                        x = inv.a * tx + inv.c * ty + inv.e + canvasSize/2;
-                        y = inv.b * tx + inv.d * ty + inv.f + canvasSize/2;
-
-                        // 4. Check boundaries
-                        x = Math.max(0, Math.min(canvasSize-1, x));
-                        y = Math.max(0, Math.min(canvasSize-1, y));
-
-                        // Original color query
-                        const pixel = colorMapCtx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
-                        const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-
-                        // Rest of the existing logic
-                        if (colorMappings.rooms[hex]) {
-                            const roomId = colorMappings.rooms[hex];
-                            const element = document.getElementById('room-' + roomId);
-                            const index = selectedRooms.indexOf(roomId);
-                            if (index === -1) {
-                                selectedRooms.push(roomId);
-                                element.classList.add('selected');
-                            } else {
-                                selectedRooms.splice(index, 1);
-                                element.classList.remove('selected');
-                            }
-                            updateCurrentRoomDisplay(roomId);
-                        }
-                        else if (colorMappings.carpets[hex]) {
-                            const carpetId = colorMappings.carpets[hex];
-                            const element = document.getElementById('carpet-' + carpetId);
-                            const index = selectedCarpets.indexOf(carpetId);
-                            if (index === -1) {
-                                selectedCarpets.push(carpetId);
-                                element.classList.add('selected');
-                            } else {
-                                selectedCarpets.splice(index, 1);
-                                element.classList.remove('selected');
-                            }
-                        }
-                    }
-
-                    // Update current room display
-                    function updateCurrentRoomDisplay(roomId) {
-                        document.getElementById('current-room').textContent = roomId;
-                    }
-
-					// WebSocket for real-time updates
-                    function setupUpdates() {
-                        console.log('Initializing robot updates...');
-                        let lastStatusPoll = 0;
-
-                        // 1. Polling as fallback
-						const pollInterval = setInterval(() => {
-							// Check status more often
-							fetchLiveStatus()
-								.then(processStatusUpdate)
-								.catch(console.error);
-
-                            // Query position less frequently
-                            if (Date.now() - lastStatusPoll > 3000) {
-								fetchRobotStatus().then(data => {
-                                    if (data?.position) {
-                                        updateRobotPosition(data.position.x, data.position.y);
-                                        updateRoomInfo(data);
-                                    }
-                                }).catch(console.error);
-                                lastStatusPoll = Date.now();
-                            }
-                        }, 2000);
-
-                        // 2. WebSocket Listener
-                        if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
-                            console.log('WebSocket connection established');
-
-                            // Position updates
-                            vis.conn._socket.on('${prefix}.vis.robotUpdate', (data) => {
-                                try {
-                                    const update = typeof data === 'string' ? JSON.parse(data) : data;
-                                    if (update?.position) {
-                                        processPositionUpdate(update);
-                                    }
-                                } catch (e) {
-                                    console.error('Position update error:', e);
-                                }
-                            });
-
-                            // History updates
-                            vis.conn._socket.on('${prefix}.vis.PosHistory${DH_CurMap}', (data) => {
-                                try {
-                                    const history = typeof data === 'string' ? JSON.parse(data) : data;
-                                    posHistory = Object.values(history);
-                                    updatePathFromHistory(history);
-                                    updateFixedLabelsWithNewData(posHistory);
-                                } catch (e) {
-                                    console.error('History update error:', e);
-                                }
-                            });
-
-                            // Status updates
-                            vis.conn._socket.on('${prefix}.vis.State', (data) => {
-                                try {
-                                    processStatusUpdate(data);
-                                } catch (e) {
-                                    console.error('Status update error:', e);
-                                }
-                            });
-
-                            // Connection handling
-                            vis.conn._socket.on('connect', () => {
-                                console.log('WebSocket reconnected');
-                                fetchInitialHistory().then(updatePathFromHistory);
-                            });
-
-                            vis.conn._socket.on('disconnect', () => {
-                                console.warn('WebSocket disconnected');
-                            });
-                        }
-
-                        // Initial data load
-                        fetchInitialData();
-                    }
-
-                    // Helper functions
-                    function processPositionUpdate(update) {
-                        const {x, y} = update.position;
-                        updateRobotPosition(x, y);
-
-                        const [canvasX, canvasY] = toCanvas(x, y);
-                        const lastPoint = robotPathPoints[robotPathPoints.length - 1];
-
-                        if (!lastPoint ||
-                            Math.abs(lastPoint[0] - canvasX) > 5 ||
-                            Math.abs(lastPoint[1] - canvasY) > 5) {
-                            robotPathPoints.push([canvasX, canvasY]);
-                            if (robotPathPoints.length > 4000) robotPathPoints.shift();
-                            updateRobotPath();
-                        }
-
-                        if (update.currentRoom || update.TotalArea) {
-                            updateRoomInfo(update);
-                        }
-                    }
-
-                    function processStatusUpdate(state) {
-                        if (!state) return;
-
-                        const statusUpdate = typeof state === 'string' ? JSON.parse(state) : state;
-                        const statusNumber = parseInt(statusUpdate?.val ?? statusUpdate);
-
-                        if (!isNaN(statusNumber)) {
-                            const statusText = statusMapping[statusNumber] || "Unknown";
-                            updateChargerStatus(statusText);
-                        } else {
-                            console.warn('Invalid status number received:', statusUpdate);
-                        }
-                    }
-
-                    async function fetchInitialData() {
-                        try {
-                            const [positionData, history] = await Promise.all([
-                                fetchRobotStatus().catch(() => null),
-                                fetchInitialHistory().catch(() => null)
-                            ]);
-
-                            if (positionData?.position) {
-                                updateRobotPosition(positionData.position.x, positionData.position.y);
-                                updateRoomInfo(positionData);
-                            }
-
-                            if (history) {
-                                updatePathFromHistory(history);
-                            } else {
-                                hideRobotPosition();
-                            }
-
-                            // Initial status
-                            const status = await fetchLiveStatus().catch(() => null);
-                            processStatusUpdate(status);
-                        } catch (e) {
-                            console.error('Initial data loading error:', e);
-                        }
-                    }
-
-                    // Helper function to fetch Robot position
-                    function fetchRobotStatus() {
-                        return new Promise((resolve) => {
-                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
-                                vis.conn._socket.emit('getState', '${prefix}.vis.robotUpdate', (err, res) => {
-                                    if (!err && res && res.val) {
-                                        try {
-                                            resolve(typeof res.val === 'string' ? JSON.parse(res.val) : res.val);
-                                        } catch (e) {
-                                            console.error('Parsing error:', e);
-                                            resolve({});
-                                        }
-                                    } else {
-                                        resolve({});
-                                    }
-                                });
-                            }
-                        });
-                    }
-
-                    // Helper function to fetch live Status
-                    function fetchLiveStatus() {
-                        return new Promise((resolve) => {
-                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
-                                vis.conn._socket.emit('getState', '${prefix}.vis.State', (err, res) => {
-                                    if (!err && res && res.val) {
-                                        try {
-                                            resolve(typeof res.val === 'string' ? JSON.parse(res.val) : res.val);
-                                        } catch (e) {
-                                            console.error('Parsing error:', e);
-                                            resolve({});
-                                        }
-                                    } else {
-                                        resolve({});
-                                    }
-                                });
-                            }
-                        });
-                    }
-
-                    function fetchInitialHistory() {
-                        return new Promise((resolve) => {
-                            if (typeof vis !== 'undefined' && vis.conn && vis.conn._socket) {
-                                vis.conn._socket.emit('getState', '${prefix}.vis.PosHistory${DH_CurMap}', (err, res) => {
-                                    if (!err && res && res.val) {
-                                        try {
-                                            const historyData = typeof res.val === 'string' ? JSON.parse(res.val) : res.val;
-                                            updatePathFromHistory(historyData);
-                                            console.log('Initial history loaded'+ JSON.stringify(historyData));
-                                            resolve(historyData);
-                                        } catch (e) {
-                                            console.error('Error parsing history data:', e);
-                                            resolve(null);
-                                        }
-                                    } else {
-                                        console.error('Error fetching history:', err);
-                                        resolve(null);
-                                    }
-                                });
-                            } else {
-                                console.error('Socket connection not available');
-                                resolve(null);
-                            }
-                        });
-                    }
-
-					// Function for the room name to find out which number belongs to it
-					function getRoomNameNumberMap() {
-                        const nameNumberMap = {};
-						for (const [roomNumber, roomData] of Object.entries(roomDataMap)) {
-                            nameNumberMap[roomData.name] = Number(roomNumber);
-						}
-                      return nameNumberMap;
-                    }
-
-					// Update room information
-                    function updateRoomInfo(data) {
-                        // Update basic info display
-                        if (data.currentRoom) {
-                            document.getElementById('current-room').textContent = data.currentRoom;
-                        }
-
-                        if (data.TotalArea) {
-                            const cleanedArea = typeof data.CleanedArea === 'number' ? data.CleanedArea : '0';
-                            document.getElementById('current-CleanedArea').textContent = cleanedArea;
-                        }
-
-                        // Optimized label update
-                        const currentRoomId = data.currentRoom;
-                        if (!currentRoomId) return;
-
-                        const fixedLabels = document.querySelectorAll('.room-label-fixed');
-                        if (!fixedLabels.length) return;
-
-                        // Prepare room data (fallback to empty object if not available)
-                        const roomData = {
-                            TotalArea: data.TotalArea,
-                            CoveragePercent: data.CoveragePercent,
-                            CleanedArea: data.CleanedArea,
-                            ...(data[currentRoomId] || {}) // Merge with room-specific data if available
-                        };
-
-                        fixedLabels.forEach(fixedLabel => {
-                            try {
-                                const labelId = fixedLabel.id.replace('room-label-', '').replace('-fixed', '');
-                                const roomInfo = roomDataMap[labelId];
-
-                                if (roomInfo && roomInfo.name === currentRoomId) {
-                                    fixedLabel.innerHTML =
-		                                '<div class="label-content">' +
-		                                    '<strong style="font-size: 14px">' + roomInfo.name + '</strong>' +
-		                                    (roomData.TotalArea ? ' <span style="font-size: 12px">' + roomData.TotalArea + ' m²</span>' : '') +
-		                                    '<br>' +
-		                                    (roomData.CoveragePercent ? roomData.CoveragePercent + '% covered' : 'No data') + '<br>' +
-		                                    (roomData.CleanedArea ? roomData.CleanedArea + ' m² cleaned' : '') +
-		                                '</div>';
-
-									const roomElement = document.getElementById('room-' + roomNameNumberMap[roomInfo.name]);
-		                            if (roomElement) {;
-
-										// Calculate visual properties based on cleaning progress
-										const coverage = roomData.CoveragePercent || 0;
-										const coverageRatio = coverage / 100;
-
-										// Visual feedback - color and opacity
-										roomElement.style.opacity = 0.3 + (coverageRatio * 0.7);
-										const hue = 120 * coverageRatio; // Green (120) when clean
-										roomElement.querySelector('path').style.fill = 'hsla(' + hue + ', 100%, 50%, 0.5)';
-									}
-								}
-                            } catch (e) {
-                                console.error('Error updating room label:', e);
-                            }
-                        });
-                    }
-
-                    // Function that loops through all statuses continuously with delay
-                    function loopChargerStatus() {
-                        if (stopStatusLoop) {
-                            console.log('Status loop stopped');
-                            return; // Exit the function if stop flag is set
-                        }
-                        updateChargerStatus(statusList[currentStatusIndex]);
-                        // Move to the next status or restart from beginning
-                        currentStatusIndex = (currentStatusIndex + 1) % statusList.length;
-                        statusLoopTimeout = setTimeout(loopChargerStatus, 5000);
-                    }
-
-                    // Event handler for the toggle button
-                    document.getElementById('Base-station-toggle').addEventListener('click', function() {
-                        const button = this;
-                        const robotPos = document.getElementById('robot-position');
-
-                        if (stopStatusLoop) {
-                            // Reset index when starting fresh
-                            //currentStatusIndex = 0;
-                            stopStatusLoop = false;
-                            console.log('Starting status loop');
-                            button.textContent = 'Stop Base Spectacle';
-                            if (robotPos) robotPos.style.opacity = 0;
-                            loopChargerStatus();
-                        } else {
-                            // Stop the loop
-                            stopStatusLoop = true;
-                            clearTimeout(statusLoopTimeout); // Clear any pending timeout
-                            console.log('Stopping status loop');
-                            button.textContent = 'Start Base Spectacle';
-                            if (robotPos) robotPos.style.opacity = 1;
-                        }
-                    });
-
-					// Change background color
-					document.getElementById('bg-color-picker').addEventListener('input', function(e) {
-                        document.documentElement.style.setProperty('--map-background-color', e.target.value);
-					});
-
-					// Set default value
-					document.documentElement.style.setProperty('--map-background-color', '#ffffff');
-
-                    document.getElementById('x-rotation').addEventListener('input', function() {
-                        xRotation = parseInt(this.value);
-                        updateTransformation();
-                        updateSliderValues();
-						debouncedStabilizeLabels();
-                    });
-
-                    document.getElementById('y-rotation').addEventListener('input', function() {
-                        yRotation = parseInt(this.value);
-                        updateTransformation();
-                        updateSliderValues();
-						debouncedStabilizeLabels();
-                    });
-
-                    document.getElementById('z-rotation').addEventListener('input', function() {
-                        zRotation = parseInt(this.value);
-                        updateTransformation();
-                        updateSliderValues();
-						debouncedStabilizeLabels();
-                    });
-
-                    document.getElementById('perspective').addEventListener('input', function() {
-                        perspective = parseInt(this.value);
-                        updateTransformation();
-                        updateSliderValues();
-						debouncedStabilizeLabels();
-                    });
-
-					document.getElementById('zoom-level').addEventListener('input', function() {
-                        zoomLevel = parseInt(this.value);
-                        updateTransformation();
-                        document.getElementById('zoom-value').textContent = zoomLevel + '%';
-						debouncedStabilizeLabels();
-					});
-
-					document.getElementById('x-position').addEventListener('input', function() {
-                        xPosition = parseInt(this.value);
-                        updateTransformation();
-                        document.getElementById('x-position-value').textContent = xPosition + 'px';
-						debouncedStabilizeLabels();
-					});
-
-					document.getElementById('y-position').addEventListener('input', function() {
-                        yPosition = parseInt(this.value);
-                        updateTransformation();
-                        document.getElementById('y-position-value').textContent = yPosition + 'px';
-						debouncedStabilizeLabels();
-					});
-
-                    document.getElementById('reset-selection-btn').addEventListener('click', () => {
-                        selectedRooms.forEach(id => document.getElementById('room-' + id)?.classList.remove('selected'));
-                        selectedCarpets.forEach(id => document.getElementById('carpet-' + id)?.classList.remove('selected'));
-                        selectedRooms = [];
-                        selectedCarpets = [];
-                        document.getElementById('current-room').textContent = '-';
-                    });
-
-                    document.getElementById('reset-view-btn').addEventListener('click', function() {
-                        xRotation = 0;
-                        yRotation = 0;
-                        zRotation = 0;
-                        perspective = 1200;
-                        zoomLevel = 100;
-                        xPosition = 0;
-                        yPosition = 0;
-
-                        document.getElementById('x-rotation').value = 0;
-                        document.getElementById('y-rotation').value = 0;
-                        document.getElementById('z-rotation').value = 0;
-                        document.getElementById('perspective').value = 1200;
-                        document.getElementById('zoom-level').value = 100;
-                        document.getElementById('zoom-value').textContent = '100%';
-                        document.getElementById('x-position').value = 0;
-                        document.getElementById('y-position').value = 0;
-                        document.getElementById('x-position-value').textContent = '0px';
-                        document.getElementById('y-position-value').textContent = '0px';
-
-                        updateTransformation();
-                        updateSliderValues();
-                        debouncedStabilizeLabels();
-                    });
-
-                    document.getElementById('toggle-robot-path').addEventListener('click', function() {
-                        showRobotPath = !showRobotPath;
-                        document.getElementById('robot-path').style.display = showRobotPath ? 'block' : 'none';
-                        this.textContent = showRobotPath ? 'Hide Robot Path' : 'Show Robot Path';
-                    });
-
-                    document.getElementById('toggle-room-label').addEventListener('click', function() {
-                        areHiddenState = !areHiddenState;
-                        stabilizeLabels();
-                        this.textContent = areHiddenState ? 'Hide room labels' : 'Show room labels';
-                    });
-
-                    function debounce(func, delay) {
-                        let timeout;
-                        return function(...args) {
-                            clearTimeout(timeout);
-                            timeout = setTimeout(() => func.apply(this, args), delay);
-                        };
-                    }
-
-                    const debouncedStabilizeLabels = debounce(stabilizeLabels, 500); // e.g. 300ms delay
-
-                    clickLayer.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        const touch = e.touches[0];
-                        const event = new MouseEvent('click', {
-                            clientX: touch.clientX,
-                            clientY: touch.clientY
-                        });
-                        handleClick(event);
-                    }, { passive: false });
-
-                    // Helper function RGB to Hex
-                    function rgbToHex(r, g, b) {
-                        return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-                    }
+                    // =============================================
+                    // Initialization and start the application
+                    // =============================================
 
                     // Initialization
                     function initAllInteractions() {
@@ -6646,651 +10775,37 @@ class Dreamehome extends utils.Adapter {
                             console.error('Click layer not found!');
                         }
 
+						setupPerspectiveSettings();
                         // 3. Initialization
                         initializeColorMap();
                         updateSliderValues();
                         updateTransformation();
                         setupUpdates();
-                        stabilizeLabels();
+                        //stabilizeLabels();
+                        initCleaningMenu();
+                        initRobotControl();
 
                         console.log('Initialization completed');
                     }
 
-
-					// 1. CSS for contained labels
-                    var fixLabelCSS =
-                        "#map-labels-container {" +
-                            "position: absolute;" +
-                            "top: 0;" +
-                            "left: 0;" +
-                            "width: 100%;" +
-                            "height: 100%;" +
-                            "pointer-events: none;" +
-                            "overflow: hidden;" +
-                            "z-index: 103;" +
-                        "}" +
-                        "" +
-                        ".room-label-fixed {" +
-                            "position: absolute;" +
-                            "transform: translate(-50%, -50%) scale(var(--scale, 1));" +
-                            "transition: transform 0.2s ease-out, opacity 0.2s ease;" +
-                            "will-change: transform;" +
-                            "background: rgba(255, 255, 255, 0.5);" +
-                            "padding: 4px 8px;" +
-                            "border-radius: 4px;" +
-                            "box-shadow: 0 2px 8px rgba(0,0,0,0.15);" +
-                            "border: 1px solid rgba(0,0,0,0.1);" +
-                            "font-size: 10px;" +
-                            "font-weight: bold;" +
-                            "white-space: nowrap;" +
-                            "backdrop-filter: blur(2px);" +
-                            "max-width: 200px;" +
-                            "text-align: center;" +
-                    		"color: #000000;" +
-                            "contain: content;" +
-                        "}" +
-                        "" +
-                        ".room-label-fixed .label-content {" +
-                            "white-space: normal;" +
-                            "word-break: break-word;" +
-                        "}";
-
-                    // 2. Updated label stabilization function
-                    function stabilizeLabels() {
-                        // Extract latest room data from history
-                        const latestRoomData = getLatestRoomDataFromHistory(posHistory);
-
-                        // If labels are not hidden, clean up
-                        if (!areHiddenState) {
-                            updatePositionCallbacks.forEach(function(cb) {
-                                window.removeEventListener("resize", cb);
-                                window.removeEventListener("scroll", cb);
-                            });
-                            updatePositionCallbacks = [];
-                            document.querySelectorAll(".room-label-fixed").forEach(function(el) {
-                                el.remove();
-                            });
-                            const container = document.getElementById("map-labels-container");
-                            if (container) container.remove();
-                            return;
-                        }
-
-                        // Remove old elements
-                        document.querySelectorAll(".room-label-fixed").forEach(function(el) {
-                            el.remove();
-                        });
-                        let container = document.getElementById("map-labels-container");
-
-                        // Create container if it doesn't exist
-                        if (!container) {
-                            container = document.createElement("div");
-                            container.id = "map-labels-container";
-                            document.querySelector(".map-container").appendChild(container);
-                        }
-
-                        // Insert CSS
-                        const style = document.createElement("style");
-                        style.textContent = fixLabelCSS;
-                        document.head.appendChild(style);
-
-                        // For each existing label
-                        document.querySelectorAll(".room-label").forEach(function(origLabel) {
-                            const roomId = roomDataMap[origLabel.id.replace("room-label-", "")].name;
-                            const roomData = latestRoomData[roomId] || {};
-
-                            // Create new fixed label
-                            const fixedLabel = document.createElement("div");
-                            fixedLabel.className = "room-label-fixed";
-
-							fixedLabel.innerHTML =
-                                '<div class="label-content">' +
-                                    '<strong style="font-size: 14px">' + roomId + '</strong>' +
-                                    (roomData.TotalArea ? ' <span style="font-size: 12px">' + roomData.TotalArea + ' m²</span>' : '') +
-                                    '<br>' +
-                                    (roomData.CoveragePercent ? roomData.CoveragePercent + '% covered' : 'No data') + '<br>' +
-                                    (roomData.CleanedArea ? roomData.CleanedArea + ' m² cleaned' : '') +
-                                '</div>';
-                            fixedLabel.id = origLabel.id + "-fixed";
-
-                            // Add to container
-                            container.appendChild(fixedLabel);
-
-                            // Update position function with boundary checks
-                            const updatePosition = function() {
-                                const mapRect = document.querySelector(".map-container").getBoundingClientRect();
-                                const labelRect = origLabel.getBoundingClientRect();
-
-                                // Calculate relative position within map container
-                                const relX = labelRect.left - mapRect.left + labelRect.width/2;
-                                const relY = labelRect.top - mapRect.top + labelRect.height/2;
-
-                                // Check if label would overlap with control panel (right 300px)
-                                const panelRightEdge = mapRect.width - 100;
-                                const adjustedX = relX > panelRightEdge ? panelRightEdge - 20 : relX;
-
-                                // Ensure label stays within container bounds
-                                const boundedX = Math.max(20, Math.min(mapRect.width - 20, adjustedX));
-                                const boundedY = Math.max(20, Math.min(mapRect.height - 20, relY));
-
-                                // Calculate scale based on perspective
-                                const scale = Math.min(1, 1200 / (window.innerHeight * 0.5));
-
-                                // Apply styles
-                                fixedLabel.style.setProperty("--scale", scale);
-                                fixedLabel.style.left = boundedX + "px";
-                                fixedLabel.style.top = boundedY + "px";
-                                fixedLabel.style.opacity = (scale > 0.3) ? "1" : "0";
-                                fixedLabel.style.display = (labelRect.width === 0 || labelRect.height === 0) ? "none" : "block";
-                            };
-
-                            // Set up updates
-                            const observer = new MutationObserver(updatePosition);
-                            observer.observe(origLabel, { attributes: true });
-
-                            window.addEventListener("resize", updatePosition);
-                            window.addEventListener("scroll", updatePosition);
-							// Save callback for later removal
-                            updatePositionCallbacks.push(updatePosition);
-
-                            // Initial update
-                            updatePosition();
-                        });
-                    }
-
-                    function updateFixedLabelsWithNewData(newPosHistory) {
-                        const latestRoomData = getLatestRoomDataFromHistory(newPosHistory || posHistory);
-
-                        document.querySelectorAll('.room-label-fixed').forEach(fixedLabel => {
-                            const roomId = roomDataMap[fixedLabel.id.replace('room-label-', '').replace('-fixed', '')].name;
-                            const roomData = latestRoomData[roomId] || {};
-
-							fixedLabel.innerHTML =
-                                '<div class="label-content">' +
-                                    '<strong style="font-size: 14px">' + roomId + '</strong>' +
-                                    (roomData.TotalArea ? ' <span style="font-size: 12px">' + roomData.TotalArea + ' m²</span>' : '') +
-                                    '<br>' +
-                                    (roomData.CoveragePercent ? roomData.CoveragePercent + '% covered' : 'No data') + '<br>' +
-                                    (roomData.CleanedArea ? roomData.CleanedArea + ' m² cleaned' : '') +
-                                '</div>';
-                        });
-                    }
-
-                    function getLatestRoomDataFromHistory(posHistory) {
-                        const roomData = {};
-
-                        posHistory?.forEach(entry => {
-                            if (entry.room) {
-                                const key = entry.room; // Use room name directly as key
-                                if (!roomData[key] || (roomData[key].timestamp < entry.timestamp)) {
-									//console.log("Processing entry for room:", key, "with data:", entry); // Debug
-                                    roomData[key] = {
-                                        CleanedArea: entry.CleanedArea,
-                                        CoveragePercent: entry.CoveragePercent,
-										TotalArea: entry.TotalArea,
-                                        timestamp: entry.timestamp
-                                    };
-                                }
-                            }
-                        });
-						//console.log("Processed roomData:", roomData); // Debug
-                        return roomData;
-                    }
-
-					// =============================================
-                    // Start Menu Animation System
-                    // =============================================
-                    // Global variables
-                    let menuTimeout;
-                    const MENU_TIMEOUT_DURATION = 15000; // 5 seconds
-                    let isMenuInteracting = false;
-                    let lastInteractionTime = Date.now();
-                    let isClosing = false;
-
-                    // Particle System
-                    class MenuParticles {
-                        constructor() {
-                            this.particles = [];
-                            this.container = document.createElement('div');
-                            this.container.className = 'menu-particles';
-                            document.body.appendChild(this.container);
-                        }
-
-                        createParticle(x, y) {
-                            const p = document.createElement('div');
-                            p.className = 'menu-particle';
-                            p.style.left = x + 'px';
-                            p.style.top = y + 'px';
-                            p.style.opacity = '0.8';
-
-                            // Randomize properties
-                            const size = Math.random() * 3 + 2;
-                            const angle = Math.random() * Math.PI * 2;
-                            const velocity = Math.random() * 2 + 1;
-                            const life = Math.random() * 1000 + 500;
-
-                            p.style.width = size + 'px';
-                            p.style.height = size + 'px';
-                            p.style.background = 'hsl(' + (Math.random() * 60 + 250) + ', 100%, ' + (Math.random() * 30 + 70) + '%)';
-
-                            this.container.appendChild(p);
-
-                            const particle = {
-                                element: p,
-                                x, y,
-                                vx: Math.cos(angle) * velocity,
-                                vy: Math.sin(angle) * velocity,
-                                life,
-                                born: Date.now()
-                            };
-
-                            this.particles.push(particle);
-                            return particle;
-                        }
-
-                        update() {
-                            const now = Date.now();
-                            this.particles = this.particles.filter(p => {
-                                const alive = now - p.born < p.life;
-                                if (!alive) {
-                                    p.element.remove();
-                                    return false;
-                                }
-
-                                // Apply physics
-                                p.x += p.vx;
-                                p.y += p.vy;
-                                p.vy += 0.05; // gravity
-
-                                // Fade out
-                                const progress = (now - p.born) / p.life;
-                                p.element.style.opacity = 1 - progress;
-
-                                // Update position
-                                p.element.style.transform = 'translate(' + (p.vx * 2) + 'px, ' + (p.vy * 2) + 'px)';
-                                p.element.style.left = p.x + 'px';
-                                p.element.style.top = p.y + 'px';
-
-                                return true;
-                            });
-
-                            requestAnimationFrame(() => this.update());
-                        }
-                    }
-
-                    const particles = new MenuParticles();
-                    particles.update();
-
-                    // Improved timer system
-                    function resetMenuTimer() {
-                        clearTimeout(menuTimeout);
-                        lastInteractionTime = Date.now();
-
-                        menuTimeout = setTimeout(() => {
-                            const inactiveDuration = Date.now() - lastInteractionTime;
-                            if (inactiveDuration >= MENU_TIMEOUT_DURATION - 100 && !isClosing) {
-                                closeAllMenusWithAnimation();
-                            }
-                        }, MENU_TIMEOUT_DURATION);
-                    }
-
-                    // Animated closing with particles (for auto-close)
-                    function closeAllMenusWithAnimation() {
-                        if (isClosing) return;
-                        isClosing = true;
-
-                        const activeMenus = document.querySelectorAll('.menu-level.active');
-                        if (activeMenus.length === 0) {
-                            isClosing = false;
-                            return;
-                        }
-
-                        // Particle explosion from main button
-                        createCloseParticles();
-
-                        // Animation for each active menu
-                        activeMenus.forEach(menu => {
-                            menu.style.transform = 'translateX(20px) rotateY(20deg)';
-                            menu.style.opacity = '0';
-
-                            setTimeout(() => {
-                                menu.classList.remove('active');
-                                isClosing = false;
-                            }, 500);
-                        });
-
-                        // Reset main button
-                        const mainBtn = document.getElementById('main-menu-btn');
-                        mainBtn.classList.remove('active');
-                        mainBtn.style.transform = 'rotate(0) scale(1)';
-                    }
-
-                    // Manual closing function
-                    function manuallyCloseAllMenus() {
-                        if (isClosing) return;
-                        isClosing = true;
-
-                        const activeMenus = document.querySelectorAll('.menu-level.active');
-                        if (activeMenus.length === 0) {
-                            isClosing = false;
-                            return;
-                        }
-
-                        activeMenus.forEach(menu => {
-                            menu.style.transform = 'translateX(20px) rotateY(20deg)';
-                            menu.style.opacity = '0';
-
-                            setTimeout(() => {
-                                menu.classList.remove('active');
-                                isClosing = false;
-                            }, 500);
-                        });
-
-                        const mainBtn = document.getElementById('main-menu-btn');
-                        mainBtn.classList.remove('active');
-                        mainBtn.style.transform = 'rotate(0) scale(1)';
-                    }
-
-                    // Interaction handler
-                    function handleInteraction() {
-                        isMenuInteracting = true;
-                        lastInteractionTime = Date.now();
-                        resetMenuTimer();
-
-                        setTimeout(() => {
-                            isMenuInteracting = false;
-                        }, 300);
-                    }
-
-                    // Create particles when opening menu
-                    function createOpenParticles(element) {
-                        const rect = element.getBoundingClientRect();
-                        const centerX = rect.left + rect.width / 2;
-                        const centerY = rect.top + rect.height / 2;
-
-                        for (let i = 0; i < 15; i++) {
-                            particles.createParticle(centerX, centerY);
-                        }
-                    }
-
-                    // Create particles when closing menu
-                    function createCloseParticles() {
-                        const btn = document.getElementById('main-menu-btn');
-                        const rect = btn.getBoundingClientRect();
-                        const centerX = rect.left + rect.width / 2;
-                        const centerY = rect.top + rect.height / 2;
-
-                        for (let i = 0; i < 20; i++) {
-                            particles.createParticle(centerX, centerY);
-                        }
-                    }
-
-                    // Show menu function
-                    function showMenu(menuId) {
-                        handleInteraction();
-
-                        // Close only other menus
-                        document.querySelectorAll('.menu-level').forEach(menu => {
-                            if (menu.id !== menuId && menu.classList.contains('active')) {
-                                menu.style.transform = 'translateX(20px) rotateY(20deg)';
-                                menu.style.opacity = '0';
-                                setTimeout(() => {
-                                    menu.classList.remove('active');
-                                }, 500);
-                            }
-                        });
-
-                        const menu = document.getElementById(menuId);
-                        if (menu) {
-                            menu.classList.add('active');
-                            setTimeout(() => {
-                                menu.style.transform = 'translateX(0) rotateY(0)';
-                                menu.style.opacity = '1';
-                                createOpenParticles(menu);
-								// Automatically scroll up
-								menu.scrollTo(0, 0);
-                            }, 10);
-                        }
-                    }
-
-                    // Event listeners for menu items
-                    document.querySelectorAll('.menu-level, .menu-item, .back-button, .slider-container, input, label').forEach(element => {
-                        element.addEventListener('mouseenter', handleInteraction);
-                        element.addEventListener('mouseleave', () => {
-                            isMenuInteracting = false;
-                            resetMenuTimer();
-                        });
-                        element.addEventListener('click', handleInteraction);
-                    });
-
-                    // Improved touch support
-                    document.querySelectorAll('.menu-item, .back-button, .slider-container, input').forEach(item => {
-                        item.addEventListener('touchstart', handleInteraction, { passive: true });
-                        item.addEventListener('touchend', () => {
-                            isMenuInteracting = false;
-                            resetMenuTimer();
-                        }, { passive: true });
-                    });
-
-                    // Main button event handler
-                    document.getElementById('main-menu-btn').addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        handleInteraction();
-
-                        const mainMenu = document.getElementById('main-menu');
-                        const wasActive = mainMenu.classList.contains('active');
-
-                        if (wasActive) {
-                            manuallyCloseAllMenus();
-                            createCloseParticles();
-                        } else {
-                            showMenu('main-menu');
-                            this.style.transform = 'rotate(135deg) scale(1.1)';
-                        }
-                        this.classList.toggle('active');
-                    });
-
-                    // Menu navigation
-                    document.querySelectorAll('[data-next]').forEach(button => {
-                        button.addEventListener('click', function() {
-                            handleInteraction();
-                            setTimeout(() => {
-                                const nextMenu = this.getAttribute('data-next');
-                                showMenu(nextMenu);
-                            }, 200);
-                        });
-                    });
-
-                    document.querySelectorAll('[data-back]').forEach(button => {
-                        button.addEventListener('click', function() {
-                            handleInteraction();
-                            setTimeout(() => {
-                                const backMenu = this.getAttribute('data-back');
-                                showMenu(backMenu);
-                            }, 200);
-                        });
-                    });
-
-                    // Click outside closes menu
-                    document.addEventListener('click', function(e) {
-                        if (!e.target.closest('.control-panel')) {
-                            manuallyCloseAllMenus();
-                        }
-                    });
-
-                    // Hover effects for menu items
-                    document.querySelectorAll('.menu-item').forEach(item => {
-                        item.addEventListener('mouseenter', function() {
-                            const rect = this.getBoundingClientRect();
-                            for (let i = 0; i < 3; i++) {
-                                setTimeout(() => {
-                                    particles.createParticle(
-                                        rect.left + Math.random() * rect.width,
-                                        rect.top + Math.random() * rect.height
-                                    );
-                                }, i * 100);
-                            }
-                        });
-                    });
-
-                    // Initialize
+					// Initialize
                     resetMenuTimer();
-                    // =============================================
-                    // End Menu Animation System
-                    // =============================================
 
-                    function startSpectacularAnimation() {
-
-                        // PREPARE ELEMENTS
-                        const controls = {
-                            xRotation: document.getElementById('x-rotation'),
-                            yRotation: document.getElementById('y-rotation'),
-                            zRotation: document.getElementById('z-rotation'),
-                            perspective: document.getElementById('perspective'),
-                            zoom: document.getElementById('zoom-level'),
-                            xPos: document.getElementById('x-position'),
-                            yPos: document.getElementById('y-position')
-                        };
-
-                        // ANIMATION CONTROLLER
-                        const AnimationMaster = {
-                            phase: 0,
-                            speed: 0.002,
-                            running: false,
-                            requestId: null,
-                            startTime: null,
-
-                            // Spectacular effect compositions
-                            effects: {
-                                // 1. "Orbit" flight around the map
-                                orbitalFlight: (progress) => {
-                                    const angle = progress * Math.PI * 2;
-                                    return {
-                                        x: Math.sin(angle * 1.3) * 45,
-                                        y: progress * 360,
-                                        z: Math.cos(angle * 0.7) * 20,
-                                        perspective: 800 + Math.sin(angle * 2) * 600,
-                                        zoom: 80 + Math.sin(angle * 4) * 20,
-                                        xPos: Math.sin(angle * 1.5) * 150,
-                                        yPos: Math.cos(angle * 0.5) * 100
-                                    };
-                                },
-
-                                // 2. "Drone flight" simulation
-                                droneFlight: (progress) => {
-                                    const angle = progress * Math.PI * 4;
-                                    return {
-                                        x: 15 + Math.sin(angle) * 10,
-                                        y: progress * 720,
-                                        z: Math.cos(angle * 0.3) * 5,
-                                        perspective: 500 + Math.sin(angle * 3) * 400,
-                                        zoom: 60 + Math.sin(angle * 2) * 40,
-                                        xPos: Math.sin(angle * 2) * 200,
-                                        yPos: Math.cos(angle) * 80
-                                    };
-                                },
-
-                                // 3. "Action cam" mode
-                                actionCam: (progress) => {
-                                    const angle = progress * Math.PI * 8;
-                                    return {
-                                        x: Math.sin(angle * 2) * 60,
-                                        y: progress * 1440,
-                                        z: Math.cos(angle * 3) * 15,
-                                        perspective: 300 + Math.sin(angle * 5) * 700,
-                                        zoom: 30 + Math.sin(angle * 8) * 70,
-                                        xPos: Math.sin(angle * 4) * 300,
-                                        yPos: Math.cos(angle * 2) * 150
-                                    };
-                                }
-                            },
-
-                            // Main animation loop
-                            animate: (timestamp) => {
-                                if (!AnimationMaster.startTime) AnimationMaster.startTime = timestamp;
-                                const elapsed = timestamp - AnimationMaster.startTime;
-                                AnimationMaster.phase = (AnimationMaster.phase + AnimationMaster.speed) % 1;
-
-                                // Dynamic effect switching
-                                let effect;
-                                if (AnimationMaster.phase < 0.33) {
-                                    effect = AnimationMaster.effects.orbitalFlight(AnimationMaster.phase * 3);
-                                } else if (AnimationMaster.phase < 0.66) {
-                                    effect = AnimationMaster.effects.droneFlight((AnimationMaster.phase - 0.33) * 3);
-                                } else {
-                                    effect = AnimationMaster.effects.actionCam((AnimationMaster.phase - 0.66) * 3);
-                                }
-
-                                // Apply values
-                                controls.xRotation.value = effect.x;
-                                controls.yRotation.value = effect.y;
-                                controls.zRotation.value = effect.z;
-                                controls.perspective.value = effect.perspective;
-                                controls.zoom.value = effect.zoom;
-                                controls.xPos.value = effect.xPos;
-                                controls.yPos.value = effect.yPos;
-
-                                // Trigger events
-                                Object.values(controls).forEach(control => {
-                                    control.dispatchEvent(new Event('input'));
-                                });
-
-                                // Special effects
-                                if (AnimationMaster.phase > 0.5 && AnimationMaster.phase < 0.55) {
-                                    document.querySelector('.map-content').style.filter = 'brightness(1.5)';
-                                } else {
-                                    document.querySelector('.map-content').style.filter = '';
-                                }
-
-                                AnimationMaster.requestId = requestAnimationFrame(AnimationMaster.animate);
-                            },
-
-                            start: () => {
-                                if (!AnimationMaster.running) {
-                                    AnimationMaster.running = true;
-                                    AnimationMaster.startTime = null;
-                                    AnimationMaster.requestId = requestAnimationFrame(AnimationMaster.animate);
-                                }
-                            },
-
-                            stop: () => {
-                                if (AnimationMaster.running) {
-                                    cancelAnimationFrame(AnimationMaster.requestId);
-                                    AnimationMaster.running = false;
-                                    document.querySelector('.map-content').style.filter = '';
-                                }
-                            },
-
-                            toggle: function(event) {
-                                if (AnimationMaster.running) {
-                                    AnimationMaster.stop();
-                                    event.target.textContent = 'Start Map Spectacle';
-                                } else {
-                                    areHiddenState = false;
-                                    stabilizeLabels();
-                                    document.getElementById('toggle-room-label').textContent = 'Show room labels';
-                                    AnimationMaster.start();
-                                    event.target.textContent = 'Stop Map Spectacle';
-                                }
-                            }
-                        };
-
-                        // Event listeners
-                        document.getElementById('animation-toggle').addEventListener('click', AnimationMaster.toggle);
-                        document.getElementById('animation-speed').addEventListener('input', (e) => {
-                            AnimationMaster.speed = e.target.value * 0.0005;
-                            document.getElementById('speed-value').textContent = e.target.value + 'x';
-                        });
-                    }
-
-                    // Start the application
                     setTimeout(function() {
                         console.log('DOM fully loaded');
                         initAllInteractions();
+                        // Initialize Cleaning Menu on load
+                        initCleaningMenu();
+                        // Position initial for summary
+                        positionSummaryTooltip();
+
+
 
                         // Wait briefly until everything is loaded
                         setTimeout(() => {
                             startSpectacularAnimation();
                             document.querySelector('.map-container').classList.add('animation-active');
+							stabilizeLabels(); // Wait 1.5 seconds to update all label positions to avoid the slippery view
                         }, 1500);
                     }, 0);
 
@@ -7452,7 +10967,6 @@ class Dreamehome extends utils.Adapter {
             ((DH_NewTaskStatus == 1) || (DH_NewTaskStatus == 2) || (DH_NewTaskStatus == 3) || (DH_NewTaskStatus == 4) || (DH_NewTaskStatus == 5))) {
       //1: "Auto cleaning"---------2: "Zone cleaning"----------3: "Segment cleaning"-----4: "Spot cleaning"----------5: "Fast mapping"
       await this.setState(DH_Did + '.vis.PosHistory' + DH_CurMap, '{}', true);
-      await this.setState(DH_Did + '.vis.CharHistory' + DH_CurMap, '{}', true);
       DH_CleanStatus = false;
       DH_SetLastStatus = false;
       DH_OldTaskStatus = DH_NewTaskStatus;
@@ -7522,14 +11036,16 @@ class Dreamehome extends utils.Adapter {
       if (now - roomData[roomName].lastUpdated > 2000) {
         const cleanedArea = roomData[roomName].points.size;
         const coveragePercent = (cleanedArea / roomData[roomName].totalArea) * 100;
-
-        await this.updateRoomStates(roomPath, {
-          Name: currentSegment.Name,
-          TotalArea: parseFloat((roomData[roomName].totalArea / 10000).toFixed(2)),
-          CleanedArea: parseFloat((cleanedArea / 10000).toFixed(2)),
-          CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
-          LastUpdate: new Date().toISOString()
-        });
+        //this.log.info(parseFloat((cleanedArea / 10000).toFixed(2)));
+        if (parseFloat((cleanedArea / 10000).toFixed(2)) > 0.5) {
+          await this.updateRoomStates(roomPath, {
+            Name: currentSegment.Name,
+            TotalArea: parseFloat((roomData[roomName].totalArea / 10000).toFixed(2)),
+            CleanedArea: parseFloat((cleanedArea / 10000).toFixed(2)),
+            CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
+            LastUpdate: new Date().toISOString()
+          });
+        }
 
 
         await this.setState(`${DH_Did}.state.CurrentRoomCleaningName`, currentSegment.Name, true);
@@ -7942,7 +11458,8 @@ class Dreamehome extends utils.Adapter {
       InSetvalue = DreameChargingStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P1' /*"Status"*/ ) {
-      DH_NowStatus = JSON.parse(JSON.stringify(InSetvalue));
+      DH_NowStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
+      this.log.warn(`=======> from DH_SetPropSPID: DH_NowStatus is ${DH_NowStatus}  (${InSetPropSPID}) Set to : ${InSetvalue}`);
       InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P4' /*"Suction level"*/ ) {
@@ -7955,7 +11472,9 @@ class Dreamehome extends utils.Adapter {
       InSetvalue = DreameWaterTank[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P7' /*"Task status"*/ ) {
-      DH_NowTaskStatus = JSON.parse(JSON.stringify(InSetvalue));
+
+      DH_NowTaskStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
+	  this.log.warn(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
       InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P23' /*"Cleaning mode"*/ ) {
@@ -8085,14 +11604,17 @@ class Dreamehome extends utils.Adapter {
             try {
             // Parse the value and update the robot's position
               const robotData = await this.DH_GetRobotPosition(JSON.parse(valueCopy), CheckArrayRooms);
-              this.log.info('Call DH_GetRobotPosition: ' + JSON.stringify(robotData));
+              if (LogData) {
+                this.log.info('Call DH_GetRobotPosition: ' + JSON.stringify(robotData));
+              }
               if (robotData) {
+				  if (LogData) {
 				  this.log.info('Pass DH_GetRobotPosition... | ' + validTaskStatuses.includes(DH_NowTaskStatus) + ' | ' + validNowStatuses.includes(DH_NowStatus));
+				  }
                 // Update history with the complete object
 				  // If the current task status is one of the valid values and the robot is in one of the valid statuses
                 if (validTaskStatuses.includes(DH_NowTaskStatus) && validNowStatuses.includes(DH_NowStatus)) {
                   await this.DH_SetHistory(robotData, DH_Did + '.vis.PosHistory' + DH_CurMap);
-                  this.log.info('Call DH_SetHistory..');
                   DH_CleanStatus = true;
                   DH_SetLastStatus = false;
                 }
@@ -8151,7 +11673,6 @@ class Dreamehome extends utils.Adapter {
               CoveragePercent: parsed.CoveragePercent,
               timestamp: parsed.timestamp || Date.now()
             };
-            this.log.info("DH_SetHistory (if (typeof parsed === 'object' && parsed.position)) Set Variable : " + historyEntry);
           }
         } catch (e) {
           this.log.warn(`Could not parse history value: ${NewRobVal}`);
@@ -8171,7 +11692,6 @@ class Dreamehome extends utils.Adapter {
           CoveragePercent: NewRobVal.CoveragePercent,
           timestamp: NewRobVal.timestamp || Date.now()
         };
-        this.log.info("DH_SetHistory (if (typeof NewRobVal === 'object' && NewRobVal.position)) Set Variable : " + historyEntry);
       } else {
         throw new Error(`Invalid position format: ${typeof NewRobVal}`);
       }
@@ -8205,61 +11725,18 @@ class Dreamehome extends utils.Adapter {
         ack: true
       });
 
-      this.log.info('DH_SetHistory Set: ' + historyEntry);
       // 6. Send live update with all data
       await this.setStateAsync(`${DH_Did}.vis.robotUpdate`, {
         val: JSON.stringify(historyEntry),
         ack: true
       });
 
-      this.log.info(`Updated history: Index ${newIndex} with ${JSON.stringify(historyEntry)}`);
+      if (LogData) {
+	  this.log.info(`Updated history: Index ${newIndex} with ${JSON.stringify(historyEntry)}`);
+      }
 
     } catch (error) {
       this.log.error(`SetHistory failed: ${error.message}`);
-    }
-  }
-
-  async OldDH_SetHistory(NewRobVal, InRobPath) {
-    try {
-    // Get Robot X Y History (current robot position history)
-      let RobPosOb = await this.getStateAsync(InRobPath);
-      let OldObjectRobPos = JSON.parse(RobPosOb.val);
-
-      // Get Charger New X Y (current charger position)
-      let NewObjCharVal = await this.getStateAsync(DH_Did + '.mqtt.charger');
-      let NewCharVal = NewObjCharVal.val;
-
-      // Get Object Index (the last index of the robot's position history)
-      const lastRobIndex = Object.keys(OldObjectRobPos).length - 1;
-
-      // Check if the last index is valid
-      if (lastRobIndex === -1 || isNaN(lastRobIndex)) {
-      // If no previous history, create new entry
-        OldObjectRobPos = { '0': JSON.stringify(NewRobVal) };
-        await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
-
-        // Create charger history entry
-        const OldObjectCharPos = { '0': JSON.stringify(NewCharVal) };
-        await this.setState(DH_Did + '.vis.CharHistory' + DH_CurMap, JSON.stringify(OldObjectCharPos), true);
-      } else {
-      // Add new robot position to the history
-        OldObjectRobPos[lastRobIndex + 1] = JSON.stringify(NewRobVal);
-        await this.setState(InRobPath, JSON.stringify(OldObjectRobPos), true);
-
-      // Optionally, you can handle charger history as well:
-      // OldObjectCharPos[lastRobIndex + 1] = JSON.stringify(NewCharVal);
-      // await this.setState(DH_Did + ".vis.CharHistory" + DH_CurMap, JSON.stringify(OldObjectCharPos), true);
-      }
-
-      // Clean up references to avoid memory leaks
-      RobPosOb = null;
-      OldObjectRobPos = null;
-      NewObjCharVal = null;
-      NewCharVal = null;
-
-    } catch (error) {
-    // Log any error that occurs
-      this.log.error('DH_SetHistory Error: ' + error.message);
     }
   }
 
@@ -9080,14 +12557,14 @@ class Dreamehome extends utils.Adapter {
     // Wait until the robot is docked
     await this.waitUntilDocked();
 
-    // Wait until washing starts: status is "Washing", "Clean Add Water" oder "Adding Water"
+    // Wait until washing starts: status is "Washing", "Add clean water" oder "Adding Water"
     const activeWashStatuses = [
       DreameSelfWashBaseStatus[UserLang][1], // "Washing"
-      DreameSelfWashBaseStatus[UserLang][5], // "Clean Add Water"
+      DreameSelfWashBaseStatus[UserLang][5], // "Add clean water"
       DreameSelfWashBaseStatus[UserLang][6]  // "Adding Water"
     ];
 
-    // Wait until washing process starts ("Washing", "Clean Add Water" oder "Adding Water")
+    // Wait until washing process starts ("Washing", "Add clean water" oder "Adding Water")
     let washStatus;
     do {
       await this.wait(2000);
@@ -9095,7 +12572,7 @@ class Dreamehome extends utils.Adapter {
 	  this.log.info(`Current Self-Wash-Base Status: ${washStatus}`);  // Add logging to monitor status changes
     } while (!activeWashStatuses.includes(washStatus));
 
-    // Wait until washing process is complete (status is NOT "Washing", "Clean Add Water" oder "Adding Water" anymore)
+    // Wait until washing process is complete (status is NOT "Washing", "Add clean water" oder "Adding Water" anymore)
     do {
       await this.wait(2000);
       washStatus = (await this.getStateAsync(`${DH_Did}.state.SelfWashBaseStatus`))?.val;
@@ -10169,6 +13646,18 @@ class Dreamehome extends utils.Adapter {
           await this.updateSpeakMode(state?.val);
         }
 
+        if (id.endsWith('.control.Command')) {
+          const command = state.val; // "Start", "Stop", ..
+          const targetObj = DH_Did + '.control.' + command;
+
+			 try {
+            await this.setStateAsync(targetObj, true);
+            this.log.info('Command executed: ' + command);
+
+          } catch (e) {
+            this.log.error('Failed to execute command ' + command + ': ' + e);
+          }
+        }
 
       }
 
