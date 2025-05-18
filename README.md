@@ -32,6 +32,13 @@ Here, XXXXXX is the number of your robot.***
 
 ![DreameHome1 5 gif](https://github.com/user-attachments/assets/93bb5f6c-15d1-4a11-8597-503a69a7a51a)
 
+![DreamHome Map1](https://github.com/user-attachments/assets/38ff506f-6cdd-4bdd-a6b7-074aeb45cf8c)
+
+![DreamHome Map2](https://github.com/user-attachments/assets/ba3f9211-922f-4fec-a3ec-a068edd91b76)
+
+
+![DreamHome Map3](https://github.com/user-attachments/assets/9724ddd8-f0c7-4536-81f0-6e801ff0f00d)
+
  **New Features**
 
 
