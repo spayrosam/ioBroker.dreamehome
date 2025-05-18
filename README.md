@@ -25,8 +25,9 @@ Here, XXXXXX is the number of your robot.***
     ### **WORK IN PROGRESS**
 -->
 
-
-
+### 0.1.6 (18.05.2025)
+1. Optimized for minimal resource consumption
+2. Radial menu issue with invisible menu parts at the screen edges has been fixed
 
 ### 0.1.5 (18.05.2025) 
 
