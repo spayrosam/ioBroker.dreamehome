@@ -25,6 +25,12 @@ Here, XXXXXX is the number of your robot.***
     ### **WORK IN PROGRESS**
 -->
 
+### 0.1.7 (08.07.2025)
+1. Memory Optimization
+2. Added Robots with Encrypted Maps
+3. Status for Consumed Elements under VIS (Filters, Brushes, etc.)
+4. Extension of the Settings Menu under VIS
+
 ### 0.1.6 (18.05.2025)
 1. Optimized for minimal resource consumption
 2. Radial menu issue with invisible menu parts at the screen edges has been fixed
