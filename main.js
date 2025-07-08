@@ -57,7 +57,6 @@ let visitedPointsPerSegment = {}; // Memory structure: { segmentId: Set("x,y", .
 let lastPosition = null; // Vacuum last known position
 let roomData = {}; // Stores data per room name
 
-<<<<<<< HEAD
 const WATER_TRACKING = {
   MAX_ML: 4500,                // Maximum tank capacity in milliliters
   DEFAULT_ML_PER_SQM: 26,     // Default water consumption in milliliters per square meter
@@ -84,8 +83,6 @@ let isCleaningActive = false;
 let autoSaveInterval; // Autosave Controller
 let firstWaterTrackingActive = false;
 let firstStartWaterTrack = false;
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 let UserLang = 'EN';
 //<=================End Global
@@ -2072,11 +2069,7 @@ const DHURLSENDB = 'L2RldmljZS9zZW5kQ29tbWFuZA==';
 let DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
 const DHURLSENDDOM = 'LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==';
 let DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
-<<<<<<< HEAD
 let DH_Map = {};
-=======
-const DH_Map = {};
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 let In_path = '';
 let DH_Auth = '',
   DH_AuthRef = '',
@@ -2155,7 +2148,6 @@ class Dreamehome extends utils.Adapter {
     this.subscribeStates('*.control.*');
     this.log.info('Login and request Dreame data from cloud');
 
-<<<<<<< HEAD
     try {
     // Initialize configuration with defaults
       this.config = {
@@ -2205,8 +2197,6 @@ class Dreamehome extends utils.Adapter {
       this.log.warn('GARBAGE COLLECTION NOT AVAILABLE! Start Node.js with --expose-gc for proper memory management');
       this.log.warn('Current memory cleanup will be very limited in effectiveness');
     }
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     // Create the setting object
     await this.setObjectNotExists('settings.alexaSpeakMode', {
       type: 'state',
@@ -2364,10 +2354,7 @@ class Dreamehome extends utils.Adapter {
         },
         native: {},
       });
-<<<<<<< HEAD
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       await this.setObjectNotExists(In_path + 'map.StartCleaningByRoomConfig', {
         type: 'state',
         common: {
@@ -2421,14 +2408,10 @@ class Dreamehome extends utils.Adapter {
     const state = await this.getStateAsync('settings.alexaSpeakMode');
     await this.updateSpeakMode(state?.val);
 
-<<<<<<< HEAD
     // Restoring the water tank level
     this.restoreWaterTankData();
 
     firstStartWaterTrack = true; // Set status to true to track the tank, false to prevent cloud reset.
-=======
-
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }
 
   async DH_CloudLogin() {
@@ -2626,49 +2609,9 @@ class Dreamehome extends utils.Adapter {
     });
   }
 
-<<<<<<< HEAD
   async decryptDreameMap(encryptedData, model, enckey) {
     const iv = DREAME_IVs[model];
     if (!iv) throw new Error(`IV for model ${model} not in the database!`);
-=======
-  async DH_RequestNewMap() {
-	    /*try { //Test decrypted Map..
-            var TSETURLData = {
-                did: DH_Did,
-                model: DH_Model,
-                filename: "ali_dreame/...", // Get Raw and Key
-                region: DH_Region
-            };
-            var TGetCloudRequestMap = await this.DH_URLRequest(DH_URLDOWNURL, TSETURLData);
-            this.log.warn("Get ====> " + JSON.stringify(TGetCloudRequestMap));
-            var TRetFileData = await this.DH_getFile(TGetCloudRequestMap.data);
-            var Traw_map = TRetFileData.replace("_", "/").replace("-", "+");
-            this.log.warn("File ====> " + Traw_map);
-            Traw_map = Buffer.from(Traw_map, 'base64');
-		    this.log.warn("Base64 ====> " + Traw_map);
-            var iv = "";
-            try {
-                const hashedKey = createHash('sha256').update("xxxx").digest().slice(0, 32);
-                const decipher = createDecipheriv('aes-256-cbc', hashedKey, Buffer.from(iv, 'utf8'));
-                let decrypted = decipher.update(Traw_map, 'binary', 'utf8');
-                decrypted += decipher.final('utf8');
-                this.log.warn("Decrypted =====> " + decrypted);
-				var TDH_decode = zlib.inflateSync(decrypted).toString()
-                this.log.warn("Zlib ====> " + TDH_decode);
-            } catch (ex) {
-                this.log.error(`Map data decryption failed: ${ex}. Private key might be missing`);
-            }
-
-        } catch (error) {
-            this.log.warn(`Unable to decrypt file at ${DH_URLDOWNURL}: ${error}`);
-        }*/
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
-
-    let DH_input_Raw = null;
-    let DH_jsonread = null;
-    let DH_jsondecode = null;
-    let DH_decode = null;
-    let DH_DecodeMap = null;
 
     try {
       const key = crypto.createHash('sha256').update(enckey).digest().slice(0, 32);
@@ -2760,16 +2703,10 @@ class Dreamehome extends utils.Adapter {
         return;
       }
 
-<<<<<<< HEAD
       // 2. Download and parse map data
       const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
 
       // 3. Store raw data in state
-=======
-      const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
-
-      // CloudData Object handling
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       await this.setObjectNotExistsAsync(DH_Did + '.map.CloudData', {
         type: 'state',
         common: {
@@ -2784,25 +2721,15 @@ class Dreamehome extends utils.Adapter {
       });
       await this.setStateAsync(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
 
-<<<<<<< HEAD
       // 4. Process available maps
       let mapKeys = [];
       if (RetFileData?.mapstr) {
         mapKeys = Object.keys(RetFileData.mapstr);
         const dynamicStates = {};
-=======
-      // Dynamic MapNumber handling
-      const dynamicStates = {};
-      let mapKeys = [];
-      if (RetFileData?.mapstr) {
-        mapKeys = Object.keys(RetFileData.mapstr);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         mapKeys.forEach((mapKey) => {
           dynamicStates[mapKey] = `Map ${parseInt(mapKey)+1}`;
         });
-      }
 
-<<<<<<< HEAD
         // 5. Create/update map selection object
         const mapNumberPath = DH_Did + '.map.MapNumber';
         if (!await this.objectExists(mapNumberPath)) {
@@ -2939,127 +2866,11 @@ class Dreamehome extends utils.Adapter {
           }
         } catch (error) {
           this.log.error('Error processing map number:' + error);
-=======
-      const mapNumberPath = DH_Did + '.map.MapNumber';
-      const objExists = await this.objectExists(mapNumberPath);
-
-      if (!objExists) {
-        await this.setObjectNotExistsAsync(mapNumberPath, {
-          type: 'state',
-          common: {
-            name: 'Map Number',
-            type: 'number',
-            role: 'level',
-            states: dynamicStates,
-            write: true,
-            read: true,
-            def: mapKeys[0] || 0
-          },
-          native: {},
-        });
-      } else {
-        await this.extendObjectAsync(mapNumberPath, {
-          common: { states: dynamicStates }
-        });
-      }
-
-      // Current Map handling
-      try {
-        const DH_CurMapOb = await this.getStateAsync(mapNumberPath);
-        let currentMap = (DH_CurMapOb && DH_CurMapOb.val !== null) ? DH_CurMapOb.val : (mapKeys[0] || 0);
-
-        if (mapKeys.length > 0 && !mapKeys.includes(currentMap.toString())) {
-          currentMap = mapKeys[0];
-          await this.setStateAsync(mapNumberPath, currentMap, true);
-          this.log.warn('Invalid map number, reset to default');
-        }
-
-        DH_CurMap = currentMap;
-
-        // Call the floor update
-        await this.updateFloorsBasedOnMaps(DH_CurMap);
-
-      } catch (error) {
-        DH_CurMap = mapKeys[0] || 0;
-        await this.setStateAsync(mapNumberPath, DH_CurMap, true);
-        this.log.warn('Map number error:', error);
-      }
-
-      // Map data processing
-      if (RetFileData?.mapstr && DH_CurMap.toString() in RetFileData.mapstr) {
-        DH_DecodeMap = JSON.stringify(RetFileData.mapstr[DH_CurMap.toString()].map);
-      }
-
-      if (LogData) {
-	       this.log.info('Decode Map response: ' + JSON.stringify(DH_DecodeMap));
-      }
-
-      if (DH_DecodeMap) {
-        try {
-          DH_input_Raw = DH_DecodeMap.replace(/-/g, '+').replace(/_/g, '/');
-          DH_decode = zlib.inflateSync(Buffer.from(DH_input_Raw, 'base64')).toString();
-          DH_jsondecode = DH_decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-
-          if (DH_jsondecode) {
-            DH_jsonread = JSON.parse(DH_jsondecode);
-            DH_Map[DH_CurMap] = DH_jsonread;
-
-            if (LogData) {
-              this.log.info('Decode Map response: ' + JSON.stringify(DH_jsonread));
-            }
-
-            if (!DH_jsonread) {
-              this.log.warn(DreameInformation[UserLang][2] + DH_CurMap + DreameInformation[UserLang][3]);
-            } else {
-
-              // Save positions
-              await Promise.all([
-                this.setObjectNotExistsAsync(DH_Did + '.mqtt.robot', {
-                  type: 'state',
-                  common: {
-                    name: 'Robot Position',
-                    type: 'json',
-                    role: 'array',
-                    write: false,
-                    read: true,
-                    def: JSON.stringify(DH_jsonread.robot || {})
-                  },
-                  native: {},
-                }),
-                this.setObjectNotExistsAsync(DH_Did + '.mqtt.charger', {
-                  type: 'state',
-                  common: {
-                    name: 'Charger Position',
-                    type: 'json',
-                    role: 'array',
-                    write: false,
-                    read: true,
-                    def: JSON.stringify(DH_jsonread.charger || {})
-                  },
-                  native: {},
-                })
-              ]);
-
-              this.log.info(DreameInformation[UserLang][5]);
-            }
-          }
-
-        } catch (error) {
-          this.log.error('Map processing error:', error);
-        } finally {
-          // Explicit memory cleaning
-          DH_input_Raw = null;
-          DH_jsonread = null;
-          DH_jsondecode = null;
-          DH_decode = null;
-          DH_DecodeMap = null;
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         }
       }
     } catch (error) {
       this.log.error(`Map request failed: ${error}`);
     } finally {
-<<<<<<< HEAD
       // Cleanup
       DH_jsondecode = null;
       DH_DecodeMap = null;
@@ -3737,25 +3548,6 @@ class Dreamehome extends utils.Adapter {
     if (!await this.objectExists(`${In_path}ViewSettings0`)) {
       await this.createFloorStates(1);
       this.log.info('Created base floor states');
-=======
-      // Additional cleanup
-      DH_input_Raw = null;
-      DH_jsonread = null;
-      DH_jsondecode = null;
-      DH_decode = null;
-      DH_DecodeMap = null;
-    }
-  }
-
-  // Updates the floors based on the available maps
-  async updateFloorsBasedOnMaps(currentMapNumber) {
-    const In_path = DH_Did + '.vis.';
-
-    // 1. Ensure base floor exists (Floor 1 -> stored as 0)
-    if (!await this.objectExists(`${In_path}ViewSettings0`)) {
-      await this.createFloorStates(1); // Creates ViewSettings0 and PosHistory0
-      this.log.info('Created base floor states (Floor 1 -> stored as 0)');
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     }
 
     // 2. Get available floors from MapNumber states
@@ -3771,35 +3563,19 @@ class Dreamehome extends utils.Adapter {
 
     // 3. Create missing floor states
     for (const floor of availableFloors) {
-<<<<<<< HEAD
       const storageNumber = floor - 1;
       if (!await this.objectExists(`${In_path}ViewSettings${storageNumber}`)) {
         await this.createFloorStates(floor);
         this.log.info(`Created floor states for floor ${floor}`);
-=======
-      const storageNumber = floor - 1; // Convert to 0-based storage
-      if (!await this.objectExists(`${In_path}ViewSettings${storageNumber}`)) {
-        await this.createFloorStates(floor);
-        this.log.info(`Created floor states for floor ${floor} (stored as ${storageNumber})`);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       }
     }
   }
 
-<<<<<<< HEAD
   // Creates state objects for a floor
   async createFloorStates(requestedFloor) {
     const actualFloor = requestedFloor - 1;
     const In_path = DH_Did + '.vis.';
 
-=======
-  // Helper function for creating floor states
-  async createFloorStates(requestedFloor) {
-    const actualFloor = requestedFloor - 1; // Conversion 1 -> 0, 2 -> 1
-    const In_path = DH_Did + '.vis.';
-
-    // Define default values for perspective settings
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     const defaultPerspective = {
       perspective: {
         xRotation: 0,
@@ -3847,11 +3623,6 @@ class Dreamehome extends utils.Adapter {
         },
         native: {}
       }),
-<<<<<<< HEAD
-=======
-
-      // Create state variables for all floors as an HTML file
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       this.setObjectNotExists(`${In_path}vishtml${actualFloor}`, {
         type: 'state',
         common: {
@@ -3865,10 +3636,6 @@ class Dreamehome extends utils.Adapter {
         native: {}
       })
     ]);
-<<<<<<< HEAD
-=======
-    this.log.info(`Created states for floor ${requestedFloor} (stored as ${actualFloor})`);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }
 
   async DH_getFile(url) {
@@ -4219,11 +3986,7 @@ class Dreamehome extends utils.Adapter {
         return;
       }
 
-<<<<<<< HEAD
 		 // 1. Create MapSize and Rotation objects (if it does not exist)
-=======
-		 // 1. Create MapSize object (if it does not exist)
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const mapSizeObjName = `${DH_Did}.map.MapSize${DH_CurMap}`;
       let canvasSize = 1024; // Default value
 
@@ -4243,7 +4006,6 @@ class Dreamehome extends utils.Adapter {
         native: {},
       });
 
-<<<<<<< HEAD
       const rotationStateName = `${DH_Did}.map.Rotation${DH_CurMap}`;
       await this.setObjectNotExistsAsync(rotationStateName, {
         type: 'state',
@@ -4279,9 +4041,6 @@ class Dreamehome extends utils.Adapter {
       }
 
       // 3. Get existing value or set default
-=======
-      // 2. Get existing value or set default
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const mapSizeState = await this.getStateAsync(mapSizeObjName);
       if (mapSizeState && mapSizeState.val) {
         canvasSize = parseInt(mapSizeState.val);
@@ -4289,17 +4048,10 @@ class Dreamehome extends utils.Adapter {
         await this.setStateAsync(mapSizeObjName, canvasSize, true);
       }
 
-<<<<<<< HEAD
       // 4. Reset NewMap flag
       await this.setStateAsync(`${DH_Did}.map.NewMap`, false, true);
 
       // 5. Rest of the original function with the dynamic canvasSize
-=======
-      // 3. Reset NewMap flag
-      await this.setStateAsync(`${DH_Did}.map.NewMap`, false, true);
-
-      // 4. Rest of the original function with the dynamic canvasSize
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       //await this.DH_RequestNewMap();
 
 
@@ -4311,11 +4063,7 @@ class Dreamehome extends utils.Adapter {
         charger: currentMap.charger || []
       };
 
-<<<<<<< HEAD
       // 6. Precise center point calculation
-=======
-      // Precise center point calculation
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       function CalculateRoomCenter(WAr) {
         const x0 = WAr.map(m => m.beg_pt_x);
         const x1 = WAr.map(m => m.end_pt_x);
@@ -4346,7 +4094,6 @@ class Dreamehome extends utils.Adapter {
         };
       }
 
-<<<<<<< HEAD
       // 7. Canvas Setup
       // Default value: 1024, will be changed dynamically later
 
@@ -4399,49 +4146,12 @@ class Dreamehome extends utils.Adapter {
 
 
       // 10. Prepare color mappings
-=======
-      // 2. Canvas Setup
-      // Default value: 1024, will be changed dynamically later
-
-
-      // 3. Calculate scaling
-      const { minX, maxX, minY, maxY } = elements.rooms.reduce((acc, room) => {
-        room.walls?.forEach(wall => {
-          acc.minX = Math.min(acc.minX, wall.beg_pt_x || 0, wall.end_pt_x || 0);
-          acc.maxX = Math.max(acc.maxX, wall.beg_pt_x || 0, wall.end_pt_x || 0);
-          acc.minY = Math.min(acc.minY, wall.beg_pt_y || 0, wall.end_pt_y || 0);
-          acc.maxY = Math.max(acc.maxY, wall.beg_pt_y || 0, wall.end_pt_y || 0);
-        });
-        return acc;
-      }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
-
-      const scale = Math.min(
-        canvasSize / Math.max(maxX - minX, 1),
-        canvasSize / Math.max(maxY - minY, 1)
-      ) * 0.9;
-      const offsetX = (canvasSize - (maxX - minX) * scale) / 2 - minX * scale;
-      const offsetY = (canvasSize - (maxY - minY) * scale) / 2 - minY * scale;
-
-      // 4. Transformation function
-      function toCanvas(x, y) {
-        return [
-          Math.round(x * scale + offsetX),
-          Math.round(y * scale + offsetY)
-        ];
-      }
-
-      // 5. Prepare color mappings
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const colorMappings = {
         rooms: {},
         carpets: {}
       };
 
-<<<<<<< HEAD
       // 11. Prepare rooms mappings
-=======
-      // 6. Prepare rooms mappings
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       function PrepareRoomsMappings(RoomID) {
 		    let ExportRoomName = '';
         for (const iCHroomID in CheckArrayRooms) {
@@ -4453,14 +4163,10 @@ class Dreamehome extends utils.Adapter {
 		    return ExportRoomName;
 	    }
 
-<<<<<<< HEAD
       // Retrieve polygon shapes for each room
       const roomPolygons = currentMap?.polygons?.rooms || [];
 
       // 12. HTML with all features
-=======
-      // 7. HTML with all features
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const html = `<!DOCTYPE html><html><head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
@@ -5676,11 +5382,7 @@ class Dreamehome extends utils.Adapter {
 				}
 
 				/* ==================== */
-<<<<<<< HEAD
                 /* Batterry indicator */
-=======
-                /* Clean Command menu */
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 				/* ==================== */
 				/* Battery indicator (charging bar with animation) */
 				.battery-indicator {
@@ -5713,7 +5415,6 @@ class Dreamehome extends utils.Adapter {
 				}
 
 				/* ==================== */
-<<<<<<< HEAD
                 /* Component status */
 				/* ==================== */
 				.compact-component {
@@ -5876,8 +5577,6 @@ class Dreamehome extends utils.Adapter {
 				}
 
 				/* ==================== */
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                 /* customeClean Room setting menu */
 				/* ==================== */
 				.settings-button {
@@ -6135,7 +5834,6 @@ class Dreamehome extends utils.Adapter {
 				  background: white;
 				}
 
-<<<<<<< HEAD
 				.room-polygon {
 				  pointer-events: bounding-box;
 				  transition: fill-opacity 0.5s !important;
@@ -6145,8 +5843,6 @@ class Dreamehome extends utils.Adapter {
 				  fill-opacity: 0.7 !important;
 				  stroke-width: 1.5 !important;
 				}
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
             </style>
         </head>
@@ -6161,10 +5857,6 @@ class Dreamehome extends utils.Adapter {
     colorMappings.rooms[color] = room.room_id;
     const walls = room.walls.map(w => toCanvas(w.beg_pt_x, w.beg_pt_y));
     const pathData = walls.map(([x,y], i) => (i === 0 ? 'M' : 'L') + x + ' ' + y).join(' ') + ' Z';
-<<<<<<< HEAD
-=======
-    //const center = walls.reduce((a, b) => [a[0]+b[0], a[1]+b[1]], [0, 0]).map(v => v/walls.length);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
     // Precise center point calculation
     const center = CalculateRoomCenter(room.walls);
@@ -6190,7 +5882,6 @@ class Dreamehome extends utils.Adapter {
                         </div>`;
   }).join('')}
 
-<<<<<<< HEAD
 
                     ${roomPolygons.map(room => {
     const color = ColorsItems[room.id % ColorsItems.length];
@@ -6220,13 +5911,10 @@ class Dreamehome extends utils.Adapter {
   }).join('')}
 
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     ${Object.entries(elements.carpets).map(([id, rect]) => {
     const color = ColorsCarpet[id % ColorsCarpet.length];
     colorMappings.carpets[color] = id;
     const [x1, y1, x2, y2] = rect;
-<<<<<<< HEAD
 
     // Transform all 4 corner points
     const [tx1, ty1] = toCanvas(x1, y1);
@@ -6244,13 +5932,6 @@ class Dreamehome extends utils.Adapter {
                             <div class="carpet" id="carpet-${id}"
                                 style="left:${left}px;top:${top}px;width:${width}px;height:${height}px; background:${color}33;border:2px solid ${color}">
                             </div>`;
-=======
-    const [tx1, ty1] = toCanvas(x1, y1);
-    return `
-                        <div class="carpet" id="carpet-${id}"
-							style="left:${tx1}px;top:${ty1}px;width:${(x2-x1)*scale}px;height:${(y2-y1)*scale}px;background:${color}33;border:2px solid ${color}">
-                        </div>`;
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }).join('')}
 
                     ${wallsInfo.doors.map(door => {
@@ -6438,31 +6119,19 @@ class Dreamehome extends utils.Adapter {
 
                         <div class="slider-container">
                             <label for="x-position">Horizontal:</label>
-<<<<<<< HEAD
                             <input type="range" id="x-position" min="-700" max="700" value="0" step="5">
-=======
-                            <input type="range" id="x-position" min="-500" max="500" value="0" step="5">
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="x-position-value">0px</span>
                         </div>
 
                         <div class="slider-container">
                             <label for="y-position">Vertical:</label>
-<<<<<<< HEAD
                             <input type="range" id="y-position" min="-700" max="700" value="0" step="5">
-=======
-                            <input type="range" id="y-position" min="-500" max="500" value="0" step="5">
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="y-position-value">0px</span>
                         </div>
 
 						<div class="slider-container">
                             <label for="map-size-range">Map Size:</label>
-<<<<<<< HEAD
                             <input type="range" id="map-size-range" min="256" max="2048" value="${canvasSize}" step="32">
-=======
-                            <input type="range" id="map-size-range" min="256" max="2048" value="${canvasSize}" step="64">
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="map-size-value">${canvasSize}px</span>
                         </div>
 
@@ -6743,7 +6412,6 @@ class Dreamehome extends utils.Adapter {
                             <span id="battery-percent">0%</span>
 						</div>
 
-<<<<<<< HEAD
 				        <!-- Component status section -->
 				        <div class="component-status" style="margin-top: 12px;">
 				            <div id="component-list" style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 5px 0;">
@@ -6751,8 +6419,6 @@ class Dreamehome extends utils.Adapter {
 				            </div>
 				        </div>
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
                     </div>
                 </div>
@@ -6769,7 +6435,6 @@ class Dreamehome extends utils.Adapter {
                     </div>
                 </div>
 
-<<<<<<< HEAD
                 <!-- Overlay for component detail view -->
                 <div class="component-detail-overlay" id="component-detail-overlay">
                     <div class="component-detail-container">
@@ -6808,8 +6473,6 @@ class Dreamehome extends utils.Adapter {
                     </div>
                 </div>
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                 <canvas id="click-layer" width="${canvasSize}" height="${canvasSize}"></canvas>
 
                 <script>
@@ -6817,10 +6480,7 @@ class Dreamehome extends utils.Adapter {
 					const prefix = '${prefix}';
                     const colorMappings = ${JSON.stringify(colorMappings, null, 2)};
                     const roomData = ${JSON.stringify(roomData, null, 2)};
-<<<<<<< HEAD
 					const rotationAngle = ${rotationAngle};
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     const scale = ${scale};
                     const offsetX = ${offsetX};
                     const offsetY = ${offsetY};
@@ -6859,11 +6519,8 @@ class Dreamehome extends utils.Adapter {
                     let currentStatusIndex = 0; // Keeps track of the current status index
 					let statusLoopTimeout; // To store the timeout reference
 
-<<<<<<< HEAD
 					const UserLang = '${UserLang}';
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					const statusList = [
                       'Sweeping',
                       'Mopping',
@@ -7051,17 +6708,12 @@ class Dreamehome extends utils.Adapter {
                       }
                     }
 
-<<<<<<< HEAD
 					// =============================================
                     // update Battery Status
                     // =============================================
                     function pollStatus() {
                       updateBatteryStatus();
                       updateComponentStatus();
-=======
-                    function pollStatus() {
-                      updateBatteryStatus();
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					  setTimeout(pollStatus, 5000);
                     }
 
@@ -7103,7 +6755,6 @@ class Dreamehome extends utils.Adapter {
                     }
 
 					// =============================================
-<<<<<<< HEAD
                     // update components
                     // =============================================
                     const components = [
@@ -7994,8 +7645,6 @@ class Dreamehome extends utils.Adapter {
                     }
 
 					// =============================================
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     // Clean selected logic
                     // =============================================
 
@@ -8312,10 +7961,6 @@ class Dreamehome extends utils.Adapter {
 								  <style>
 								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
-<<<<<<< HEAD
-=======
-								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -8328,10 +7973,6 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
-<<<<<<< HEAD
-=======
-								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -8345,10 +7986,6 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
-<<<<<<< HEAD
-=======
-								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -8363,10 +8000,6 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; } .icon-drop-wave-3 { animation-delay: -1.5s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
-<<<<<<< HEAD
-=======
-								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -8644,7 +8277,6 @@ class Dreamehome extends utils.Adapter {
                         ${Object.entries(elements.carpets).map(([id, rect]) => {
     const color = ColorsCarpet[id % ColorsCarpet.length];
     const [x1, y1, x2, y2] = rect;
-<<<<<<< HEAD
 
     // Transform all four corners
     const [tx1, ty1] = toCanvas(x1, y1);
@@ -8664,16 +8296,6 @@ class Dreamehome extends utils.Adapter {
                                 colorMapCtx.fill();`;
   }).join('')}
 
-=======
-    const [tx1, ty1] = toCanvas(x1, y1);
-    const width = (x2-x1)*scale;
-    const height = (y2-y1)*scale;
-
-    return `
-                                colorMapCtx.fillStyle = '${color}';
-                                colorMapCtx.fillRect(${tx1}, ${ty1}, ${width}, ${height});`;
-  }).join('')}
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Change and reloading map size
@@ -8969,7 +8591,6 @@ class Dreamehome extends utils.Adapter {
 					let isMenuOpen = false;
 					let radialMenu = null;
 					let lastRoomId = null;
-<<<<<<< HEAD
 					let autoCloseTimeout = null; // for automatic closing
 					let actionDetected = false; // Flag to track if any action has been detected
 					const orderIconsCache = {}; // Global cache object for order icons
@@ -9010,27 +8631,6 @@ class Dreamehome extends utils.Adapter {
 					        { name: 'Repeat', icon: '', options: VisCleaningOptions.Repeat }
 					    ];
 					}
-=======
-					let autoCloseTimeout; // for automatic closing
-					let actionDetected = false; // Flag to track if any action has been detected
-
-					// Main options
-					const mainOptions = [
-					  {
-					    name: 'Mode',
-					    icon: '',
-					    options: Object.keys(VisCleaningModes).map(key => ({
-					      value: key,
-					      label: VisCleaningModes[key].name,
-					      svg: VisCleaningModes[key].icon
-					    }))
-					  },
-					  { name: 'Suction', icon: '', options: VisCleaningOptions.Suction },
-					  { name: 'Water', icon: '', options: VisCleaningOptions.Water },
-					  { name: 'Route', icon: '', options: VisCleaningOptions.Route },
-					  { name: 'Repeat', icon: '', options: VisCleaningOptions.Repeat }
-					];
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					// Toggle menu visibility
 					function toggleRadialMenu(x, y, roomId) {
@@ -9049,7 +8649,6 @@ class Dreamehome extends utils.Adapter {
 					    radialMenu.style.top = y + 'px';
 					    radialMenu.classList.add('active');
 					    isMenuOpen = true;
-<<<<<<< HEAD
 						actionDetected = false; // Timer reset when opening
 
 					    // Start the timeout for auto-closing
@@ -9058,29 +8657,13 @@ class Dreamehome extends utils.Adapter {
 					    // Add event listener for clicks outside the menu
 					    document.addEventListener('click', outsideClickListener);
 					    radialMenu.addEventListener('click', menuClickListener); // Reset timeout if clicked inside the menu
-=======
-
-					    // Start the timeout for auto-closing
-					    autoCloseTimeout = setTimeout(() => {
-					        if (!actionDetected) {
-					            closeRadialMenu();
-					        }
-					    }, 15000); // Menu will close after 15 seconds if no action is detected
-
-					    // Add event listener for clicks outside the menu
-					    document.addEventListener('click', outsideClickListener);
-					    radialMenu.addEventListener('click', resetTimeout); // Reset timeout if clicked inside the menu
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Close the radial menu
 					function closeRadialMenu() {
 					    clearTimeout(autoCloseTimeout); // Stop the timeout if the menu is manually closed
-<<<<<<< HEAD
 						actionDetected = false; // Timer reset when closing
 						isMenuOpen = false;
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    // Hide all sub-options
 					    document.querySelectorAll('.sub-options').forEach(el => el.classList.remove('active'));
@@ -9104,11 +8687,7 @@ class Dreamehome extends utils.Adapter {
 
 					    // Remove the listener for clicks outside the menu
 					    document.removeEventListener('click', outsideClickListener);
-<<<<<<< HEAD
 					    radialMenu?.removeEventListener('click', menuClickListener); // Remove reset listener
-=======
-					    radialMenu.removeEventListener('click', resetTimeout); // Remove reset listener
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Open a sub-menu for a main option
@@ -9122,11 +8701,8 @@ class Dreamehome extends utils.Adapter {
 					    activeMainOption = mainBtn;
 
 					    setTimeout(() => subOptions.classList.add('active'), 300);
-<<<<<<< HEAD
 					    actionDetected = true; // Mark as "Action Detected"
 					    startAutoCloseTimeout(); // Restart the timer
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Close the sub-menu
@@ -9140,11 +8716,8 @@ class Dreamehome extends utils.Adapter {
 
 					    setTimeout(() => {
 					        document.querySelectorAll('.main-option').forEach(btn => btn.classList.remove('hidden'));
-<<<<<<< HEAD
 							actionDetected = false; // Reset after closing the submenu
 							startAutoCloseTimeout(); // Restart the timer
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					    }, 150);
 					}
 
@@ -9199,7 +8772,6 @@ class Dreamehome extends utils.Adapter {
 					        document.body.appendChild(radialMenu);
 					        lastRoomId = roomId;
 
-<<<<<<< HEAD
 			                // 1. Create Mode Button FIRST
 			                createModeButton(roomId, labelContent);
 
@@ -9211,13 +8783,6 @@ class Dreamehome extends utils.Adapter {
 
 			                // 3. Then create other buttons based on current mode
 			                createModeSpecificButtons(roomId, labelContent);
-=======
-					        // Create mode selection button first
-					        createModeButton(roomId, labelContent);
-
-					        // Then create other buttons based on current mode
-					        createModeSpecificButtons(roomId, labelContent);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    } catch (error) {
 					        console.error("Error updating radial menu:", error);
@@ -9250,7 +8815,6 @@ class Dreamehome extends utils.Adapter {
 					    btn.style.setProperty('--ty', ty);
 					    btn.dataset.optionType = option.name;
 
-<<<<<<< HEAD
 				       // SPECIAL HANDLING FOR ORDER BUTTON
 				       if (option.name === 'Order') {
 				           const currentOrder = getCurrentOrder(roomId);
@@ -9265,13 +8829,6 @@ class Dreamehome extends utils.Adapter {
 				   		const labelIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + option.name.toLowerCase() + ' svg');
 				   		btn.innerHTML = labelIcon ? labelIcon.outerHTML : (matchedOption ? matchedOption.svg : '');
 				       }
-=======
-					    // Set icon
-					    const currentValue = labelContent.dataset[option.name.toLowerCase()];
-					    const matchedOption = option.options && option.options.find(opt => opt.value.toString() === currentValue);
-					    const labelIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + option.name.toLowerCase() + ' svg');
-					    btn.innerHTML = labelIcon ? labelIcon.outerHTML : (matchedOption ? matchedOption.svg : '');
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    const subOptions = document.createElement('div');
 					    subOptions.className = 'sub-options';
@@ -9285,17 +8842,12 @@ class Dreamehome extends utils.Adapter {
 
 					            const subBtn = document.createElement('div');
 					            subBtn.className = 'sub-option';
-<<<<<<< HEAD
 					            //subBtn.innerHTML = subOpt.svg || subOpt.label[0];
-=======
-					            subBtn.innerHTML = subOpt.svg || subOpt.label[0];
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            subBtn.style.setProperty('--tx', subTx);
 					            subBtn.style.setProperty('--ty', subTy);
 					            subBtn.dataset.value = subOpt.value;
 					            subBtn.title = subOpt.label;
 
-<<<<<<< HEAD
 		            			// SPECIAL HANDLING FOR ORDER SUB-OPTIONS
 		                        if (option.name === 'Order') {
 		                            subBtn.innerHTML = generateOrderIcon(subOpt.value, option.options.length);
@@ -9303,29 +8855,19 @@ class Dreamehome extends utils.Adapter {
 		                            subBtn.innerHTML = subOpt.svg || subOpt.label[0];
 		                        }
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            subBtn.addEventListener('click', function(e) {
 					                e.stopPropagation();
 					                actionDetected = true;
 
-<<<<<<< HEAD
 					                if (option.name === 'Order') {
 										handleOrderChange(subOpt.value, roomId);
 									}
 									else if (isModeButton) {
-=======
-					                if (isModeButton) {
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					                    // Handle mode change
 										const commandModeName = subOpt.value;
 										const commandModeCode = getModeCode(commandModeName);
 					                    labelContent.dataset.mode = commandModeCode;
-<<<<<<< HEAD
 										//console.log("Mode change -> name: " + commandModeName + ", code: " + commandModeCode + ", old: " + labelContent.dataset.mode + ", labelContent:", labelContent);
-=======
-										console.log("Mode change -> name: " + commandModeName + ", code: " + commandModeCode + ", old: " + labelContent.dataset.mode + ", labelContent:", labelContent);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					                    // Update icon
 					                    const labelIconContainer = document.querySelector('#room-label-' + roomId + '-fixed .icon-mode');
@@ -9369,7 +8911,6 @@ class Dreamehome extends utils.Adapter {
 					}
 
 					function recreateModeSpecificButtons(roomId, labelContent) {
-<<<<<<< HEAD
 				        // Update the order icon IMMEDIATELY
 				        const orderBtn = radialMenu.querySelector('.main-option[data-option-type="Order"]');
 				        if (orderBtn) {
@@ -9381,12 +8922,6 @@ class Dreamehome extends utils.Adapter {
 					    const buttons = radialMenu.querySelectorAll('.main-option');
 					    buttons.forEach((btn, index) => {
 					        if (index > 1) { // Keep mode button (index 0) and room oder (index 1)
-=======
-					    // Remove existing buttons (except mode button)
-					    const buttons = radialMenu.querySelectorAll('.main-option');
-					    buttons.forEach((btn, index) => {
-					        if (index > 0) { // Keep mode button (index 0)
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            btn.remove();
 					            // Remove corresponding sub-options
 					            const subOptions = radialMenu.querySelectorAll('.sub-options')[index];
@@ -9403,11 +8938,7 @@ class Dreamehome extends utils.Adapter {
 					    const availableOptions = getAvailableOptionsForMode(currentMode);
 
 					    availableOptions.forEach((option, index) => {
-<<<<<<< HEAD
 					        createMainButton(option, index + 2, availableOptions.length + 2, roomId, labelContent, false);
-=======
-					        createMainButton(option, index + 1, availableOptions.length + 1, roomId, labelContent, false);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					    });
 					}
 
@@ -9433,7 +8964,6 @@ class Dreamehome extends utils.Adapter {
 					    });
 					}
 
-<<<<<<< HEAD
 					// Get room order options
 					async function getOrderOptions() {
 					    try {
@@ -9577,8 +9107,6 @@ class Dreamehome extends utils.Adapter {
 					    }
 					}
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					function handleOptionSelection(optionName, value, roomId, labelContent, btn) {
 					    let convertedValue = value;
 
@@ -9669,26 +9197,10 @@ class Dreamehome extends utils.Adapter {
 						//updateSummaryDisplay();
 					}
 
-<<<<<<< HEAD
-=======
-					// Function to reset the timeout
-					function resetTimeout() {
-					    clearTimeout(autoCloseTimeout); // Stop the current timeout
-					    actionDetected = true; // Action detected
-					    // Restart the timeout when the user clicks inside the menu
-					    autoCloseTimeout = setTimeout(() => {
-					        if (!actionDetected) {
-					            closeRadialMenu();
-					        }
-					    }, 15000); // Menu will close after 15 seconds if no action is detected
-					}
-
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					// Close the menu if clicked outside
 					function outsideClickListener(e) {
 					    if (!radialMenu.contains(e.target)) {
 					        closeRadialMenu();
-<<<<<<< HEAD
 							document.removeEventListener('click', outsideClickListener);
 					    }
 					}
@@ -9711,11 +9223,6 @@ class Dreamehome extends utils.Adapter {
 					    }, 15000); // Menu will close after 15 seconds if no action is detected
 					}
 
-=======
-					    }
-					}
-
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					// Function: =============> Reverse mapping functions for Suction
 					function getSuctionCode(name) {
 					    const suctionReverseMap = {
@@ -9784,7 +9291,6 @@ class Dreamehome extends utils.Adapter {
                     // Changing the robot vacuum position
                     // =============================================
                     // Transformation function for the script part
-<<<<<<< HEAD
                     function toCanvas(x, y, customAngle = null) {
 						const angle = customAngle !== null ? customAngle : rotationAngle;
                         const angleRad = angle * Math.PI / 180;
@@ -9795,12 +9301,6 @@ class Dreamehome extends utils.Adapter {
                         return [
                             Math.round(rotatedX * scale + offsetX),
                             Math.round(rotatedY * scale + offsetY)
-=======
-                    function toCanvas(x, y) {
-                        return [
-                            Math.round(x * scale + offsetX),
-                            Math.round(y * scale + offsetY)
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         ];
                     }
 
@@ -9863,7 +9363,6 @@ class Dreamehome extends utils.Adapter {
                             pathData += ' L ' + currentPathPoints[i][0] + ' ' + currentPathPoints[i][1];
                         }
 
-<<<<<<< HEAD
                         pathElement.innerHTML =
                             '<path d="' + pathData + '" ' +
                             'stroke="rgba(0,150,255,0.2)" ' +
@@ -9877,12 +9376,6 @@ class Dreamehome extends utils.Adapter {
                             'stroke-linecap="round" ' +
                             'stroke-linejoin="round" ' +
                             'fill="none" />';
-=======
-                        pathElement.innerHTML = '<path d="' + pathData + '" ' +
-                                               'stroke="rgba(0,150,255,0.8)" ' +
-                                               'stroke-width="4" ' +
-                                               'fill="none" />';
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }
 
                     function updateHistoryPath() {
@@ -9894,7 +9387,6 @@ class Dreamehome extends utils.Adapter {
                             pathData += ' L ' + historyPathPoints[i][0] + ' ' + historyPathPoints[i][1];
                         }
 
-<<<<<<< HEAD
                         pathElement.innerHTML =
                             '<path d="' + pathData + '" ' +
                             'stroke="rgba(255,50,50,0.4)" ' +
@@ -9908,12 +9400,6 @@ class Dreamehome extends utils.Adapter {
 						    'stroke-linecap="round" ' +
                             'stroke-linejoin="round" ' +
                             'fill="none" />';
-=======
-                        pathElement.innerHTML = '<path d="' + pathData + '" ' +
-                                               'stroke="rgba(255,50,50,0.6)" ' +
-                                               'stroke-width="4" ' +
-                                               'fill="none" />';
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }
 
                     // Draw robot path
@@ -10144,13 +9630,8 @@ class Dreamehome extends utils.Adapter {
                         font-weight: bold;
                         white-space: nowrap;
                         backdrop-filter: blur(1px);
-<<<<<<< HEAD
                         min-width: 170px;
                         max-width: 195px;
-=======
-                        min-width: 145px;
-                        max-width: 175px;
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         min-height: 80px;
                         text-align: center;
                         color: #000000;
@@ -10487,11 +9968,7 @@ class Dreamehome extends utils.Adapter {
                       },
 
                       // Function: =============> Create label HTML content
-<<<<<<< HEAD
                      createLabelContent: function(roomId, roomInfo, settings, stats) {
-=======
-                     createLabelContent: function(roomInfo, settings, stats) {
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                          // Settings SVG Icon
                          const settingsIcon = \`
                              <svg class="settings-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -10536,7 +10013,6 @@ class Dreamehome extends utils.Adapter {
                             })
                             .join(' ');
 
-<<<<<<< HEAD
                         // Default values for RoomOrder
                         let orderDisplay = '-';
                         let orderColor = '#cccccc';
@@ -10596,8 +10072,6 @@ class Dreamehome extends utils.Adapter {
                                 console.error('Failed to load SA data:', e);
                             });
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         // Assemble HTML with data attributes
                         return '<div class="label-content" ' + dataAttributes + '>' +
                           '<div class="label-header">' +
@@ -10606,13 +10080,10 @@ class Dreamehome extends utils.Adapter {
                             '<div class="settings-button"> ' + settingsIcon + '</div>' +
                           '</div>' +
                           '<div class="icon-container">' +
-<<<<<<< HEAD
                             // Order icon with data attribute
                             '<div class="setting-item" title="CleanOrder" data-setting="order">' +
                             '<div class="icon-scale icon-order" data-order="-">' + getOrderIcon() + '</div>' +
                             '</div>' +
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             // Mode icon with data attribute
                             '<div class="setting-item" title="Mode" data-setting="mode">' +
                               '<div class="icon-scale icon-mode">' + icons.mode + '</div>' +
@@ -10624,10 +10095,7 @@ class Dreamehome extends utils.Adapter {
                             this.createIconItem('Repeat', values.repeat, 3, icons.repeat) +
                           '</div>' +
                           '<div class="progress-container">' +
-<<<<<<< HEAD
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             '<div class="progress-bar">' +
                               '<div class="progress-fill" style="width:' + stats.CoveragePercent + '%"></div>' +
                             '</div>' +
@@ -10945,10 +10413,7 @@ class Dreamehome extends utils.Adapter {
 
                           // 8. INSERT GENERATED CONTENT (most important part!)
                           fixedLabel.innerHTML = labelManager.createLabelContent(
-<<<<<<< HEAD
 							roomId,
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             roomInfo,
                             roomSettings[roomId] || {},
                             roomStats[roomId]?.stats || {}
@@ -11095,13 +10560,8 @@ class Dreamehome extends utils.Adapter {
                           if (roomElement) {
                             const path = roomElement.querySelector('path');
                             if (path) {
-<<<<<<< HEAD
                               roomElement.style.opacity = 0.3 + (coverageRatio * 0.5);
                               path.style.fill = 'hsla(' + (120 * coverageRatio) + ', 100%, 50%, 0.3)'; // Calculate the cleaned area in the room and update the room color accordingly
-=======
-                              roomElement.style.opacity = 0.3 + (coverageRatio * 0.7);
-                              path.style.fill = 'hsla(' + (120 * coverageRatio) + ', 100%, 50%, 0.5)';
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             }
                           }
 
@@ -13692,10 +13152,7 @@ class Dreamehome extends utils.Adapter {
                         initCleaningMenu();
                         initRobotControl();
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         console.log('Initialization completed');
                     }
 
@@ -13710,17 +13167,13 @@ class Dreamehome extends utils.Adapter {
                         // Position initial for summary
                         positionSummaryTooltip();
 
-<<<<<<< HEAD
 						initializeMenu(); // Initialize the radial menu when the page loads
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 
                         // Wait briefly until everything is loaded
                         setTimeout(() => {
                             startSpectacularAnimation();
                             document.querySelector('.map-container').classList.add('animation-active');
-<<<<<<< HEAD
 							stabilizeLabels();
                         }, 1500);
 
@@ -13728,10 +13181,6 @@ class Dreamehome extends utils.Adapter {
 							debouncedStabilizeLabels(); // Wait 3 seconds to update all label positions to avoid the slippery view
 							//
                         }, 3000);
-=======
-							stabilizeLabels(); // Wait 1.5 seconds to update all label positions to avoid the slippery view
-                        }, 1500);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }, 0);
 
                 </script>
@@ -14147,11 +13596,7 @@ class Dreamehome extends utils.Adapter {
 
   /**
  * Calculates the geometric center of a room based on wall coordinates
-<<<<<<< HEAD
  * Handles coordinate system wrapping for angular values (>180�cases)
-=======
- * Handles coordinate system wrapping for angular values (>180� cases)
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
  *
  * @param {Array<Object>} WAr - Array of wall objects containing start/end coordinates
  * @param {number} WAr[].beg_pt_x - X-coordinate of wall start point
@@ -14509,13 +13954,9 @@ class Dreamehome extends utils.Adapter {
     }
     if (InSetPropSPID == 'S4P1' /*"Status"*/ ) {
       DH_NowStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
-<<<<<<< HEAD
       if (LogData) {
         this.log.info(`=======> from DH_SetPropSPID: DH_NowStatus is ${DH_NowStatus}  (${InSetPropSPID}) Set to : ${InSetvalue}`);
       }
-=======
-      this.log.warn(`=======> from DH_SetPropSPID: DH_NowStatus is ${DH_NowStatus}  (${InSetPropSPID}) Set to : ${InSetvalue}`);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P4' /*"Suction level"*/ ) {
@@ -14539,13 +13980,9 @@ class Dreamehome extends utils.Adapter {
     if (InSetPropSPID == 'S4P7' /*"Task status"*/ ) {
 
       DH_NowTaskStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
-<<<<<<< HEAD
       if (LogData) {
 	  this.log.info(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
       }
-=======
-	  this.log.warn(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P23' /*"Cleaning mode"*/ ) {
@@ -14639,50 +14076,6 @@ class Dreamehome extends utils.Adapter {
   // Optimized for minimal resource consumption
   async DH_uncompress(In_Compressed, In_path) {
   // Replace URL-safe characters with the standard Base64 characters
-<<<<<<< HEAD
-=======
-    let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
-
-    let decode;
-    try {
-    // Decompress the data synchronously using inflateSync and convert the buffer to a string
-      decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
-    } catch (err) {
-    // Log a warning if decompression fails
-      this.log.warn('Error during decompression: ' + err);
-      return; // Exit if decompression fails
-    }
-
-    // Use a regular expression to extract the JSON-like structure from the decompressed string
-    let jsondecode = decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-
-    let jsonread;
-    try {
-    // Try to parse the extracted JSON string
-      jsonread = JSON.parse(jsondecode);
-    } catch (err) {
-    // Log a warning if JSON parsing fails
-      this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
-      return; // Exit if JSON parsing fails
-    }
-
-    // If JSON is valid, proceed to process it further
-    if (!jsonread) {
-      return; // Exit if no valid JSON found
-    }
-
-    // Call another method to handle the decoded JSON data
-    await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
-
-    // Nullify variables to release memory after processing
-    input_Raw = null;
-    decode = null;
-    jsondecode = null;
-    jsonread = null;
-  }
-
-  async DH_uncompressOld(In_Compressed, In_path) {
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
 
     let decode;
@@ -14785,15 +14178,12 @@ class Dreamehome extends utils.Adapter {
               DH_CleanStatus = false;
               DH_SetLastStatus = false;
               await this.resetVariables();
-<<<<<<< HEAD
 
 			  // Water level tracking at the end of cleaning
 			    if (waterTracking.isMopping) {
                 await this.handleCleaningComplete();
                 waterTracking.isMopping = false; // Reset Mopping-Flag
               }
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
             }
 
             // If cleaning is in progress but not yet complete, record history
@@ -14867,7 +14257,6 @@ class Dreamehome extends utils.Adapter {
         throw new Error(`Invalid position format: ${typeof NewRobVal}`);
       }
 
-<<<<<<< HEAD
 	  // Update water consumption if mopping is active
       if (waterTracking.isMopping && historyEntry.CleanedArea && historyEntry.currentRoom) {
         isCleaningActive = true;
@@ -14879,8 +14268,6 @@ class Dreamehome extends utils.Adapter {
         }
       }
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       // 2. Load existing history data
       let history = {};
       const historyState = await this.getStateAsync(InRobPath);
@@ -15772,17 +15159,10 @@ class Dreamehome extends utils.Adapter {
         VarPointValue = JSON.parse(VarPointValue);
         break;
       case 'number':
-<<<<<<< HEAD
         if (VarPointValue === 'Infinity' || VarPointValue === Infinity) {
           VarPointValue = 0;
         } else {
           VarPointValue = JSON.parse(VarPointValue);
-=======
-        if (VarPointValue !== 'Infinity') {
-          VarPointValue = JSON.parse(VarPointValue);
-        } else {
-          VarPointValue = 0;
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         }
         break;
       case 'undefined':
@@ -17197,7 +16577,6 @@ class Dreamehome extends utils.Adapter {
 
         }
 
-<<<<<<< HEAD
         // Handle map rotation changes
         if ((id.toString().indexOf('.map.Rotation' + DH_CurMap) != -1) && (state.val || state.val === 0)){
           const newRotation = parseInt(state.val);
@@ -17206,8 +16585,6 @@ class Dreamehome extends utils.Adapter {
           await this.DH_GenerateMap();
         }
 
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         if (id.toString().includes('.StartCleaningByRoomConfig') && state.val) {
           await this.setStateAsync(DH_Did + '.map.StartCleaningByRoomConfig', false, true);
 
@@ -17535,7 +16912,6 @@ class Dreamehome extends utils.Adapter {
           return;
         }
 
-<<<<<<< HEAD
         // Handle manual cleanup trigger
         if (id.endsWith('resources.memoryCleaner.triggerCleanup') && state.val === true) {
           const MAX_RESET_ATTEMPTS = 3;
@@ -17633,8 +17009,6 @@ class Dreamehome extends utils.Adapter {
           }
           return;
         }
-=======
->>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         if (id.endsWith('.alexaSpeakMode')) {
           await this.updateSpeakMode(state?.val);
         }
