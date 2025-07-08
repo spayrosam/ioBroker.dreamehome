@@ -30,6 +30,12 @@ Here, XXXXXX is the number of your robot.***
 2. Added Robots with Encrypted Maps
 3. Status for Consumed Elements under VIS (Filters, Brushes, etc.)
 4. Extension of the Settings Menu under VIS
+![grafik](https://github.com/user-attachments/assets/93eede3d-e8cf-4f83-bad6-335dcdf6bc70)
+
+![grafik](https://github.com/user-attachments/assets/4328c91f-8811-4beb-8a6f-450f923428b4)
+
+![grafik](https://github.com/user-attachments/assets/4deb3705-4df9-4d55-a85a-e2671469fa9d)
+
 
 ### 0.1.6 (18.05.2025)
 1. Optimized for minimal resource consumption
