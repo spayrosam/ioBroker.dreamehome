@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "news": {
-      "0.1.6": {
+      "0.1.7": {
         "en": "Interactive Map - New Features",
         "de": "Interactive Map - Neue Funktionen",
         "ru": "Интерактивная карта - новые возможности",
@@ -83,7 +83,8 @@
     "username": "",
     "password": "",
     "interval": 30,
-    "getMap": false
+    "heapLimitMb": 100,
+    "eventLoopLagLimitMs": 100
   },
   "objects": [],
   "instanceObjects": [
@@ -105,6 +106,18 @@
         "read": true,
         "write": false,
         "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "resources.log",
+      "type": "state",
+      "common": {
+        "type": "string",
+        "role": "text",
+        "read": true,
+        "write": false,
+        "desc": "Last resource warnings"
       },
       "native": {}
     }
