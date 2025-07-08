@@ -18,6 +18,8 @@ const {
 const {
   Image
 } = require('canvas');
+
+const { ResourceMonitor, FunctionProfiler, SafeMemoryManager, initMonitoring } = require('./lib/resourceMonitor');
 /**============> Check if canvas is installed using the following command:
 cd /opt/iobroker/
 npm list canvas
@@ -55,6 +57,35 @@ let visitedPointsPerSegment = {}; // Memory structure: { segmentId: Set("x,y", .
 let lastPosition = null; // Vacuum last known position
 let roomData = {}; // Stores data per room name
 
+<<<<<<< HEAD
+const WATER_TRACKING = {
+  MAX_ML: 4500,                // Maximum tank capacity in milliliters
+  DEFAULT_ML_PER_SQM: 26,     // Default water consumption in milliliters per square meter
+  LEARNING_SAMPLES: 20,         // Number of stored consumption values for learning
+  MOPPING_MODES: [5120, 5121, 5123, 3840], // Mopping modes: 5120 = Vacuum + Mop, 5121 = Mop only, 5123 = Mop after Vacuum, 3840 = Customize room cleaning
+  MIN_AREA_DELTA: 0.5, // Minimum area progress (m�)
+  ROOM_COOLDOWN: 30000 // 30 seconds (no updates in the same room)
+};
+
+const waterTrackingCache = {
+  mode: null,
+  waterLevel: null
+};
+
+// Cache for consumptionData
+let consumptionDataCache = {
+  data: null,
+  lastUpdate: 0,
+  cacheTTL: 60000 // 1 minute cache validity
+};
+
+let waterTracking = null;
+let isCleaningActive = false;
+let autoSaveInterval; // Autosave Controller
+let firstWaterTrackingActive = false;
+let firstStartWaterTrack = false;
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 let UserLang = 'EN';
 //<=================End Global
@@ -2041,7 +2072,11 @@ const DHURLSENDB = 'L2RldmljZS9zZW5kQ29tbWFuZA==';
 let DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
 const DHURLSENDDOM = 'LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==';
 let DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
+<<<<<<< HEAD
+let DH_Map = {};
+=======
 const DH_Map = {};
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 let In_path = '';
 let DH_Auth = '',
   DH_AuthRef = '',
@@ -2067,6 +2102,19 @@ canvas.width = 1024;
 let DH_UpdateMapInterval = null;
 let DH_UpdateTheMap = true;
 
+const DREAME_IVs = {
+  'dreame.vacuum.p2114a': '6PFiLPYMHLylp7RR',
+  'dreame.vacuum.p2114o': '6PFiLPYMHLylp7RR',
+  'dreame.vacuum.p2140o': '8qnS9dqgT3CppGe1',
+  'dreame.vacuum.p2140p': '8qnS9dqgT3CppGe1',
+  'dreame.vacuum.p2149o': 'RNO4p35b2QKaovHC',
+  'dreame.vacuum.r2209': 'qFKhvoAqRFTPfKN6',
+  'dreame.vacuum.r2211o': 'dndRQ3z8ACjDdDMo',
+  'dreame.vacuum.r2216o': '4sCv3Q2BtbWVBIB2',
+  'dreame.vacuum.r2228o': 'dndRQ3z8ACjDdDMo',
+  'dreame.vacuum.r2235': 'NRwnBj5FsNPgBNbT',
+  'dreame.vacuum.r2254': 'wRy05fYLQJMRH6Mj',
+};
 //================> Global Get Robot position (Segment)
 const CheckArrayRooms = [];
 
@@ -2107,6 +2155,58 @@ class Dreamehome extends utils.Adapter {
     this.subscribeStates('*.control.*');
     this.log.info('Login and request Dreame data from cloud');
 
+<<<<<<< HEAD
+    try {
+    // Initialize configuration with defaults
+      this.config = {
+        intervalMs: this.config.intervalMs || 60000,
+        heapLimitMb: this.config.heapLimitMb || 150,
+        eventLoopLagLimitMs: this.config.eventLoopLagLimitMs || 50,
+        gcEnabled: this.config.gcEnabled !== undefined ? this.config.gcEnabled : true,
+        memoryCleanerEnabled: this.config.memoryCleanerEnabled !== undefined ? this.config.memoryCleanerEnabled : true,
+        memoryCleanerThresholdMB: this.config.memoryCleanerThresholdMB || 300,
+        memoryCleanerIntervalSec: this.config.memoryCleanerIntervalSec || 30,
+        ...this.config
+      };
+
+      // Initialize monitoring, profiling and memory manager
+      const { monitor, profiler, memoryManager } = await initMonitoring(this);
+
+      // Store references
+      this.monitor = monitor;
+      this.profiler = profiler;
+      this.memoryManager = memoryManager;
+
+      this.subscribeStates('resources.profiling.enabled');
+      this.subscribeStates('resources.memoryCleaner.*');
+
+      // Initialen Profiling-Status setzen
+      const initialProfilingState = await this.getStateAsync('resources.profiling.enabled');
+      this.profiler.setEnabled(initialProfilingState?.val || false);
+
+      // Start memory manager if enabled
+      if (this.config.memoryCleanerEnabled) {
+        this.memoryManager.enableAutoCleanup({
+          thresholdMB: this.config.memoryCleanerThresholdMB,
+          intervalMinutes: this.config.memoryCleanerIntervalSec / 60 // Umrechnung von Sekunden zu Minuten
+        });
+        this.log.info(`Memory management started (threshold: ${this.config.memoryCleanerThresholdMB}MB, interval: ${this.config.memoryCleanerIntervalSec}s)`);
+      }
+
+      this.log.info('Adapter initialized with resource monitoring, profiling and memory management');
+
+    } catch (err) {
+      this.log.error(`Initialization failed: ${err.message}`);
+    // Consider terminating the adapter if critical
+    // this.terminate ? this.terminate() : process.exit(1);
+    }
+
+    if (typeof global.gc !== 'function') {
+      this.log.warn('GARBAGE COLLECTION NOT AVAILABLE! Start Node.js with --expose-gc for proper memory management');
+      this.log.warn('Current memory cleanup will be very limited in effectiveness');
+    }
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     // Create the setting object
     await this.setObjectNotExists('settings.alexaSpeakMode', {
       type: 'state',
@@ -2151,6 +2251,7 @@ class Dreamehome extends utils.Adapter {
       }
     }
     this.subscribeStates('settings.showlog');
+
     await this.DH_CloudLogin();
     if (DH_Auth) {
       In_path = DH_Did + '.vis.';
@@ -2254,7 +2355,7 @@ class Dreamehome extends utils.Adapter {
       await this.setObjectNotExists(In_path + 'map.NewMap', {
         type: 'state',
         common: {
-          name: 'gnew Map',
+          name: 'Create new map for vis',
           type: 'boolean',
           role: 'switch',
           write: true,
@@ -2263,6 +2364,10 @@ class Dreamehome extends utils.Adapter {
         },
         native: {},
       });
+<<<<<<< HEAD
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       await this.setObjectNotExists(In_path + 'map.StartCleaningByRoomConfig', {
         type: 'state',
         common: {
@@ -2316,7 +2421,14 @@ class Dreamehome extends utils.Adapter {
     const state = await this.getStateAsync('settings.alexaSpeakMode');
     await this.updateSpeakMode(state?.val);
 
+<<<<<<< HEAD
+    // Restoring the water tank level
+    this.restoreWaterTankData();
 
+    firstStartWaterTrack = true; // Set status to true to track the tank, false to prevent cloud reset.
+=======
+
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }
 
   async DH_CloudLogin() {
@@ -2388,6 +2500,9 @@ class Dreamehome extends utils.Adapter {
         const GetObjNameData = JSON.parse(JSON.stringify(GetCloudRequestObjName.data))[0].value;
         DH_filename = JSON.parse(GetObjNameData).obj_name;
         this.log.info('Fetching obj_name: ' + DH_filename);
+
+        // Initialize water tracking
+        await this.initWaterTracking();
       }
 
       for (const [CPkeyRaw, CPvalue] of Object.entries(DreameStateCustomProperties)) {
@@ -2463,6 +2578,7 @@ class Dreamehome extends utils.Adapter {
     await this.DH_RequestNewMap();
     //await this.DH_GetControl();
     await this.DH_RequestControlState();
+
   }
 
   async DH_PropObject(InData, InPath, InLog) {
@@ -2510,6 +2626,11 @@ class Dreamehome extends utils.Adapter {
     });
   }
 
+<<<<<<< HEAD
+  async decryptDreameMap(encryptedData, model, enckey) {
+    const iv = DREAME_IVs[model];
+    if (!iv) throw new Error(`IV for model ${model} not in the database!`);
+=======
   async DH_RequestNewMap() {
 	    /*try { //Test decrypted Map..
             var TSETURLData = {
@@ -2541,6 +2662,7 @@ class Dreamehome extends utils.Adapter {
         } catch (error) {
             this.log.warn(`Unable to decrypt file at ${DH_URLDOWNURL}: ${error}`);
         }*/
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
     let DH_input_Raw = null;
     let DH_jsonread = null;
@@ -2549,6 +2671,82 @@ class Dreamehome extends utils.Adapter {
     let DH_DecodeMap = null;
 
     try {
+      const key = crypto.createHash('sha256').update(enckey).digest().slice(0, 32);
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'utf8'));
+      let decrypted = decipher.update(encryptedData);
+      decrypted = Buffer.concat([decrypted, decipher.final()]);
+      return decrypted;
+    } catch (err) {
+      throw new Error(`AES decryption failed: ${err.message}`);
+    }
+  }
+
+
+  // Decodes a Base64-encoded map string to JSON
+  async decodeMapToJSON(mapDataStr) {
+    try {
+    // 1. Prepare Base64 data
+      let encodedData = mapDataStr;
+
+      // If AES key is present (when string contains comma)
+      if (mapDataStr.includes(',')) {
+        const [data, key] = mapDataStr.split(',');
+        encodedData = data.replace(/-/g, '+').replace(/_/g, '/');
+
+        // Perform AES decryption
+        const aesKey = crypto.SHA256(key).toString().substr(0, 32);
+        const decrypted = crypto.AES.decrypt(
+          encodedData,
+          crypto.enc.Utf8.parse(aesKey),
+          {
+            iv: crypto.enc.Utf8.parse(''),
+            mode: crypto.mode.CBC,
+            padding: crypto.pad.Pkcs7
+          }
+        );
+        encodedData = decrypted.toString(crypto.enc.Base64);
+      } else {
+        encodedData = mapDataStr.replace(/-/g, '+').replace(/_/g, '/');
+      }
+
+      // 2. Base64 decode
+      const buffer = Buffer.from(encodedData, 'base64');
+
+      // 3. Unpack with zlib (synchronous)
+      const inflated = zlib.inflateSync(buffer);
+
+      // 4. Read map dimensions
+      const mapWidth = inflated.readInt16LE(19);
+      const mapHeight = inflated.readInt16LE(21);
+
+      // 5. Extract JSON part (starting from position 27 + map data)
+      const jsonStart = 27 + (mapWidth * mapHeight);
+      const jsonString = inflated.slice(jsonStart).toString('utf8');
+
+      return JSON.parse(jsonString);
+    } catch (error) {
+      this.log.error('Error decoding map:', error);
+      return null;
+    }
+  }
+
+  // Requesting and processing new map data
+  async DH_RequestNewMap() {
+
+    // Variable declarations
+    let DH_jsonread = null;
+    let DH_jsondecode = null;
+    let DH_decode = null;
+    let DH_DecodeMap = null;
+    let mymapData = null;
+    let Mapcanvas = null;
+    let Mapctx = null;
+    let enckey = null;
+    let filename = null;
+    let currentMap = null;
+
+    try {
+      // 1. Request map URL from cloud service
       const SETURLData = {
         did: DH_Did,
         model: DH_Model,
@@ -2562,9 +2760,16 @@ class Dreamehome extends utils.Adapter {
         return;
       }
 
+<<<<<<< HEAD
+      // 2. Download and parse map data
+      const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
+
+      // 3. Store raw data in state
+=======
       const RetFileData = await this.DH_getFile(GetCloudRequestMap.data);
 
       // CloudData Object handling
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       await this.setObjectNotExistsAsync(DH_Did + '.map.CloudData', {
         type: 'state',
         common: {
@@ -2579,16 +2784,162 @@ class Dreamehome extends utils.Adapter {
       });
       await this.setStateAsync(DH_Did + '.map.CloudData', JSON.stringify(RetFileData), true);
 
+<<<<<<< HEAD
+      // 4. Process available maps
+      let mapKeys = [];
+      if (RetFileData?.mapstr) {
+        mapKeys = Object.keys(RetFileData.mapstr);
+        const dynamicStates = {};
+=======
       // Dynamic MapNumber handling
       const dynamicStates = {};
       let mapKeys = [];
       if (RetFileData?.mapstr) {
         mapKeys = Object.keys(RetFileData.mapstr);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         mapKeys.forEach((mapKey) => {
           dynamicStates[mapKey] = `Map ${parseInt(mapKey)+1}`;
         });
       }
 
+<<<<<<< HEAD
+        // 5. Create/update map selection object
+        const mapNumberPath = DH_Did + '.map.MapNumber';
+        if (!await this.objectExists(mapNumberPath)) {
+          await this.setObjectNotExistsAsync(mapNumberPath, {
+            type: 'state',
+            common: {
+              name: 'Map Number',
+              type: 'number',
+              role: 'level',
+              states: dynamicStates,
+              write: true,
+              read: true,
+              def: mapKeys[0] || 0
+            },
+            native: {},
+          });
+        } else {
+          await this.extendObjectAsync(mapNumberPath, {
+            common: { states: dynamicStates }
+          });
+        }
+
+        // 6. Determine current map
+        try {
+          const DH_CurMapOb = await this.getStateAsync(mapNumberPath);
+          currentMap = (DH_CurMapOb && DH_CurMapOb.val !== null) ? DH_CurMapOb.val : (mapKeys[0] || 0);
+
+          if (mapKeys.length > 0 && !mapKeys.includes(currentMap.toString())) {
+            currentMap = mapKeys[0];
+            await this.setStateAsync(mapNumberPath, currentMap, true);
+            this.log.warn('Invalid map number, reset to default');
+          }
+
+          await this.updateFloorsBasedOnMaps(currentMap);
+
+          // 7. Process selected map data
+          if (RetFileData?.mapstr && currentMap.toString() in RetFileData.mapstr) {
+            DH_DecodeMap = JSON.stringify(RetFileData.mapstr[currentMap.toString()].map);
+          }
+
+          if (LogData) {
+            this.log.info('Decode Map response: ' + JSON.stringify(DH_DecodeMap));
+          }
+
+          if (DH_DecodeMap) {
+            try {
+              mymapData = await this.parseRoboMap(DH_DecodeMap, DH_Model);
+              DH_decode = mymapData.jsonData;
+
+              if (!DH_Map) DH_Map = {};
+
+              // Store map with polygon data in original mm coordinates
+              const polygonData = this.createCompletePolygonStructure(mymapData);
+              DH_Map[currentMap] = {
+                ...mymapData.jsonData,
+                header: mymapData.header,
+                polygons: polygonData,
+                coordinateSystem: {
+                  gridSize: mymapData.header.gridSize,
+                  origin: {
+                    x: mymapData.header.origin.x,
+                    y: mymapData.header.origin.y,
+                    left: mymapData.header.origin.left,
+                    top: mymapData.header.origin.top
+                  },
+                  mapDimensions: {
+                    width: mymapData.header.width,
+                    height: mymapData.header.height
+                  }
+                }
+              };
+
+              if (LogData) {this.log.info('Map with polygon data saved: ' + JSON.stringify(DH_Map[currentMap]));}
+
+              // Create visual representation
+              Mapcanvas = createCanvas(mymapData.header.width, mymapData.header.height);
+              Mapctx = Mapcanvas.getContext('2d');
+
+              // Draw map layers
+              await this.drawBackground(Mapctx, Mapcanvas);
+              await this.drawRooms(Mapctx, DH_Map[currentMap].polygons, DH_Map[currentMap].coordinateSystem);
+              await this.drawWalls(Mapctx, DH_Map[currentMap].polygons, DH_Map[currentMap].coordinateSystem);
+
+              // Save map image
+              const imageBase64 = Mapcanvas.toDataURL('image/png');
+              await this.setObjectNotExistsAsync(DH_Did + '.map.' + currentMap + '.MapImage', {
+                type: 'state',
+                common: {
+                  name: 'Map Image',
+                  type: 'string',
+                  role: 'image',
+                  write: false,
+                  read: true
+                },
+                native: {},
+              });
+              await this.setState(DH_Did + '.map.' + currentMap + '.MapImage', imageBase64, true);
+
+              // Store robot and charger positions
+              if (DH_decode) {
+                DH_jsonread = typeof DH_decode === 'string' ? JSON.parse(DH_decode) : DH_decode;
+
+                await Promise.all([
+                  this.setObjectNotExistsAsync(DH_Did + '.mqtt.robot', {
+                    type: 'state',
+                    common: {
+                      name: 'Robot Position',
+                      type: 'json',
+                      role: 'array',
+                      write: false,
+                      read: true,
+                      def: JSON.stringify(DH_jsonread.robot || {})
+                    },
+                    native: {},
+                  }),
+                  this.setObjectNotExistsAsync(DH_Did + '.mqtt.charger', {
+                    type: 'state',
+                    common: {
+                      name: 'Charger Position',
+                      type: 'json',
+                      role: 'array',
+                      write: false,
+                      read: true,
+                      def: JSON.stringify(DH_jsonread.charger || {})
+                    },
+                    native: {},
+                  })
+                ]);
+              }
+
+            } catch (error) {
+              this.log.error('Error processing map:' + error);
+            }
+          }
+        } catch (error) {
+          this.log.error('Error processing map number:' + error);
+=======
       const mapNumberPath = DH_Did + '.map.MapNumber';
       const objExists = await this.objectExists(mapNumberPath);
 
@@ -2702,11 +3053,691 @@ class Dreamehome extends utils.Adapter {
           DH_jsondecode = null;
           DH_decode = null;
           DH_DecodeMap = null;
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         }
       }
     } catch (error) {
       this.log.error(`Map request failed: ${error}`);
     } finally {
+<<<<<<< HEAD
+      // Cleanup
+      DH_jsondecode = null;
+      DH_DecodeMap = null;
+      enckey = null;
+      filename = null;
+
+      // Release canvas resources
+      if (Mapcanvas) {
+        Mapcanvas.width = 1;
+        Mapcanvas.height = 1;
+        Mapctx = null;
+        Mapcanvas = null;
+      }
+
+      // Clean up mymapData
+      if (mymapData) {
+        mymapData.header = null;
+        if (mymapData.rooms) {
+          Object.values(mymapData.rooms).forEach(room => {
+            room.pixels = null;
+            room.borders = null;
+          });
+        }
+        mymapData = null;
+      }
+
+      // Manual garbage collection
+      if (global.gc) {
+        global.gc();
+        this.log.info('Manual garbage collection performed');
+      }
+    }
+  }
+
+  // Parses robot map data with advanced polygon handling
+  async parseRoboMap(mapDataStr, deviceModel) {
+    try {
+      // 1. Prepare and decode data
+      const [encodedData, aesKey] = mapDataStr.includes(',')
+        ? [mapDataStr.split(',')[0].replace(/-/g, '+').replace(/_/g, '/'), mapDataStr.split(',')[1]]
+        : [mapDataStr.replace(/-/g, '+').replace(/_/g, '/'), null];
+
+      // 2. Base64 decode
+      let buffer = Buffer.from(encodedData, 'base64');
+
+      // 3. Perform AES decryption if needed
+      if (aesKey && deviceModel && DREAME_IVs[deviceModel]) {
+        const key = crypto.SHA256(aesKey).toString().substr(0, 32);
+        const iv = crypto.enc.Utf8.parse(DREAME_IVs[deviceModel]);
+
+        const decrypted = crypto.AES.decrypt(
+          encodedData,
+          crypto.enc.Utf8.parse(key),
+          { iv, mode: crypto.mode.CBC, padding: crypto.pad.Pkcs7 }
+        );
+
+        buffer = Buffer.from(decrypted.toString(crypto.enc.Base64), 'base64');
+      }
+
+      // 4. Decompress data
+      const inflated = zlib.inflateSync(buffer);
+
+      // 5. Parse header information
+      const header = {
+        mapId: inflated.readInt16LE(0),
+        frameType: inflated.readUInt8(4),
+        robot: {
+          x: inflated.readInt16LE(5),
+          y: inflated.readInt16LE(7),
+          angle: inflated.readInt16LE(9)
+        },
+        charger: {
+          x: inflated.readInt16LE(11),
+          y: inflated.readInt16LE(13),
+          angle: inflated.readInt16LE(15)
+        },
+        gridSize: inflated.readInt16LE(17), // mm per pixel
+        width: inflated.readInt16LE(19),
+        height: inflated.readInt16LE(21),
+        origin: {
+          x: inflated.readInt16LE(23),
+          y: inflated.readInt16LE(25),
+          left: '',
+          top: ''
+        }
+      };
+
+      // 6. Calculate origin position in pixel coordinates
+      header.origin.left = Math.round(header.origin.x / header.gridSize) * -1;
+      header.origin.top = Math.round(header.origin.y / header.gridSize) * -1;
+
+      // 7. Extract pixel data
+      const mapStart = 27;
+      const mapEnd = mapStart + header.width * header.height;
+      const mapData = inflated.slice(mapStart, mapEnd);
+
+      // 8. Parse JSON metadata
+      const jsonData = JSON.parse(inflated.slice(mapEnd).toString());
+
+      // 9. Process room pixels and create polygons
+      const rooms = {};
+      for (let y = 0; y < header.height; y++) {
+        for (let x = 0; x < header.width; x++) {
+          const pos = y * header.width + x;
+          const val = mapData.readUInt8(pos);
+          const areaId = val & 0x3f;
+          const isBorder = (val >> 7) === 1;
+
+          if (areaId > 0) {
+            if (!rooms[areaId]) {
+              rooms[areaId] = {
+                pixels: [],
+                borders: [],
+                minX: x,
+                maxX: x,
+                minY: y,
+                maxY: y
+              };
+            }
+
+            const room = rooms[areaId];
+            room.pixels.push({x, y});
+
+            if (isBorder) room.borders.push({x, y});
+            if (x < room.minX) room.minX = x;
+            if (x > room.maxX) room.maxX = x;
+            if (y < room.minY) room.minY = y;
+            if (y > room.maxY) room.maxY = y;
+          }
+        }
+      }
+
+      // 10. Convert to mm and create precise polygons
+      Object.keys(rooms).forEach(id => {
+        const room = rooms[id];
+        const gridSize = header.gridSize;
+        const origin = header.origin;
+
+        // Convert bounds to mm
+        room.minX *= gridSize;
+        room.maxX *= gridSize;
+        room.minY *= gridSize;
+        room.maxY *= gridSize;
+
+        // Create exact polygon matching pixel shape
+        const polygonWithHoles = this.createExactRoomPolygon(room.pixels, gridSize, origin);
+        room.polygon = polygonWithHoles.outer;
+        room.holes = polygonWithHoles.holes;
+
+        // Calculate center in mm
+        room.center = {
+          x: (room.minX + room.maxX) / 2,
+          y: (room.minY + room.maxY) / 2
+        };
+      });
+
+      return {
+        header,
+        rooms,
+        jsonData
+      };
+
+    } catch (error) {
+      this.log.error('Error parsing map:' + error);
+      return null;
+    }
+  }
+
+  // Creates a polygon from room pixel data, including holes
+  createExactRoomPolygon(roomPixels, gridSize, origin) {
+    if (!roomPixels?.length) return [];
+
+    const offsetX = -origin.left;
+    const offsetY = -origin.top;
+    const pixelMap = this.buildPixelMap(roomPixels);
+
+    // Find contours with protection against infinite loops
+    const { outerContour, holes } = this.findAllContoursSafe(pixelMap);
+
+    // Convert to world coordinates
+    const convertToWorld = (contour) =>
+      contour.map(({ x, y }) => ({
+        x: (x - origin.left) * gridSize,
+        y: (y - origin.top) * gridSize
+      }));
+
+    return {
+      outer: convertToWorld(outerContour),
+      holes: holes.map(hole => convertToWorld(hole))
+    };
+  }
+
+  // Creates a binary pixel map for O(1) lookups
+  buildPixelMap(pixels) {
+    const map = new Map();
+    for (const { x, y } of pixels) {
+      map.set(`${x},${y}`, true);
+    }
+    return map;
+  }
+
+  // Robust hole detection with geometric validation
+  findAllContoursSafe(pixelMap) {
+    const visited = new Set();
+    const outerContour = this.traceContourSafe(pixelMap, visited);
+    if (!outerContour.length) return { outerContour: [], holes: [] };
+
+    // 1. Determine boundaries for scanline algorithm
+    const bounds = this.getContourBounds(outerContour);
+    const [minX, maxX, minY, maxY] = bounds;
+
+    // 2. Find potential hole starting points with scanline
+    const holeSeeds = this.findHoleSeeds(outerContour, pixelMap, visited, minX, maxX, minY, maxY);
+
+    // 3. Validate and trace holes
+    const holes = [];
+    for (const seed of holeSeeds) {
+      if (!visited.has(`${seed.x},${seed.y}`)) {
+        const hole = this.traceContourSafe(pixelMap, visited, seed, true);
+
+        if (hole.length >= 3 &&
+                this.isValidHole(hole, outerContour)) {
+          holes.push(hole);
+        }
+      }
+    }
+
+    return { outerContour, holes };
+  }
+
+  // Contour tracing with protection against infinite loops
+  traceContourSafe(pixelMap, visited, startPixel = null) {
+    const contour = [];
+    startPixel = startPixel || this.findStartPixel(pixelMap);
+    if (!startPixel) return [];
+
+    let current = { ...startPixel };
+    let prevDir = 0; // Starting direction: right
+    let iterations = 0;
+    const MAX_ITERATIONS = 1000; // Prevents infinite loops
+
+    // Clockwise movement directions (8-neighborhood)
+    const directions = [
+      { dx: 1, dy: 0 },   // Right
+      { dx: 1, dy: -1 },  // Top-Right
+      { dx: 0, dy: -1 },   // Top
+      { dx: -1, dy: -1 }, // Top-Left
+      { dx: -1, dy: 0 },   // Left
+      { dx: -1, dy: 1 },   // Bottom-Left
+      { dx: 0, dy: 1 },    // Bottom
+      { dx: 1, dy: 1 }      // Bottom-Right
+    ];
+
+    do {
+      contour.push(current);
+      visited.add(`${current.x},${current.y}`);
+      iterations++;
+
+      // Find next pixel in clockwise direction
+      let found = false;
+      for (let i = 0; i < 8; i++) {
+        const dir = (prevDir + 6 + i) % 8; // Start left of previous direction
+        const next = {
+          x: current.x + directions[dir].dx,
+          y: current.y + directions[dir].dy
+        };
+
+        if (pixelMap.has(`${next.x},${next.y}`)) {
+          prevDir = dir;
+          current = next;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found || iterations >= MAX_ITERATIONS) break;
+    } while (current.x !== startPixel.x || current.y !== startPixel.y);
+
+    // Close polygon if needed
+    if (contour.length > 1 && (contour[0].x !== contour[contour.length-1].x ||
+                               contour[0].y !== contour[contour.length-1].y)) {
+      contour.push({ ...contour[0] });
+    }
+
+    return contour;
+  }
+
+  // Scanline algorithm for hole seed detection
+  findHoleSeeds(outerContour, pixelMap, visited, minX, maxX, minY, maxY) {
+    const seeds = [];
+    const contourSet = new Set(outerContour.map(p => `${p.x},${p.y}`));
+
+    // Scanline with 2px step for performance
+    for (let y = minY; y <= maxY; y += 2) {
+      let inside = false;
+      let prevOnContour = false;
+
+      for (let x = minX; x <= maxX; x++) {
+        const key = `${x},${y}`;
+        const onContour = contourSet.has(key);
+
+        // Edge transition detection
+        if (onContour && !prevOnContour) {
+          inside = !inside;
+        }
+        prevOnContour = onContour;
+
+        if (inside && !visited.has(key) && !pixelMap.has(key)) {
+          // Check for new unique starting point
+          if (!seeds.some(s => Math.abs(s.x - x) < 2 && Math.abs(s.y - y) < 2)) {
+            seeds.push({ x, y });
+          }
+        }
+      }
+    }
+    return seeds;
+  }
+
+  // Checks if a hole is valid
+  isValidHole(hole, outerContour) {
+    try {
+      // 1. Basic validation
+      if (!hole?.length || !outerContour?.length) return false;
+
+      // 2. Calculate center
+      let holeCenter;
+      try {
+        holeCenter = this.getPolygonCentroid(hole);
+      } catch (e) {
+        // Fallback for simple midpoint calculation
+        holeCenter = {
+          x: hole.reduce((sum, p) => sum + p.x, 0) / hole.length,
+          y: hole.reduce((sum, p) => sum + p.y, 0) / hole.length
+        };
+      }
+
+      // 3. Area calculation
+      const holeArea = this.MapcalculatePolygonArea(hole);
+      const outerArea = this.MapcalculatePolygonArea(outerContour);
+
+      // 4. Validation criteria
+      return (
+        this.isPointInsidePolygon(holeCenter, outerContour) &&
+            holeArea < (outerArea * 0.5) &&
+            holeArea > 0
+      );
+    } catch (error) {
+      this.log.error('Hole validation error:', error);
+      return false;
+    }
+  }
+
+  // Calculates the true geometric centroid
+  getPolygonCentroid(polygon) {
+    if (!polygon?.length || polygon.length < 3)
+      return polygon?.[0] || { x: 0, y: 0 };
+
+    let area = 0, cx = 0, cy = 0;
+    const n = polygon.length;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const xi = polygon[i].x;
+      const yi = polygon[i].y;
+      const xj = polygon[j].x;
+      const yj = polygon[j].y;
+
+      const cross = (xi * yj) - (xj * yi);
+      area += cross;
+      cx += (xi + xj) * cross;
+      cy += (yi + yj) * cross;
+    }
+
+    area /= 2;
+    const factor = 1 / (6 * area);
+
+    return {
+      x: Math.abs(cx * factor),
+      y: Math.abs(cy * factor)
+    };
+  }
+
+  // Calculates polygon area
+  MapcalculatePolygonArea(polygon) {
+    if (!polygon?.length || polygon.length < 3) return 0;
+
+    let area = 0;
+    const n = polygon.length;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += polygon[i].x * polygon[j].y;
+      area -= polygon[j].x * polygon[i].y;
+    }
+
+    return Math.abs(area / 2);
+  }
+
+  // Gets contour boundaries
+  getContourBounds(contour) {
+    if (!contour?.length) return [0, 0, 0, 0];
+
+    let minX = Infinity, maxX = -Infinity,
+      minY = Infinity, maxY = -Infinity;
+
+    for (const point of contour) {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    }
+
+    return [minX, maxX, minY, maxY];
+  }
+
+  // Finds top-left pixel as starting point
+  findStartPixel(pixelMap) {
+    const pixels = [...pixelMap.keys()].map(k => {
+      const [x, y] = k.split(',').map(Number);
+      return { x, y };
+    });
+    if (!pixels.length) return null;
+
+    // Sort by Y (top) then X (left)
+    pixels.sort((a, b) => a.y - b.y || a.x - b.x);
+    return pixels[0];
+  }
+
+  // Point-in-polygon test using raycasting
+  isPointInsidePolygon(point, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].x, yi = polygon[i].y;
+      const xj = polygon[j].x, yj = polygon[j].y;
+
+      const intersect = ((yi > point.y) !== (yj > point.y)) &&
+            (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  // Creates an optimized polygon from pixel data
+  createOptimizedRoomPolygon(pixels, gridSize) {
+    if (!pixels.length) return [];
+
+    // Simple bounding box with rounded corners
+    const minX = Math.min(...pixels.map(p => p.x)) * gridSize;
+    const maxX = Math.max(...pixels.map(p => p.x)) * gridSize;
+    const minY = Math.min(...pixels.map(p => p.y)) * gridSize;
+    const maxY = Math.max(...pixels.map(p => p.y)) * gridSize;
+
+    // Create rectangle polygon with slight rounding
+    const radius = gridSize * 2; // Rounding radius
+    return [
+      { x: minX + radius, y: minY },
+      { x: maxX - radius, y: minY },
+      { x: maxX, y: minY + radius },
+      { x: maxX, y: maxY - radius },
+      { x: maxX - radius, y: maxY },
+      { x: minX + radius, y: maxY },
+      { x: minX, y: maxY - radius },
+      { x: minX, y: minY + radius },
+      { x: minX + radius, y: minY } // Close polygon
+    ];
+  }
+
+  // Creates complete polygon structure from parsed data
+  createCompletePolygonStructure(parsedData) {
+    const wallsInfo = parsedData.jsonData?.walls_info?.storeys?.[0];
+    const pixelRooms = parsedData.rooms || {};
+
+    return {
+      meta: {
+        gridSize: parsedData.header.gridSize,
+        origin: {
+          x: parsedData.header.origin.x,
+          y: parsedData.header.origin.y
+        },
+        mapDimensions: {
+          width: parsedData.header.width,
+          height: parsedData.header.height
+        }
+      },
+      rooms: Object.entries(pixelRooms).map(([id, room]) => ({
+        id: parseInt(id),
+        floorType: room.floorType || 0,
+        polygon: room.polygon || [],
+        holes: room.holes || [],
+        center: room.center,
+        bounds: {
+          minX: room.minX,
+          maxX: room.maxX,
+          minY: room.minY,
+          maxY: room.maxY
+        },
+        pixelData: {
+          center: {
+            x: room.center.x / parsedData.header.gridSize,
+            y: room.center.y / parsedData.header.gridSize
+          },
+          bounds: {
+            minX: room.minX / parsedData.header.gridSize,
+            maxX: room.maxX / parsedData.header.gridSize,
+            minY: room.minY / parsedData.header.gridSize,
+            maxY: room.maxY / parsedData.header.gridSize
+          }
+        }
+      })),
+      walls: wallsInfo?.rooms?.map(room => ({
+        id: room.room_id,
+        walls: room.walls?.map(wall => ({
+          type: wall.type,
+          beg: { x: wall.beg_pt_x, y: wall.beg_pt_y },
+          end: { x: wall.end_pt_x, y: wall.end_pt_y }
+        })) || []
+      })) || [],
+      doors: wallsInfo?.doors?.map(door => ({
+        id: door.door_id,
+        type: door.door_type,
+        beg: { x: door.beg_pt_x, y: door.beg_pt_y },
+        end: { x: door.end_pt_x, y: door.end_pt_y }
+      })) || []
+    };
+  }
+
+  // Draws background
+  async drawBackground(ctx, canvas) {
+    ctx.fillStyle = '#FFFFFF00';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Draws rooms with polygons and holes
+  async drawRooms(ctx, polygonData, coordinateSystem) {
+    if (!polygonData?.rooms) {
+      this.log.warn('No room information available for drawing');
+      return;
+    }
+
+    const { gridSize, origin } = coordinateSystem;
+    const offsetX = -origin.x;
+    const offsetY = -origin.y;
+
+    // Draw each room with holes
+    polygonData.rooms.forEach(room => {
+      if (!room.polygon?.length) return;
+
+      // Consistent color based on room ID
+      const hue = (room.id * 137) % 360;
+      ctx.fillStyle = `hsla(${hue}, 80%, 70%, 0.5)`;
+      ctx.strokeStyle = `hsl(${hue}, 80%, 30%)`;
+      ctx.lineWidth = 1;
+
+      // Begin path for room with holes
+      ctx.beginPath();
+
+      // Draw main polygon (clockwise)
+      const first = room.polygon[0];
+      ctx.moveTo(
+        (first.x + offsetX) / gridSize,
+        (first.y + offsetY) / gridSize
+      );
+
+      for (let i = 1; i < room.polygon.length; i++) {
+        const point = room.polygon[i];
+        ctx.lineTo(
+          (point.x + offsetX) / gridSize,
+          (point.y + offsetY) / gridSize
+        );
+      }
+      ctx.closePath();
+
+      // Draw holes (counter-clockwise)
+      if (room.holes?.length) {
+        room.holes.forEach(hole => {
+          if (hole.length < 3) return; // Minimum 3 points for a hole
+
+          const holeFirst = hole[0];
+          ctx.moveTo(
+            (holeFirst.x + offsetX) / gridSize,
+            (holeFirst.y + offsetY) / gridSize
+          );
+
+          // Draw hole in reverse order for proper cutout
+          for (let i = hole.length - 1; i >= 0; i--) {
+            const point = hole[i];
+            ctx.lineTo(
+              (point.x + offsetX) / gridSize,
+              (point.y + offsetY) / gridSize
+            );
+          }
+          ctx.closePath();
+        });
+      }
+
+      // Fill complete shape and outline
+      ctx.fill('evenodd'); // Important for holes!
+      ctx.stroke();
+
+      // Draw room ID
+      if (room.center) {
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          room.id.toString(),
+          room.center.x / gridSize,
+          room.center.y / gridSize
+        );
+      }
+    });
+  }
+
+  // Draws walls and doors with coordinate transformation
+  async drawWalls(ctx, polygonData, coordinateSystem) {
+    if (!polygonData?.walls || !polygonData.doors) {
+      this.log.warn('Incomplete wall/door data for drawing');
+      return;
+    }
+
+    const { gridSize, origin } = coordinateSystem;
+    const offsetX = -origin.x;
+    const offsetY = -origin.y;
+
+    // Transformation function
+    const toCanvas = (x, y) => ({
+      x: (x + offsetX) / gridSize,
+      y: (y + offsetY) / gridSize
+    });
+
+    // 1. Draw walls
+    ctx.strokeStyle = '#1a1a1a'; // Dark gray for walls
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+
+    polygonData.walls.forEach(room => {
+      if (!room.walls?.length) return;
+
+      room.walls.forEach(wall => {
+        const start = toCanvas(wall.beg.x, wall.beg.y);
+        const end = toCanvas(wall.end.x, wall.end.y);
+
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      });
+    });
+
+    // 2. Draw doors
+    ctx.strokeStyle = '#FFA500'; // Orange for doors
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]); // Dashed pattern
+
+    polygonData.doors.forEach(door => {
+      const start = toCanvas(door.beg.x, door.beg.y);
+      const end = toCanvas(door.end.x, door.end.y);
+
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    });
+
+    // Reset line style
+    ctx.setLineDash([]);
+    this.log.debug(`Drawn: ${polygonData.walls.length} rooms with walls and ${polygonData.doors.length} doors`);
+  }
+
+  // Updates floor states based on available maps
+  async updateFloorsBasedOnMaps(currentMapNumber) {
+    const In_path = DH_Did + '.vis.';
+
+    // 1. Ensure base floor exists
+    if (!await this.objectExists(`${In_path}ViewSettings0`)) {
+      await this.createFloorStates(1);
+      this.log.info('Created base floor states');
+=======
       // Additional cleanup
       DH_input_Raw = null;
       DH_jsonread = null;
@@ -2724,6 +3755,7 @@ class Dreamehome extends utils.Adapter {
     if (!await this.objectExists(`${In_path}ViewSettings0`)) {
       await this.createFloorStates(1); // Creates ViewSettings0 and PosHistory0
       this.log.info('Created base floor states (Floor 1 -> stored as 0)');
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     }
 
     // 2. Get available floors from MapNumber states
@@ -2739,20 +3771,35 @@ class Dreamehome extends utils.Adapter {
 
     // 3. Create missing floor states
     for (const floor of availableFloors) {
+<<<<<<< HEAD
+      const storageNumber = floor - 1;
+      if (!await this.objectExists(`${In_path}ViewSettings${storageNumber}`)) {
+        await this.createFloorStates(floor);
+        this.log.info(`Created floor states for floor ${floor}`);
+=======
       const storageNumber = floor - 1; // Convert to 0-based storage
       if (!await this.objectExists(`${In_path}ViewSettings${storageNumber}`)) {
         await this.createFloorStates(floor);
         this.log.info(`Created floor states for floor ${floor} (stored as ${storageNumber})`);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       }
     }
   }
 
+<<<<<<< HEAD
+  // Creates state objects for a floor
+  async createFloorStates(requestedFloor) {
+    const actualFloor = requestedFloor - 1;
+    const In_path = DH_Did + '.vis.';
+
+=======
   // Helper function for creating floor states
   async createFloorStates(requestedFloor) {
     const actualFloor = requestedFloor - 1; // Conversion 1 -> 0, 2 -> 1
     const In_path = DH_Did + '.vis.';
 
     // Define default values for perspective settings
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     const defaultPerspective = {
       perspective: {
         xRotation: 0,
@@ -2800,8 +3847,11 @@ class Dreamehome extends utils.Adapter {
         },
         native: {}
       }),
+<<<<<<< HEAD
+=======
 
       // Create state variables for all floors as an HTML file
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       this.setObjectNotExists(`${In_path}vishtml${actualFloor}`, {
         type: 'state',
         common: {
@@ -2815,7 +3865,10 @@ class Dreamehome extends utils.Adapter {
         native: {}
       })
     ]);
+<<<<<<< HEAD
+=======
     this.log.info(`Created states for floor ${requestedFloor} (stored as ${actualFloor})`);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }
 
   async DH_getFile(url) {
@@ -3166,7 +4219,11 @@ class Dreamehome extends utils.Adapter {
         return;
       }
 
+<<<<<<< HEAD
+		 // 1. Create MapSize and Rotation objects (if it does not exist)
+=======
 		 // 1. Create MapSize object (if it does not exist)
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const mapSizeObjName = `${DH_Did}.map.MapSize${DH_CurMap}`;
       let canvasSize = 1024; // Default value
 
@@ -3186,7 +4243,45 @@ class Dreamehome extends utils.Adapter {
         native: {},
       });
 
+<<<<<<< HEAD
+      const rotationStateName = `${DH_Did}.map.Rotation${DH_CurMap}`;
+      await this.setObjectNotExistsAsync(rotationStateName, {
+        type: 'state',
+        common: {
+          name: 'Map Rotation Angle',
+          type: 'number',
+          role: 'level',
+          def: 0,
+          min: 0,
+          max: 360,
+          unit: '°',
+          read: true,
+          write: true,
+          states: {
+            0: '0',
+            90: '90',
+            180: '180',
+            270: '270',
+            360: '360'
+          }
+        },
+        native: {}
+      });
+
+
+      // 2. Read current value and normalize to valid angle
+      let rotationAngle = 0;
+      const rotationState = await this.getStateAsync(rotationStateName);
+      if (rotationState && rotationState.val !== null) {
+        const angle = Number(rotationState.val);
+        rotationAngle = [0, 90, 180, 270, 360].includes(angle) ? angle : 0;
+        await this.setStateAsync(rotationStateName, rotationAngle, true); // Corrects invalid values
+      }
+
+      // 3. Get existing value or set default
+=======
       // 2. Get existing value or set default
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const mapSizeState = await this.getStateAsync(mapSizeObjName);
       if (mapSizeState && mapSizeState.val) {
         canvasSize = parseInt(mapSizeState.val);
@@ -3194,10 +4289,17 @@ class Dreamehome extends utils.Adapter {
         await this.setStateAsync(mapSizeObjName, canvasSize, true);
       }
 
+<<<<<<< HEAD
+      // 4. Reset NewMap flag
+      await this.setStateAsync(`${DH_Did}.map.NewMap`, false, true);
+
+      // 5. Rest of the original function with the dynamic canvasSize
+=======
       // 3. Reset NewMap flag
       await this.setStateAsync(`${DH_Did}.map.NewMap`, false, true);
 
       // 4. Rest of the original function with the dynamic canvasSize
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       //await this.DH_RequestNewMap();
 
 
@@ -3209,7 +4311,11 @@ class Dreamehome extends utils.Adapter {
         charger: currentMap.charger || []
       };
 
+<<<<<<< HEAD
+      // 6. Precise center point calculation
+=======
       // Precise center point calculation
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       function CalculateRoomCenter(WAr) {
         const x0 = WAr.map(m => m.beg_pt_x);
         const x1 = WAr.map(m => m.end_pt_x);
@@ -3240,6 +4346,60 @@ class Dreamehome extends utils.Adapter {
         };
       }
 
+<<<<<<< HEAD
+      // 7. Canvas Setup
+      // Default value: 1024, will be changed dynamically later
+
+      // 8. Calculate scaling
+      // a. Temporary rotation of all points (before scaling calculation)
+      const allPoints = [];
+      elements.rooms.forEach(room => {
+        room.walls?.forEach(wall => {
+          allPoints.push({ x: wall.beg_pt_x, y: wall.beg_pt_y });
+          allPoints.push({ x: wall.end_pt_x, y: wall.end_pt_y });
+        });
+      });
+
+      // b. Calculate rotated bounding box
+      const angleRad = rotationAngle * Math.PI / 180;
+      let rotMinX = Infinity, rotMaxX = -Infinity, rotMinY = Infinity, rotMaxY = -Infinity;
+
+      allPoints.forEach(point => {
+        const rotX = point.x * Math.cos(angleRad) - point.y * Math.sin(angleRad);
+        const rotY = point.x * Math.sin(angleRad) + point.y * Math.cos(angleRad);
+
+        rotMinX = Math.min(rotMinX, rotX);
+        rotMaxX = Math.max(rotMaxX, rotX);
+        rotMinY = Math.min(rotMinY, rotY);
+        rotMaxY = Math.max(rotMaxY, rotY);
+      });
+
+      // c. Scaling based on rotated dimensions
+      const scale = Math.min(
+        canvasSize / Math.max(rotMaxX - rotMinX, 1),
+        canvasSize / Math.max(rotMaxY - rotMinY, 1)
+      ) * 0.9;
+
+      // d. Offset for centered display
+      const offsetX = (canvasSize - (rotMaxX - rotMinX) * scale) / 2 - rotMinX * scale;
+      const offsetY = (canvasSize - (rotMaxY - rotMinY) * scale) / 2 - rotMinY * scale;
+
+      // 9. Transformation function
+      function toCanvas(x, y, customAngle = null) {
+        const angle = customAngle !== null ? customAngle : rotationAngle;
+        const angleRad = angle * Math.PI / 180;
+
+        const rotatedX = x * Math.cos(angleRad) - y * Math.sin(angleRad);
+        const rotatedY = x * Math.sin(angleRad) + y * Math.cos(angleRad);
+        return [
+          Math.round(rotatedX * scale + offsetX),
+          Math.round(rotatedY * scale + offsetY)
+        ];
+      }
+
+
+      // 10. Prepare color mappings
+=======
       // 2. Canvas Setup
       // Default value: 1024, will be changed dynamically later
 
@@ -3271,12 +4431,17 @@ class Dreamehome extends utils.Adapter {
       }
 
       // 5. Prepare color mappings
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const colorMappings = {
         rooms: {},
         carpets: {}
       };
 
+<<<<<<< HEAD
+      // 11. Prepare rooms mappings
+=======
       // 6. Prepare rooms mappings
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       function PrepareRoomsMappings(RoomID) {
 		    let ExportRoomName = '';
         for (const iCHroomID in CheckArrayRooms) {
@@ -3288,7 +4453,14 @@ class Dreamehome extends utils.Adapter {
 		    return ExportRoomName;
 	    }
 
+<<<<<<< HEAD
+      // Retrieve polygon shapes for each room
+      const roomPolygons = currentMap?.polygons?.rooms || [];
+
+      // 12. HTML with all features
+=======
       // 7. HTML with all features
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       const html = `<!DOCTYPE html><html><head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
@@ -4504,7 +5676,11 @@ class Dreamehome extends utils.Adapter {
 				}
 
 				/* ==================== */
+<<<<<<< HEAD
+                /* Batterry indicator */
+=======
                 /* Clean Command menu */
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 				/* ==================== */
 				/* Battery indicator (charging bar with animation) */
 				.battery-indicator {
@@ -4537,6 +5713,171 @@ class Dreamehome extends utils.Adapter {
 				}
 
 				/* ==================== */
+<<<<<<< HEAD
+                /* Component status */
+				/* ==================== */
+				.compact-component {
+				    transition: all 0.2s ease;
+				}
+				.compact-component:hover {
+				    background: rgba(0, 255, 170, 0.1) !important;
+				    transform: scale(1.05);
+				}
+
+				.critical-level {
+				    filter: drop-shadow(0 0 2px red);
+				    opacity: 0.9;
+				}
+
+			    .component-detail-overlay {
+			        position: fixed;
+			        top: 0;
+			        left: 0;
+			        right: 0;
+			        bottom: 0;
+			        background: rgba(0,0,0,0.3);
+			        display: flex;
+			        justify-content: center;
+			        align-items: center;
+			        z-index: 1000;
+			        opacity: 0;
+			        pointer-events: none;
+			        transition: opacity 0.4s ease;
+			        backdrop-filter: blur(8px);
+			    }
+
+			    .component-detail-overlay.active {
+			        opacity: 1;
+			        pointer-events: all;
+			    }
+
+			    .component-detail-container {
+			        background: rgba(255, 255, 255, 1);
+			        backdrop-filter: blur(12px);
+			        border-radius: 20px;
+			        padding: 25px;
+			        max-width: 450px;
+			        width: 90%;
+			        border: 1px solid rgba(0, 0, 0, 0.2);
+			        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+			        text-align: center;
+			        position: absolute;
+			        top: 2%;
+			        left: 20%;
+			        transform: translateX(-50%);
+			    }
+
+			    .component-detail-svg-container {
+			        margin: 0 auto 20px;
+			        width: 160px;  /* 4x size of the original SVGs (original ~40px) */
+			        height: 160px;
+			        display: flex;
+			        justify-content: center;
+			        align-items: center;
+			        background: rgba(43, 180, 226,0.1);
+			        border-radius: 12px;
+			        padding: 15px;
+			        box-sizing: border-box;
+			    }
+
+			    .component-detail-svg {
+			        width: 100%;
+			        height: 100%;
+			        transform: scale(1.5); /* Additional scaling for better details */
+			    }
+
+			    .component-detail-name {
+			        font-size: 22px;
+			        font-weight: bold;
+			        margin-bottom: 15px;
+			        color: #000;
+			    }
+
+			    .component-detail-info {
+			        margin-bottom: 12px;
+			        font-size: 16px;
+			        color: rgba(0,0,0,0.9);
+			        display: flex;
+			        justify-content: space-between;
+			        max-width: 300px;
+			        margin-left: auto;
+			        margin-right: auto;
+			    }
+
+			    .component-detail-info span {
+			        font-weight: 500;
+			        color: #000;
+			    }
+
+			    .component-detail-reset {
+			        background: linear-gradient(135deg, rgba(0,150,255,0.6) 0%, rgba(0,100,200,0.8) 100%);
+			        border: none;
+			        color: white;
+			        padding: 10px 20px;
+			        border-radius: 10px;
+			        cursor: pointer;
+			        font-size: 15px;
+			        transition: all 0.3s ease;
+			        margin-top: 20px;
+			        font-weight: 500;
+			        box-shadow: 0 4px 15px rgba(0,100,200,0.3);
+			    }
+
+			    .component-detail-reset:hover {
+			        background: linear-gradient(135deg, rgba(0,170,255,0.7) 0%, rgba(0,120,220,0.9) 100%);
+			        transform: translateY(-2px);
+			        box-shadow: 0 6px 20px rgba(0,120,220,0.4);
+			    }
+
+			    .component-detail-reset:active {
+			        transform: translateY(1px);
+			    }
+
+			    .component-detail-close {
+			        position: absolute;
+			        top: 15px;
+			        right: 15px;
+			        background: rgba(0,0,0,0.15);
+			        border: none;
+			        color: #000;
+			        width: 32px;
+			        height: 32px;
+			        border-radius: 50%;
+			        cursor: pointer;
+			        font-size: 18px;
+			        display: flex;
+			        align-items: center;
+			        justify-content: center;
+			        transition: all 0.4s ease;
+			    }
+
+			    .component-detail-close:hover {
+			        background: rgba(0,0,0,0.25);
+			        transform: rotate(90deg);
+			    }
+
+			    /* Animation for the opening of the detail view */
+			    @keyframes componentDetailFadeIn {
+			        from { opacity: 0; transform: scale(0.95); }
+			        to { opacity: 1; transform: scale(1); }
+			    }
+
+			    .component-detail-overlay.active .component-detail-container {
+			        animation: componentDetailFadeIn 0.4s ease-out forwards;
+			    }
+
+				#pureWaterTankFill {
+			        visibility: visible !important;
+			        display: block !important;
+			    }
+
+				.Component-with-outline {
+					text-shadow: 1px 1px 2px black;
+				}
+
+				/* ==================== */
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                 /* customeClean Room setting menu */
 				/* ==================== */
 				.settings-button {
@@ -4794,6 +6135,18 @@ class Dreamehome extends utils.Adapter {
 				  background: white;
 				}
 
+<<<<<<< HEAD
+				.room-polygon {
+				  pointer-events: bounding-box;
+				  transition: fill-opacity 0.5s !important;
+				}
+
+				.room-polygon path {
+				  fill-opacity: 0.7 !important;
+				  stroke-width: 1.5 !important;
+				}
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
             </style>
         </head>
@@ -4808,7 +6161,10 @@ class Dreamehome extends utils.Adapter {
     colorMappings.rooms[color] = room.room_id;
     const walls = room.walls.map(w => toCanvas(w.beg_pt_x, w.beg_pt_y));
     const pathData = walls.map(([x,y], i) => (i === 0 ? 'M' : 'L') + x + ' ' + y).join(' ') + ' Z';
+<<<<<<< HEAD
+=======
     //const center = walls.reduce((a, b) => [a[0]+b[0], a[1]+b[1]], [0, 0]).map(v => v/walls.length);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
     // Precise center point calculation
     const center = CalculateRoomCenter(room.walls);
@@ -4834,15 +6190,67 @@ class Dreamehome extends utils.Adapter {
                         </div>`;
   }).join('')}
 
+<<<<<<< HEAD
+
+                    ${roomPolygons.map(room => {
+    const color = ColorsItems[room.id % ColorsItems.length];
+
+    // Convert the main polygon to canvas coordinates using toCanvas
+    const mainPath = room.polygon.map(p => {
+      const [x, y] = toCanvas(p.x, p.y);
+      return `${x},${y}`;
+    }).join(' ');
+
+    // Apply transformation to holes
+    const holes = room.holes.map(hole =>
+      `M ${hole.map(p => {
+        const [x, y] = toCanvas(p.x, p.y);
+        return `${x},${y}`;
+      }).join(' L')} Z`
+    ).join(' ');
+
+    return `
+                      <svg class="room-polygon" id="polygon-${room.room_id}" style="position:absolute;top:0;left:0;width:100%;height:100%">
+                        <path d="M ${mainPath} Z ${holes}"
+                              fill="${color}33"
+                              stroke="${color}"
+                              stroke-width="1.5"
+                              fill-rule="evenodd"/>
+                      </svg>`;
+  }).join('')}
+
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     ${Object.entries(elements.carpets).map(([id, rect]) => {
     const color = ColorsCarpet[id % ColorsCarpet.length];
     colorMappings.carpets[color] = id;
     const [x1, y1, x2, y2] = rect;
+<<<<<<< HEAD
+
+    // Transform all 4 corner points
+    const [tx1, ty1] = toCanvas(x1, y1);
+    const [tx2, ty2] = toCanvas(x2, y1);
+    const [tx3, ty3] = toCanvas(x2, y2);
+    const [tx4, ty4] = toCanvas(x1, y2);
+
+    // Calculate the bounding box of the transformed points
+    const left = Math.min(tx1, tx2, tx3, tx4);
+    const top = Math.min(ty1, ty2, ty3, ty4);
+    const width = Math.max(tx1, tx2, tx3, tx4) - left;
+    const height = Math.max(ty1, ty2, ty3, ty4) - top;
+
+    return `
+                            <div class="carpet" id="carpet-${id}"
+                                style="left:${left}px;top:${top}px;width:${width}px;height:${height}px; background:${color}33;border:2px solid ${color}">
+                            </div>`;
+=======
     const [tx1, ty1] = toCanvas(x1, y1);
     return `
                         <div class="carpet" id="carpet-${id}"
 							style="left:${tx1}px;top:${ty1}px;width:${(x2-x1)*scale}px;height:${(y2-y1)*scale}px;background:${color}33;border:2px solid ${color}">
                         </div>`;
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
   }).join('')}
 
                     ${wallsInfo.doors.map(door => {
@@ -5030,19 +6438,31 @@ class Dreamehome extends utils.Adapter {
 
                         <div class="slider-container">
                             <label for="x-position">Horizontal:</label>
+<<<<<<< HEAD
+                            <input type="range" id="x-position" min="-700" max="700" value="0" step="5">
+=======
                             <input type="range" id="x-position" min="-500" max="500" value="0" step="5">
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="x-position-value">0px</span>
                         </div>
 
                         <div class="slider-container">
                             <label for="y-position">Vertical:</label>
+<<<<<<< HEAD
+                            <input type="range" id="y-position" min="-700" max="700" value="0" step="5">
+=======
                             <input type="range" id="y-position" min="-500" max="500" value="0" step="5">
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="y-position-value">0px</span>
                         </div>
 
 						<div class="slider-container">
                             <label for="map-size-range">Map Size:</label>
+<<<<<<< HEAD
+                            <input type="range" id="map-size-range" min="256" max="2048" value="${canvasSize}" step="32">
+=======
                             <input type="range" id="map-size-range" min="256" max="2048" value="${canvasSize}" step="64">
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             <span class="slider-value" id="map-size-value">${canvasSize}px</span>
                         </div>
 
@@ -5323,6 +6743,16 @@ class Dreamehome extends utils.Adapter {
                             <span id="battery-percent">0%</span>
 						</div>
 
+<<<<<<< HEAD
+				        <!-- Component status section -->
+				        <div class="component-status" style="margin-top: 12px;">
+				            <div id="component-list" style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 5px 0;">
+				                <!-- Components will be dynamically inserted here -->
+				            </div>
+				        </div>
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
                     </div>
                 </div>
@@ -5339,6 +6769,47 @@ class Dreamehome extends utils.Adapter {
                     </div>
                 </div>
 
+<<<<<<< HEAD
+                <!-- Overlay for component detail view -->
+                <div class="component-detail-overlay" id="component-detail-overlay">
+                    <div class="component-detail-container">
+                        <button class="component-detail-close" id="component-detail-close">&times;</button>
+                        <div class="component-detail-svg-container">
+                            <div class="component-detail-svg" id="component-detail-svg"></div>
+                        </div>
+                        <div class="component-detail-name" id="component-detail-name"></div>
+
+                        <div class="component-detail-info">
+                            <div>Status:</div>
+                            <div id="component-detail-status">-</div>
+                        </div>
+                        <div class="component-detail-info">
+                            <div>Remaining:</div>
+                            <div id="component-detail-remaining">-</div>
+                        </div>
+                        <div class="component-detail-info">
+                            <div id="component-detail-remaining-String">Remaining Time:</div>
+                            <div id="component-detail-time">-</div>
+                        </div>
+
+						<div class="component-detail-info">
+                            <div id="component-detail-currentMlPerSqm-Label">Consumption:</div>
+                            <div id="component-detail-currentMlPerSqm">-</div>
+                        </div>
+
+						<div class="component-detail-info">
+                            <div id="component-detail-currentMlMaxMin-Label">Average:</div>
+                            <div id="component-detail-currentMlMaxMin" style="font-size: 15px;">-</div>
+                        </div>
+
+                        <button class="component-detail-reset" id="component-detail-reset">
+                            <i class="fas fa-sync-alt"></i> Reset Component
+                        </button>
+                    </div>
+                </div>
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                 <canvas id="click-layer" width="${canvasSize}" height="${canvasSize}"></canvas>
 
                 <script>
@@ -5346,6 +6817,10 @@ class Dreamehome extends utils.Adapter {
 					const prefix = '${prefix}';
                     const colorMappings = ${JSON.stringify(colorMappings, null, 2)};
                     const roomData = ${JSON.stringify(roomData, null, 2)};
+<<<<<<< HEAD
+					const rotationAngle = ${rotationAngle};
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     const scale = ${scale};
                     const offsetX = ${offsetX};
                     const offsetY = ${offsetY};
@@ -5384,6 +6859,11 @@ class Dreamehome extends utils.Adapter {
                     let currentStatusIndex = 0; // Keeps track of the current status index
 					let statusLoopTimeout; // To store the timeout reference
 
+<<<<<<< HEAD
+					const UserLang = '${UserLang}';
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					const statusList = [
                       'Sweeping',
                       'Mopping',
@@ -5571,8 +7051,17 @@ class Dreamehome extends utils.Adapter {
                       }
                     }
 
+<<<<<<< HEAD
+					// =============================================
+                    // update Battery Status
+                    // =============================================
                     function pollStatus() {
                       updateBatteryStatus();
+                      updateComponentStatus();
+=======
+                    function pollStatus() {
+                      updateBatteryStatus();
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					  setTimeout(pollStatus, 5000);
                     }
 
@@ -5614,6 +7103,899 @@ class Dreamehome extends utils.Adapter {
                     }
 
 					// =============================================
+<<<<<<< HEAD
+                    // update components
+                    // =============================================
+                    const components = [
+                        {
+                            id: 'MainBrushLeft',
+                    		timeId: 'MainBrushTimeLeft',
+                            label: 'MainBrush',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 64 64">
+                                    <style> .mainBrushCoverAnimation { animation:  coverMove 1.5s ease-in-out forwards, coverFade 1.5s ease-in-out forwards; } .mainBrushAnimation { animation: brushPulse 6s ease-in-out 1s infinite; }
+                    					@keyframes coverMove { 0% { transform: translate(2px, 15px); } 100% { transform: translate(-10px, -5px); } }
+                    					@keyframes coverFade { 0%, 70% { opacity: 0.6; } 100% { opacity: 0; } }
+                    					@keyframes brushPulse { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateX(-15px) scale(1.5); } }
+                                    </style>
+                                    <path class="mainBrushCoverAnimation" style="opacity:.27" d="M17.882 6.588q13.37 -0.188 26.729 0.376 1.235 0.407 2.447 0.753 0.466 2.096 -0.188 4.141 -0.684 0.503 -1.506 0 -3.371 0.422 -6.776 0.565 -0.753 1.129 -1.506 0l-6.024 -0.188a32 32 0 0 0 -6.588 0.753 38.776 38.776 0 0 0 -7.529 -1.129q-0.698 0.629 -1.318 0 -0.654 -2.045 -0.188 -4.141 1.485 -0.203 2.447 -1.129m-1.506 1.129h1.129q-0.266 3.668 -1.129 0m28.612 0a1.856 1.856 0 0 1 1.129 0.188q-0.976 3.415 -1.129 -0.188m-29.365 0.376a22.965 22.965 0 0 1 0.753 2.071L15.812 10.729a9.412 9.412 0 0 1 -0.188 -2.635m30.871 0q0.638 1.202 0.188 2.635 -0.491 -0.343 -0.565 -0.941 0.366 -0.813 0.376 -1.694m-25.976 0.753q1.037 0.079 0.376 0.753 -0.45 -0.258 -0.376 -0.753m4.894 0q1.037 0.079 0.376 0.753 -0.45 -0.258 -0.376 -0.753m2.635 0a27.482 27.482 0 0 1 6.4 0.376l-3.2 0.376q-1.836 -0.011 -3.2 -0.753m8.282 0q1.037 0.079 0.376 0.753 -0.45 -0.258 -0.376 -0.753m4.894 0a11.859 11.859 0 0 0 1.694 0.753q0.749 -0.144 1.129 -0.753 0.281 1.495 0.188 3.012 -12.989 0.094 -25.976 -0.188 11.481 -0.282 22.965 -0.188zm-19.576 0.753q0.835 -0.148 1.506 0.376l-0.753 0.376q-0.685 -0.139 -0.753 -0.753m17.694 0q0.835 -0.148 1.506 0.376l-0.753 0.376q-0.685 -0.139 -0.753 -0.753m-22.212 0.376q0.527 0.603 0.376 1.506a3.162 3.162 0 0 1 -1.506 -0.188 5.534 5.534 0 0 0 1.129 -1.318m1.129 0h3.012v1.129h-3.012zm6.024 0q1.037 0.079 0.376 0.753 -0.45 -0.258 -0.376 -0.753m1.129 0h11.671v1.129h-11.671zm12.047 0q1.037 0.079 0.376 0.753 -0.45 -0.258 -0.376 -0.753m7.153 0q3.422 1.473 0 1.506z"/>
+                                    <path style="opacity:.4" d="M16 26.165q0.663 -0.124 1.129 0.376a138.918 138.918 0 0 0 -1.506 4.706 354.635 354.635 0 0 1 16.188 -1.694q9.753 0.373 19.2 2.824 4.417 1.219 7.718 4.329a15.435 15.435 0 0 1 0.941 2.071 158.871 158.871 0 0 1 -0.941 10.729q-3.352 3.608 -8.094 5.082 -18.022 4.663 -36.141 0.376 -5.671 -1.538 -9.6 -5.835a32.376 32.376 0 0 1 -0.565 -6.4 22.965 22.965 0 0 1 0.565 -5.647A20.593 20.593 0 0 1 9.6 33.506a2455.341 2455.341 0 0 1 -5.647 -3.2l0.376 -0.376a27.972 27.972 0 0 1 5.271 2.447q2.421 1.186 4.518 -0.565a99.765 99.765 0 0 0 1.882 -5.647m15.812 3.765q0.682 0.414 1.506 0.376v1.882h-2.635v-1.882q0.729 0.134 1.129 -0.376m-5.271 0.376q2.748 -0.191 0.376 1.318a4.706 4.706 0 0 1 -2.635 0 1.374 1.374 0 0 1 -0.376 -0.565 92.612 92.612 0 0 0 2.635 -0.753m9.035 0.376q0.236 -0.352 0.753 -0.376 2.43 0.401 4.894 0.565 -2.931 1.958 -5.647 -0.188m-6.776 0q2.034 1.124 0 0.941 -0.62 -0.435 0 -0.941m6.024 0q0.446 0.16 0.753 0.565 -0.872 0.67 -1.882 0.376a30.871 30.871 0 0 0 1.129 -0.941m-13.553 0.753q2.335 0.101 4.518 0.753 1.962 -0.536 3.765 0.188 3.025 0.383 6.024 -0.188 1.879 0.309 3.765 0.565l-15.059 0.376q-0.512 0.96 -0.376 2.071 0.835 -0.148 1.506 0.376a25.299 25.299 0 0 1 -7.529 0.188q2.284 -0.154 3.953 -1.694 0.339 -1.466 -0.565 -2.635m19.2 0q6.656 0.46 13.553 3.953a23.718 23.718 0 0 0 -5.459 0.188q-3.672 -2.481 -8.094 -3.2 -0.62 -0.435 0 -0.941m-20.329 0.753q2.277 0.491 0.753 2.071A41.976 41.976 0 0 1 15.059 35.953q-0.469 8.274 -0.565 0a14.381 14.381 0 0 1 -4.141 -0.753 12.198 12.198 0 0 1 1.694 -1.129q3.025 2.598 4.706 -0.941 1.831 -0.23 3.388 -0.941m19.576 1.129q4.428 -0.206 8.282 2.447 -4.717 0.47 -9.412 -0.188 0.671 -0.524 1.506 -0.376 0.16 -1.081 -0.376 -1.882m-26.729 0h1.882v1.129h-1.882zm-7.529 4.518q0.397 -1.251 1.506 -2.071l3.388 -1.882q0.565 -0.376 1.129 0 -3.318 1.561 -6.024 3.953m18.824 -4.141h15.059v1.129h-15.059zm29.741 0.753q2.412 0.642 4.141 2.447l-0.565 0.565a81.694 81.694 0 0 0 -3.576 -3.012m-27.106 0.753q4.908 -0.187 9.788 0.376l-4.894 0.376q-2.667 -0.005 -4.894 -0.753m-16.188 0.753h1.129q0.429 2.005 -0.188 4.141a1.856 1.856 0 0 1 -0.188 -1.129q-0.928 0.12 -1.694 -0.376a6.927 6.927 0 0 1 -0.188 -2.259q0.729 0.134 1.129 -0.376m47.435 3.388q-2.734 -1.905 -5.647 -0.376 -0.691 -0.214 -0.376 -3.012 4.235 -0.333 6.024 3.388m-42.165 -2.259q0.835 -0.148 1.506 0.376l-0.753 0.376q-0.685 -0.139 -0.753 -0.753m1.882 0q14.123 -0.188 28.235 0.376l-14.118 0.376q-7.258 -0.001 -14.118 -0.753m-12.047 2.259q0.236 -2.222 1.129 -0.565zm40.659 -1.506q1.01 -0.161 1.882 0.376l-0.941 0.376q-0.777 -0.104 -0.941 -0.753m-28.612 0.376h28.235v1.506q-15.064 0.188 -30.118 -0.376 1.217 -0.283 1.882 -1.129m-9.412 0.376 2.259 1.129q-0.544 1.124 -1.506 0.376 -0.638 -0.634 -0.753 -1.506m46.306 0q0.798 2.043 -1.506 1.694a1.374 1.374 0 0 1 -0.376 -0.565q1.154 -0.319 1.882 -1.129m-8.282 0.376q0.835 -0.148 1.506 0.376l-0.753 0.376q-0.685 -0.139 -0.753 -0.753m-40.659 0.376a20.706 20.706 0 0 1 1.506 2.071 4.292 4.292 0 0 0 -0.565 1.318 8.809 8.809 0 0 1 -1.694 -2.447q0.078 -0.734 0.753 -0.941m1.882 0q1.491 0.73 0 1.506 -1.374 -0.93 0 -1.506m47.812 0q1.733 0.261 0.565 1.506a3.576 3.576 0 0 0 -0.941 -0.565q0.425 -0.379 0.376 -0.941m2.635 0q0.863 0.01 0.565 0.753 -0.405 -0.307 -0.565 -0.753m-1.506 3.388q-0.023 -1.652 0.941 -3.012a4.066 4.066 0 0 1 0.941 1.129 6.739 6.739 0 0 1 -1.882 1.882m-45.176 -2.259h6.024v1.882q-3.557 -0.591 -7.153 -1.129a16.565 16.565 0 0 0 1.129 -0.753m6.4 0h28.235a12.235 12.235 0 0 1 -0.188 3.012q-2.602 1.78 -1.694 -1.129h-5.271v1.882h-13.929v-2.259h-5.271q-0.136 1.111 0.376 2.071 -1.01 0.294 -1.882 -0.376 -0.533 -1.535 -0.376 -3.2m28.612 0q3.018 -0.094 6.024 0.188a2.56 2.56 0 0 1 1.129 0.565 122.729 122.729 0 0 0 -7.153 1.129zm-38.024 0.753h1.506a4.856 4.856 0 0 1 -0.188 1.882q-1.058 0.332 -1.882 -0.753 -0.135 -0.727 0.565 -1.129m45.553 0q1.424 -0.21 2.259 0.941 -2.2 2.121 -2.259 -0.941m-48.941 0.376q3.566 3.672 8.659 5.082 17.459 4.615 35.012 0.376 5.888 -1.201 9.976 -5.459 2.202 7.245 -4.329 10.729 -7.872 3.662 -16.565 4.141 -11.46 0.96 -22.588 -1.882 -6.161 -1.333 -9.976 -6.212 -0.282 -3.383 -0.188 -6.776m5.647 1.129q1.11 0.355 2.259 0.753 2.127 -0.926 4.518 -0.753 -0.154 1.102 0.753 1.694 13.741 0.376 27.482 0 0.868 -0.627 0.753 -1.694a9.788 9.788 0 0 1 4.141 0.753q1.801 -1.669 3.012 0.376 -7.512 4.048 -15.812 3.012v1.129h-11.671v-1.129q-7.999 0.963 -15.435 -2.635 -0.636 -0.739 0 -1.506m9.412 0q1.919 -0.181 3.765 0.376l-1.882 0.376q-1.208 -0.032 -1.882 -0.753m19.2 0a22.965 22.965 0 0 1 4.141 0.188q-0.753 0.376 0 0.753a22.965 22.965 0 0 1 -4.141 0.188z"/>
+                                    <path style="opacity:.212" d="M9.976 46.118q8.011 2.901 16.565 3.576 -1.183 0.314 -0.188 0.565 0.534 -0.229 0.753 -0.753l0.376 0.753q1.442 -0.718 3.2 -0.753 1.905 0.238 3.576 0 0.462 2.99 0.565 0 2.223 0.166 4.329 -0.376 0.462 2.99 0.565 0 7.052 -0.281 13.553 -3.012l0.376 0.941a60.235 60.235 0 0 0 -0.565 4.706q-5.836 3.049 -12.047 3.765l-0.376 -0.753q-0.953 0.872 -2.259 1.129l-0.376 -0.753q-0.861 0.689 -2.071 0.753 -1.209 -0.064 -2.071 -0.753 -1.056 0.702 -2.447 0.753 -1.391 -0.051 -2.447 -0.753 -0.861 0.689 -2.071 0.753 -1.209 -0.064 -2.071 -0.753l-0.376 0.753q-6.735 -0.907 -13.365 -3.576a3.576 3.576 0 0 1 -0.565 -0.941 316.988 316.988 0 0 1 -0.565 -5.271"/>
+                                    <path id="mainbrush-SVG-level" class="mainBrushAnimation" style="opacity:1" fill="#0095fe" d="M26.918 17.882a71.906 71.906 0 0 1 12.8 0.753 21.082 21.082 0 0 0 3.576 -0.376 5.308 5.308 0 0 0 2.824 0.753 10.24 10.24 0 0 0 0.753 2.071 2.748 2.748 0 0 1 -0.753 1.318q-1.918 0.412 -2.259 2.259a53.835 53.835 0 0 1 -4.329 0.376 193.129 193.129 0 0 1 -8.282 -1.129A13.384 13.384 0 0 0 25.788 24.847a19.878 19.878 0 0 1 -7.153 -0.376q-0.817 -1.732 -2.635 -2.447l-0.376 -0.941a10.24 10.24 0 0 0 0.753 -2.071q1.542 0.015 2.824 -0.753 1.868 0.312 3.765 0.376 2.149 0.111 3.953 -0.753m0.753 2.635q7.051 -0.161 13.929 1.318A228.518 228.518 0 0 1 31.247 20.894 227.765 227.765 0 0 1 20.894 21.835a164.141 164.141 0 0 1 6.776 -1.318m11.671 -1.129q2.145 -0.555 4.518 -0.376v1.506a15.736 15.736 0 0 1 -4.518 -1.129m-21.082 -0.376q9.601 -0.27 0 1.506z"/>
+                                    </svg>\`,
+                            type: 'wear'
+                        },
+                        {
+                            id: 'SideBrushLeft',
+                    		timeId: 'SideBrushTimeLeft',
+                            label: 'Sidebrush',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                    				<style> .sideBrushAnimation { transform-origin: 51% 62%; transform-box: fill-box; opacity: 1; animation: sidebrushRotate 2s infinite; }
+                    					@keyframes sidebrushRotate { 0% { transform: rotate(0deg) scale(0.9); } 100% { transform: rotate(360deg) scale(1.2); } }
+                    				</style>
+                    				<path style="opacity:.5" d="M18.384 0.553q13.321 -0.095 19.031 11.802 1.605 3.82 1.328 7.967a1.459 1.459 90 0 0 -0.885 0.148q0.676 0.729 0.59 1.77 -1.579 11.018 -11.802 15.343 -13.306 4.268 -22.277 -6.344 -2.927 -4.28 -3.688 -9.442a3.224 3.224 90 0 1 0.885 -1.328 1.459 1.459 90 0 0 -0.885 -0.148q-0.338 -3.761 1.033 -7.376 0.295 -0.885 1.18 -1.18l0.295 0.885q0.128 -0.683 0.59 -1.18A27.529 27.529 90 0 1 2.746 15.306q0.718 -0.062 1.033 0.59a2.478 2.478 90 0 0 0.148 -1.18h4.131v1.475h23.31v-1.475h4.131a2.478 2.478 90 0 0 0.148 1.18 6.965 6.965 90 0 1 1.033 -0.885q-2.505 -8.037 -10.18 -11.507l-0.885 1.18a15.294 15.294 90 0 1 -0.443 2.803 4.8 4.8 90 0 1 -2.36 0 4.518 4.518 90 0 1 -0.443 -1.328q-0.931 2.642 -3.688 1.918 -1.497 -0.611 -1.623 -2.213a6.024 6.024 90 0 1 -0.443 1.623 4.8 4.8 90 0 1 -2.36 0 15.294 15.294 90 0 1 -0.443 -2.803l-0.885 -1.18A19.082 19.082 90 0 0 8.647 6.159l-0.295 -0.295q1.314 -0.517 0.295 -1.18 0.354 -1.165 1.475 -1.623Q14.101 1.111 18.384 0.553m-1.475 1.18q1.092 -0.502 2.36 -0.148 -1.179 0.67 -2.36 0.148m3.246 0q1.092 -0.502 2.36 -0.148 -0.338 0.418 -0.885 0.443a5.953 5.953 90 0 0 -1.475 -0.295m-6.491 1.475q1.173 -0.847 2.656 -0.738a8.918 8.918 90 0 1 -2.656 0.738m3.246 -0.885h5.606a5.459 5.459 90 0 0 0.148 1.77q2.051 0.438 0 0.885 -1.491 -2.994 -4.573 -1.623a6.4 6.4 90 0 0 -1.18 1.918 4.635 4.635 90 0 0 -1.18 -0.738q0.561 -0.137 1.033 -0.443 0.219 -0.873 0.148 -1.77m6.196 0.295q1.348 -0.3 2.656 0.59l-0.148 0.295a12.706 12.706 90 0 0 -2.508 -0.885M16.024 2.913q0.24 0.027 0.295 0.295 -1.447 1.088 -0.295 -0.295m7.081 0q0.824 0.153 0.738 0.885 -0.627 -0.256 -0.738 -0.885m3.836 0q0.824 0.153 0.738 0.885 -0.627 -0.256 -0.738 -0.885M14.253 3.504q1.107 0.005 0.148 0.59a0.718 0.718 90 0 1 -0.148 -0.59m10.327 0.295q0.255 -0.564 0.59 0 -0.208 0.426 -0.59 0M10.122 4.389q0.125 -0.349 0.443 -0.59 0.234 0.582 -0.443 0.59m8.852 -0.59q2.529 -0.268 2.36 2.065 -1.016 -1.279 -2.656 -0.738a3.365 3.365 90 0 1 -0.59 0.738l-0.295 -0.295q0.428 -1.014 1.18 -1.77m10.327 0.59q-0.676 -0.008 -0.443 -0.59 0.318 0.241 0.443 0.59m0 0q0.676 -0.032 0.885 0.59 -0.676 0.032 -0.885 -0.59m0.885 0.59q0.843 0.105 1.18 0.885 -0.843 -0.105 -1.18 -0.885M18.974 5.274q2.575 -0.208 1.475 1.918 -2.652 0.359 -1.475 -1.918m-4.131 0.295H16.024v1.475h-1.18zm8.557 0h1.18v1.475H23.4zm10.327 2.656q0.623 0.209 0.59 0.885 -0.623 -0.209 -0.59 -0.885M2.746 13.24a32.235 32.235 90 0 1 -1.18 4.131L1.271 17.224q0.506 -2.116 1.475 -3.983m2.36 1.77a9.553 9.553 90 0 1 2.36 0.148 7.388 7.388 90 0 1 -2.065 0.148 18.847 18.847 90 0 1 0 5.606q-0.679 -1.531 -0.59 -3.246a13.576 13.576 90 0 1 0.295 -2.656m10.327 0q0.813 0.062 0.295 0.59 -0.353 -0.202 -0.295 -0.59m7.967 0q1.107 0.005 0.148 0.59a0.718 0.718 90 0 1 -0.148 -0.59m8.557 0q1.305 -0.123 2.508 0.295a21.412 21.412 90 0 1 0 5.016q-0.314 0.652 -1.033 0.59 0.007 -2.695 0.59 -5.311 -1.278 0.226 -2.065 -0.59m5.311 0q0.754 1.041 0.443 2.36a5.6 5.6 90 0 1 -0.443 -2.36M3.041 16.191q0.565 0.392 0 0.885 -0.47 -0.409 0 -0.885m3.836 0q0.813 0.062 0.295 0.59 -0.353 -0.202 -0.295 -0.59m29.211 0q0.811 0.283 0.295 0.885 -0.392 -0.365 -0.295 -0.885M8.647 16.486h1.18A32.706 32.706 90 0 1 9.532 22.682a47.529 47.529 90 0 0 -0.885 -6.196m1.475 0h2.951v1.18H10.122zm3.246 0h2.951v1.18h-2.951zm3.246 0h2.656v1.18H16.614zm2.951 0H21.925v1.18H19.564zm2.951 0h2.656v1.18H22.515zm2.951 0h2.951v1.18h-2.951zm3.246 0a3.866 3.866 90 0 1 2.065 0.295l-0.443 0.885 -0.295 4.721q-0.6 0.389 -1.328 0.295zm-21.834 0.59q0.813 0.062 0.295 0.59 -0.353 -0.202 -0.295 -0.59m-3.541 7.672q-0.314 0.4 -0.885 0.295 0.071 0.752 -0.148 1.475A27.153 27.153 90 0 1 1.271 22.24q0.913 -1.531 1.033 -3.393 1.5 0.274 1.475 -1.475 0.173 2.37 0.443 4.721h0.885v2.656zM30.776 17.371q0.511 2.723 0.148 5.606 -0.491 -1.018 -0.443 -2.213 0.114 -1.703 0.295 -3.393m6.491 3.541q1.058 0.082 0.885 1.18a17.459 17.459 90 0 1 -1.033 4.131q-0.049 -1.039 -1.033 -1.328 -2.208 -0.221 -4.426 -0.148a18 18 90 0 1 -0.148 3.246 3.388 3.388 90 0 1 -1.328 1.033q-10.622 0.295 -21.244 0 -0.812 -0.221 -1.033 -1.033a11.929 11.929 90 0 1 0.148 -4.131 5.435 5.435 90 0 1 1.77 0.148q-0.951 1.554 -0.295 3.246 2.208 0.221 4.426 0.148 0.128 -1.596 -0.295 -3.098a124.235 124.235 90 0 1 12.097 0q-0.423 1.502 -0.295 3.098h4.426V24.158q1.305 -0.352 4.426 0v-2.065h0.885q0.3 -2.346 0.443 -4.721 -0.025 1.75 1.475 1.475 0.22 1.022 0.148 2.065M8.352 17.666q0.452 1.756 0.59 3.688 0.034 0.907 -0.443 1.623 -0.221 -2.651 -0.148 -5.311M1.271 17.961q0.388 -0.058 0.59 0.295Q0.591 21.192 1.271 17.961m5.901 0q0.564 0.255 0 0.59 -0.426 -0.208 0 -0.59m30.981 1.475q-0.912 -0.554 -0.295 -1.475 0.421 0.684 0.295 1.475m-22.424 -0.885q0.388 -0.058 0.59 0.295 -2.912 1.633 -6.196 0.885a1.318 1.318 90 0 1 0.59 -0.443 54.353 54.353 90 0 0 5.016 -0.738m0.885 0q1.107 0.005 0.148 0.59a0.718 0.718 90 0 1 -0.148 -0.59m5.901 0a132.706 132.706 90 0 0 5.606 0.738q0.202 0.183 0.295 0.443 -2.834 0.403 -5.606 -0.443 -0.333 -0.296 -0.295 -0.738M7.172 18.847q0.564 0.255 0 0.59 -0.426 -0.208 0 -0.59m11.212 0.295q1.909 -0.101 3.541 0.885 -1.331 0.591 -2.508 -0.295 -1.325 0.903 -2.803 0.295 0.86 -0.575 1.77 -0.885m-11.507 0.885q1.107 0.005 0.148 0.59a0.718 0.718 90 0 1 -0.148 -0.59m-2.36 0.59q0.428 0.578 1.18 0.59a9.553 9.553 90 0 0 0.148 2.36q0.95 0.271 1.918 0.59a4.988 4.988 90 0 1 -2.36 0.295V21.797h-0.885zm2.36 0.295q1.107 0.005 0.148 0.59a0.718 0.718 90 0 1 -0.148 -0.59m27.736 0q0.4 0.314 0.295 0.885 -0.585 -0.075 -1.033 0.295 0.22 0.897 -0.148 1.77a6.235 6.235 90 0 1 -0.295 -2.656q0.708 0.118 1.18 -0.295M10.122 21.502q0.505 1.094 1.77 0.885v-0.885h3.836v0.885h1.18v-0.885h4.721v0.885h1.18v-0.885h3.836v0.885h1.18q-0.097 -0.52 0.295 -0.885a2.908 2.908 90 0 1 0.295 1.77h-2.065v-1.475a14.871 14.871 90 0 0 -2.951 0.148q-0.59 0.295 0 0.59 -3.981 0.221 -7.967 0.148v-0.885H12.188V22.682H10.122zm26.26 0q0.565 0.392 0 0.885 -0.26 -0.325 0 -0.885m-29.506 0.295q0.813 0.062 0.295 0.59 -0.353 -0.202 -0.295 -0.59m5.606 0.59q0.473 -0.413 1.18 -0.295v1.18h-0.885q0.105 -0.571 -0.295 -0.885m12.392 -0.295q0.654 -0.116 1.18 0.295 -0.255 0.907 -1.18 0.885zm-22.129 0.885q0.763 0.152 0.443 0.885 -0.46 -0.329 -0.443 -0.885m6.196 0q0.52 -0.097 0.885 0.295 -0.541 0.493 -1.18 0.148 0.246 -0.17 0.295 -0.443m19.769 0a2.908 2.908 90 0 1 1.77 0.295l-0.885 0.295q-0.677 -0.062 -0.885 -0.59m-18.884 1.77h3.541v2.36H9.827zm15.933 0h3.836v2.36h-3.836zm-20.949 0.295h2.656a2.478 2.478 90 0 1 -0.148 1.18q-2.127 -0.509 -1.475 1.77 1.621 0.243 2.803 1.328 11.065 0.295 22.129 0 1.182 -1.085 2.803 -1.328 0.652 -2.28 -1.475 -1.77a2.478 2.478 90 0 1 -0.148 -1.18q1.216 -0.139 2.36 0.295 -0.197 2.019 0.885 3.836 -7.918 11.626 -21.539 7.819 -6.121 -2.211 -9.442 -7.819l1.18 -3.246q-0.492 -0.339 -0.59 -0.885m-1.77 0.295h0.885q-0.197 1.268 0.59 2.213 -1.317 0.335 -1.623 -1.033 -0.256 -0.632 0.148 -1.18m32.456 0q0.817 -0.123 1.18 0.59 -0.192 1.191 -1.18 1.77 -1.095 -0.016 -0.148 -0.59 0.219 -0.873 0.148 -1.77m-28.916 0.885q0.788 0.66 0.59 1.77h-0.885q-0.077 -0.938 0.295 -1.77m25.965 0q0.788 0.66 0.59 1.77h-0.885q-0.077 -0.938 0.295 -1.77M8.057 4.389q0.24 0.027 0.295 0.295 -1.323 2.029 -3.098 3.836 -0.472 1.371 -1.475 2.36 -0.672 -0.196 -1.033 0.59l-0.295 -0.295q2.077 -4.013 5.606 -6.786m6.491 5.901q5.018 -0.074 10.032 0.148 0.836 1.698 0.59 3.688a101.176 101.176 90 0 1 -10.917 -0.295q-0.654 -1.85 0.295 -3.541m0 0.59h10.327v2.951H14.548z"/>
+                    				<path id="sidebrush-SVG-level" class="sideBrushAnimation" style="opacity:1" fill="#6cc1ff" d="M 9.648 0.912 q 0.1718 0.0677 0.192 0.288 C 10.208 3.12 10.56 5.28 10.56 6.72 c 0 0.48 0.064 1.344 0.096 2.016 q 1.0642 1.3435 0.288 2.88 a 1.8048 1.8048 90 0 1 -0.528 0.432 q 0.5813 0.1258 1.152 0.288 q 2.953 1.3603 6.144 2.064 l -0.912 0 l 0.96 0.48 L 16.8 14.88 l 0.96 0.48 a 2.2752 2.2752 90 0 0 -0.48 0 a 87.552 87.552 90 0 0 -5.28 -2.016 a 0.3504 0.3504 90 0 0 -0.048 -0 A 18.048 18.048 90 0 1 9.696 12.384 q -2.147 0.4133 -2.688 -1.728 q -0.672 0.624 -1.488 1.2 a 56.832 56.832 90 0 0 -4.128 3.744 l 0.528 -0.72 L 1.44 15.36 L 1.92 14.4 L 0.96 15.36 l 0.48 -0.96 L 0.48 14.88 l 3.84 -3.072 q 1.392 -1.056 2.496 -1.92 q 0.8462 -2.0294 2.976 -1.728 a 98.016 98.016 90 0 0 -1.296 -7.248 q 0.3696 -0.0317 0.48 0.96 L 9.12 0.96 L 9.6 1.92 L 9.6 0.96"/>
+                    			</svg>\`,
+                            type: 'wear'
+                        },
+                        {
+                            id: 'FilterLeft',
+                    		timeId: 'FilterTimeLeft',
+                            label: 'Filter',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 64 64">
+                                   <style> .filter-body { animation: filterPulse 2s ease-in-out infinite; }   @keyframes filterPulse { 0% { transform: translate(4px, 4px); opacity: 0; } 20% { opacity: 0.6; } 100% { transform: translate(0px, 0px); opacity: 1; } } </style>
+                                   <path style="opacity:1" fill="#8d8d8d" d="m56.659 34.824.376-1.506q.753-.188 0-.376v-.753q.376 0 .376-.376.56.097.753-.376.56.097.753-.376a12 12 0 0 0 2.259-.753 90 90 0 0 0 .565-10.918 254 254 0 0 1-14.87 5.834q-.497.766-.376 1.694-.401.51-1.129.376-.193.473-.753.376-.133-.337-.565-.376a165 165 0 0 0-6.965 2.635q-.45.258-.376.753-.193.473-.753.376.148-.835-.376-1.506l-19.2 7.529a109 109 0 0 0 1.129 12.047 39 39 0 0 0 6.776-2.635v.753a2234 2234 0 0 0-4.141 1.694q2.122.177 4.141-.565h.753v.753a99 99 0 0 1-7.718 1.129 31.5 31.5 0 0 1-8.094-4.518 88 88 0 0 0-5.459-9.412q-.934-3.663-2.824-6.776.18-.648.753-.941a1040 1040 0 0 0 21.082-7.153q1.231-.236 2.447.188a44 44 0 0 1 3.2-.753v-1.506a819 819 0 0 0 18.824-6.024 535 535 0 0 1 15.059 5.271l.376 1.694a235 235 0 0 0-.565 10.353q-3 .642-4.141 3.388a7 7 0 0 1-1.318.753m-7.529-19.953a98 98 0 0 1 12.047 4.329 1093 1093 0 0 0-15.059 5.835 12 12 0 0 0-2.259-.753q-4.942 1.455-9.412 3.765.333.733 1.129.941a1856 1856 0 0 1-19.576 7.718 130 130 0 0 1-11.671-6.212 3121 3121 0 0 0 44.8-15.624m9.788 16.188a32 32 0 0 0-.188-4.894l-.376-.376a7 7 0 0 1-1.318.753V23.15a92 92 0 0 0-10.541 3.765q-.12-.928.376-1.694a254 254 0 0 0 14.872-5.833 90 90 0 0 1-.565 10.918 12 12 0 0 1-2.259.753M29.929 19.765q2.748.377.188 1.129a1.86 1.86 0 0 1-.188-1.129M23.153 22.4q.898-.633 1.882.188-.997.361-1.882-.188m22.212 4.894q-4.468-.117-8.471 2.259-.368-1.256-1.694-1.318a73 73 0 0 1 8.659-3.576q1.029.704 2.259.753.076 1.16-.753 1.882-.461.747-1.318.753a107 107 0 0 1-7.906 3.012q-.073-.495.376-.753a165 165 0 0 1 6.965-2.635q-.723.808-1.882.753"/>
+                                   <path id="filter-SVG-level" class="filter-body" style="opacity:1" fill="#5696fe" d="M56.659 27.294v3.765q.047 2.166-.753 4.141a427 427 0 0 0-30.871 13.929v-.753q-.314-4.896-.753-9.788l.376-2.259a828 828 0 0 1 32-12.424zm-1.882-1.882a98 98 0 0 1 .565 8.659 36.3 36.3 0 0 0-.188-9.035q-.343.07-.376.376m-1.129 1.129a216 216 0 0 1-7.153 3.2 63 63 0 0 0 .753 2.447l6.4-2.824q.742-1.471 0-2.824m-9.412 3.765h1.129q.151 1.48-.376 2.824a210 210 0 0 0-7.719 3.2q-.462-1.54.188-3.012 3.572-1.224 6.776-3.012m9.412.376q.742 1.353 0 2.824l-6.4 2.824q-.721-1.431 0-2.824a64 64 0 0 0 6.4-2.824m-13.929.753q-.723.808-1.882.753.723-.808 1.882-.753m-1.882.753q-.723.808-1.882.753.723-.808 1.882-.753m-1.882.753q-.723.808-1.882.753.723-.808 1.882-.753m-1.882.753q-.723.808-1.882.753.723-.808 1.882-.753m1.129.376a37 37 0 0 1 .753 2.447 87 87 0 0 1-8.472 3.955q-.672-1.521-.188-3.012a143 143 0 0 0 7.906-3.388m-3.012.376q-.723.808-1.882.753.723-.808 1.882-.753m12.424 0q.692.368.753 1.318a3.7 3.7 0 0 1-.376 1.506 216 216 0 0 0-7.718 3.576q-.439-1.654.188-3.2a216 216 0 0 0 7.153-3.2m-14.306.753q-.723.808-1.882.753.723-.808 1.882-.753m-1.882.753q-.723.808-1.882.753.723-.808 1.882-.753m-2.259 1.129q.209 3.653.565 7.529.028 1.267.941 1.882-.796.75-1.318-.376a180 180 0 0 0-.565-7.341q.005-.964.376-1.694m9.412 1.129q.744 1.542 0 3.2a229 229 0 0 1-8.094 3.576q-.439-1.654.188-3.2a99 99 0 0 0 7.906-3.576"/>
+                                   <path style="opacity:1" fill="#7291c3" d="M57.035 26.541q.097.56-.376.753v-3.388a828 828 0 0 0-32 12.424l-.376 2.259q.439 4.893.753 9.788h-.753v-1.882a138 138 0 0 1-.565-10.165 176 176 0 0 1 12.235-5.271q.56.097.753-.376a107 107 0 0 0 7.906-3.012q.56.097.753-.376.729.134 1.129-.376a92 92 0 0 1 10.541-3.765z"/>
+                    			</svg>\`,
+                            type: 'wear'
+                        },
+                        {
+                            id: 'MopPadLeft',
+                    		timeId: 'MopPadTimeLeft',
+                            label: 'MoppPad',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                    			  <style> .MopleftAnimation { transform-origin: 50% 50%; transform-box: fill-box; opacity: 1; animation: mop1Rotate 2s infinite; } @keyframes mop1Rotate {  0%, 100%  { transform: rotate(0deg); } 50% { transform: rotate(360deg) scale(0.95); } }
+                    			    .MopRightAnimation { transform-origin: 50% 50%; transform-box: fill-box; opacity: 1; animation: mop2Rotate 2s infinite; } @keyframes mop2Rotate { 0%, 100% { transform: rotate(360deg); } 50% { transform: rotate(0deg) scale(0.95); } }
+                    			  </style>
+                    			  <g fill="#646464">
+                    			    <path opacity=".9" d="M 4.192 10 q 6.072 -10.399 19.8 -8.844 Q 36.279 4.203 38.908 16.6 a 11.2 11.2 90 0 1 0 3.432 Q 38.043 5.841 24.52 1.684 Q 18.224 0.409 12.376 3.004 l 0.264 0.264 a 1420 1420 90 0 0 -3.168 5.28 q 1.056 1.452 0 2.904 a 12 12 90 0 1 0.792 1.452 a 783 783 90 0 0 20.328 0.396 q 1.075 0.346 1.056 1.452 a 25.6 25.6 90 0 0 4.224 -0.264 v 1.32 q 2.517 0.077 1.584 2.508 q -0.891 0.342 -1.452 -0.396 a 30 30 90 0 0 -0.132 3.96 h -0.792 v 2.376 h -3.432 q 0.066 -2.512 -0.132 -5.016 a 2.5 2.5 90 0 1 -0.396 0.66 a 444 444 90 0 1 -21.648 0 a 2.5 2.5 90 0 1 -0.396 -0.66 q -0.198 2.504 -0.132 5.016 q -2.258 -0.14 -1.452 2.112 q 3.288 -3.976 8.316 -2.508 q 2.525 1.144 4.488 3.036 q 1.35 -0.754 2.376 -1.98 q 7.414 -4.038 11.484 3.3 a 9 9 90 0 0 1.584 1.32 a 10 10 90 0 0 1.584 -2.64 q 0.259 -0.474 0.396 0 q -1.453 3.433 -4.092 6.072 q -0.264 -0.264 0 -0.528 q 1.038 -1.218 1.98 -2.508 q -1.958 -1.167 -2.772 -3.3 q -6.035 -5.939 -11.748 0.396 q -1.11 0.3 -2.112 -0.264 q -5.764 -6.12 -11.484 0.132 q -0.751 2.002 -2.508 3.168 a 8.5 8.5 90 0 0 1.98 2.376 q 0.272 0.33 -0.132 0.528 q -2.383 -2.32 -3.696 -5.412 l 0.396 -1.188 a 14 14 90 0 0 1.584 2.904 q 1.213 -0.554 1.584 -1.848 a 20 20 90 0 1 0.396 -2.904 a 2.6 2.6 90 0 0 -1.584 -0.264 V 21.88 H 4.456 v -3.432 q -1.612 0.393 -1.584 -1.188 q -0.127 -1.708 1.584 -1.452 q -0.084 -0.65 0.264 -1.188 q 2.099 0.077 4.224 0.132 q -0.046 -0.785 0.528 -1.32 q -0.785 -1.943 -2.904 -1.98 q -0.73 -1.415 -2.376 -1.452 m 6.6 -6.336 a 0.64 0.64 90 0 1 0.528 0.132 a 88 88 90 0 0 -2.508 3.828 Q 6.7 7.555 5.908 9.472 a 3 3 90 0 1 -0.66 -0.528 q 2.28 -3.205 5.544 -5.28 m 9.24 1.584 q 0.611 0.317 1.32 0.264 a 4.46 4.46 90 0 1 -0.264 2.112 q -0.792 0.528 -1.584 0 a 4.46 4.46 90 0 1 -0.264 -2.112 q 0.51 0.094 0.792 -0.264 m -0.264 -2.112 q 0.32 0.71 0.396 1.584 q 0.195 -0.647 0.132 -1.32 q 2.81 0.379 1.98 3.168 q -0.331 -1.583 -1.98 -1.584 q -1.255 0.153 -2.112 1.056 q -0.358 -2.057 1.584 -2.904 m -3.432 0 h 1.056 q -0.659 1.994 -1.056 0 m 8.448 0.264 q 0.935 0.069 1.848 0.264 v 0.792 q -1.387 0.168 -1.848 -1.056 m -5.808 5.016 q 1.258 0.04 2.64 -0.132 q -1.276 0.72 -2.64 0.132 M 7.36 8.68 q 0.465 -0.087 0.792 0.264 q -0.568 0.29 -0.924 0.792 q -0.628 -0.533 0.132 -1.056 m 1.32 0.528 q 0.455 0.115 0.528 0.66 l -0.264 0.66 q -0.377 -0.613 -0.264 -1.32 M 4.984 9.472 L 9 12 L 2 10 q -1 -0 -2 0 L 0 9 L 5.908 10 z m 2.904 0 q 0.895 0.292 0.132 0.792 q -0.684 -0.338 -0.132 -0.792 m 7.392 0 h 10.032 q 0.116 1.559 -0.264 3.036 a 91 91 90 0 1 -9.768 0 q -0.515 -1.518 0 -3.036 m -8.448 0.792 l 1.584 0.396 q -1.1 1.33 -1.584 -0.396 m 2.112 1.32 q -0.313 -0.112 -0.528 -0.396 q 0.521 -0.209 0.528 0.396 m 2.112 2.112 h 2.64 v 0.792 h -2.64 z m 2.904 0 h 2.904 v 0.792 H 13.96 z m 3.168 0 h 2.64 v 0.792 h -2.64 z m 2.904 0 h 2.376 v 0.792 h -2.376 z m 2.904 0 h 2.904 v 0.792 h -2.904 z m 3.168 0 h 2.904 v 0.792 h -2.904 z m 3.168 0.528 q 0.65 -0.085 1.188 0.264 a 19 19 90 0 1 0 4.488 q -0.537 0.348 -1.188 0.264 z M 10 14.488 q 0.286 0.165 0.396 0.528 a 17 17 90 0 1 0 4.224 q -0.575 -2.303 -0.396 -4.752 m 1.584 0.264 a 19 19 90 0 1 3.168 0.132 q -1.428 0.524 -2.904 0.528 q -0.298 -0.265 -0.264 -0.66 m 5.016 0 q 0.215 0.024 0.264 0.264 q -1.64 0.758 -3.432 0.66 q 1.633 -0.473 3.168 -0.924 m 0.528 0 q 1.327 -0.065 2.64 0.132 a 5.2 5.2 90 0 1 -1.716 0.396 q -0.665 -0.042 -0.924 -0.528 m 2.904 0.264 q 1.13 -0.516 2.376 0 q -1.177 0.4 -2.376 0 m -15.048 0 q 1.867 -0.13 3.696 0.264 a 5.6 5.6 90 0 1 -2.376 0.264 v 8.184 a 8.6 8.6 90 0 1 2.112 0.132 q -1.188 0.264 -2.376 0 q -0.374 -1.077 -0.264 -2.244 h -0.792 z m 20.328 0.528 q -1.247 0.115 -2.376 -0.396 q 1.275 -0.127 2.376 0.396 m 6.6 -0.528 h 3.696 v 6.6 h -1.056 a 8.6 8.6 90 0 1 -0.132 2.112 l -0.264 -8.184 q -0.288 0.656 -0.924 0.396 l 0.528 -0.264 q -1.133 0.012 -1.848 -0.66 m -5.28 0.528 q 0.977 -0.449 2.112 -0.132 q 0.48 0.354 0 0.66 a 4.8 4.8 90 0 0 -2.112 -0.528 m -9.24 0 a 10.8 10.8 90 0 1 2.376 0.132 q -1.262 0.352 -2.508 0.66 q -0.186 -0.426 0.132 -0.792 m 2.64 0.264 q 1.104 -0.387 2.376 -0.264 a 1.3 1.3 90 0 1 -0.132 0.792 a 20 20 90 0 0 -2.244 -0.528 m -4.752 0 a 2.6 2.6 90 0 1 1.584 0.264 q -2.955 1.006 -6.072 0.66 a 198 198 90 0 0 4.488 -0.924 m 7.656 0 q 3.058 0.29 6.072 0.924 q -2.653 0.22 -5.28 -0.264 q -0.641 -0.094 -0.792 -0.66 m -19.272 0.264 q 0.486 0.259 0.528 0.924 q 0.075 0.781 -0.528 1.188 q -0.483 -0.153 -0.528 -0.66 a 14 14 90 0 1 0.528 -1.452 m 32.736 0 q 0.395 -0.034 0.66 0.264 a 7.4 7.4 90 0 0 0.396 1.32 q -0.132 0.396 -0.528 0.528 q -1 -0.888 -0.528 -2.112 m -16.632 0.264 a 30 30 90 0 0 2.112 0.924 a 17 17 90 0 1 -4.224 0 q 1.138 -0.374 2.112 -0.924 m 13.464 0.264 q 0.281 -0.358 0.792 -0.264 v 0.792 q -1.226 0.034 -0.264 -0.396 a 0.64 0.64 90 0 0 -0.528 -0.132 m -16.632 0 q 0.504 0.273 0 0.66 a 19 19 90 0 1 -4.488 0 q 2.33 -0.124 4.488 -0.66 m 0.528 0 q 1.482 -0.016 0.132 0.528 a 0.64 0.64 90 0 1 -0.132 -0.528 m 5.808 0 a 32 32 90 0 0 4.488 0.66 a 17 17 90 0 1 -4.224 0 q -0.298 -0.265 -0.264 -0.66 m -12.144 1.848 q 0.656 0.256 1.32 0.528 q 0.454 -0.125 0.66 -0.528 q 0.195 0.647 0.132 1.32 h -2.112 z m 2.904 0 q 0.777 0.177 0.264 0.792 q -0.351 -0.327 -0.264 -0.792 m 0.792 0 h 1.056 v 1.056 h -1.056 z m 3.96 0 q 2.492 -0.263 4.488 1.188 q -3.036 0.264 -6.072 0 q 0.935 -0.492 1.584 -1.188 m 5.28 0 q 0.506 0.351 0 0.792 q -0.421 -0.366 0 -0.792 m 0.792 0 h 1.056 v 1.056 H 24.52 z m 1.32 0 q 0.726 0.253 0.264 0.792 q -0.351 -0.327 -0.264 -0.792 m 0.792 0 q 0.433 0.429 1.056 0.528 q 0.616 -0.415 1.32 -0.528 v 1.32 h -2.376 z m -17.16 0.528 q 0.396 0.132 0.528 0.528 q -0.528 0 -0.528 -0.528"/>
+                    			    <path d="M16.336 2.608q1.535-.248 1.452 1.32 2.266-2.417 4.752-.264 1.369 2.567-.396 4.884l-1.056.528 4.488.264q.447 1.616.132 3.3a73 73 90 0 1-10.692.132 12.7 12.7 90 0 1-.264-3.564q2.38.066 4.752-.132-1.221-.311-1.716-1.452-.627-1.708-.264-3.432-.712.502-1.452 0-1.339 1.276-2.64.132 1.312.432 2.376-.528-.302-.374-.792-.396-.796.342-1.584.396 1.07-.953 2.376-.66.405-.141.528-.528m3.696 2.64q-.281.358-.792.264a4.46 4.46 90 0 0 .264 2.112q.792.528 1.584 0a4.46 4.46 90 0 0 .264-2.112q-.709.053-1.32-.264m-.264-2.112q-1.942.849-1.584 2.904.857-.903 2.112-1.056 1.649.001 1.98 1.584.83-2.79-1.98-3.168a3.4 3.4 90 0 1-.132 1.32q-.075-.874-.396-1.584m-3.432 0q.397 1.994 1.056 0zm2.64 5.28q1.364.587 2.64-.132-1.382.173-2.64.132M15.28 9.472q-.515 1.518 0 3.036 4.884.264 9.768 0 .38-1.477.264-3.036zm9.504-6.6a5.9 5.9 90 0 1 2.112.66q.598 1.102-.66 1.452-2.216-.115-1.452-2.112m0 .528q.46 1.224 1.848 1.056v-.792a14 14 90 0 0-1.848-.264M11.848 6.832h1.056q-.013 2.187-1.32.528.144-.27.264-.528m15.84 0h1.056q-.013 2.187-1.32.528.144-.27.264-.528M1.816 9.736H.496v-.792q1.226-.034.264.396.618.083 1.056.396m0 0a2.2 2.2 90 0 1 1.056.132q-.62.302-1.056-.132M4.192 10a.64.64 90 0 1-.132.528q-.275-.37.132-.528M3.4 11.056q.236.092.264.396l-1.188 3.036q.013-1.823.924-3.432m-1.32 3.696q.236.092.264.396-.183 1.06-.66 1.98a6.3 6.3 90 0 1 .396-2.376m-.528 3.432q.425.297.132.792a1.3 1.3 90 0 1-.132-.792m36.696 1.848q.528.264 0 0M2.344 24.256q-.156-1.114-.792-1.98.139-1.229.396.132.327-.871-.396-1.452.071-.871 0-1.716.582.349.66 1.056a16 16 90 0 0 .66 3.828.64.64 90 0 1-.528.132m36.168-2.904q.157-.407.528-.132a.64.64 90 0 1-.528.132m-.264 2.64q.528.264 0 0m-35.904.264a.64.64 90 0 1-.132.528q-.275-.37.132-.528m.264.792a.64.64 90 0 1 .132-.528q.275.37-.132.528m0 0a.64.64 90 0 1-.132.528q-.275-.37.132-.528m2.904-.264q1.668 1.288-.528 1.32-.053-.813.528-1.32m28.776.264h1.32v1.056h-1.32zm3.432.528q.85.078.132.792a1.3 1.3 90 0 1-.132-.792m-35.112.528q.528.264 0 0M13.96 37.456q.024-.215.264-.264 6.018 2.105 12.012 0l.132.264q-6.212 2.096-12.408 0"/>
+                    			  </g>
+                    			    <path id="mopppad1-SVG-level" class="MopRightAnimation" style="opacity:.9" fill="#3498db" d="M 27.5525 20.5225 q 5.8796 -0.8692 9.4525 3.8 a 9.804 9.804 90 0 1 1.33 3.135 q 1.0269 5.9479 -3.7525 9.5475 q -5.7038 3.3402 -11.02 -0.57 Q 18.9161 32.027 21.045 25.9375 q 1.9399 -4.3044 6.5075 -5.415 m 2.185 5.605 q -0.2195 0.114 -0.475 0.095 q -0.1197 -0.2679 -0.095 -0.57 h 0.57 z m -1.235 0.19 q -0.1719 0.1045 -0.38 0.095 q -0.2042 -0.1824 -0.19 -0.475 q 0.5766 -0.2812 0.57 0.38 m 2.185 -0.38 q 0.8274 0.0712 0.19 0.57 q -0.4227 -0.1805 -0.19 -0.57 m -3.325 0.95 q -0.247 0.1055 -0.285 0.38 q -0.7153 -0.3372 -0.0475 -0.76 q 0.094 0.2603 0.3325 0.38 m 4.655 0.475 a 0.8493 0.8493 90 0 1 -0.285 -0.38 q 0.4322 -0.4493 0.665 0.1425 q -0.1387 0.2109 -0.38 0.2375 m -5.51 0.57 q -0.0693 0.2128 -0.19 0.38 q -0.6602 -0.1453 -0.1425 -0.57 q 0.208 0.0437 0.3325 0.19 m 6.175 0.665 q -0.1748 -0.2565 -0.19 -0.57 q 0.5938 -0.2128 0.57 0.475 q -0.208 -0.0095 -0.38 0.095 m -6.555 0.57 v 0.475 h -0.475 q -0.1548 -0.7011 0.475 -0.475 m 6.65 0.475 v -0.475 q 0.5595 -0.1805 0.475 0.475 z m -6.46 0.57 v 0.285 q -0.037 0.2945 -0.3325 0.38 a 6.365 6.365 90 0 1 -0.2375 -0.57 a 0.9367 0.9367 90 0 1 0.57 -0.095 m 6.27 0.19 q 0.798 0.1719 0.19 0.665 a 0.6507 0.6507 90 0 0 -0.38 -0.095 q 0.1748 -0.2565 0.19 -0.57 m -5.795 0.95 q 0.0617 0.1719 0.19 0.285 q -0.2726 0.7524 -0.57 0 q 0.1548 -0.2042 0.38 -0.285 m 5.035 0.38 q 0.7324 0.2299 0 0.57 q -0.2299 -0.1168 -0.19 -0.38 q 0.0475 -0.1425 0.19 -0.19 m -3.895 0.665 q 0.1824 0.0399 0.285 0.19 q -0.113 0.627 -0.57 0.095 q 0.0541 -0.2442 0.285 -0.285 m 2.945 0.095 a 1.9665 1.9665 90 0 1 0.095 0.475 a 0.6507 0.6507 90 0 0 -0.38 0.095 q -0.2299 -0.1168 -0.19 -0.38 q 0.1824 -0.209 0.475 -0.19 m -1.805 0.19 q 0.2375 0.19 0.475 0 v 0.475 h -0.475 z"/>
+                    			    <path style="opacity:0.4" fill="#2d2d2d" d="M 28.7825 24.2775 q 4.3007 -0.0437 5.7475 3.99 q 0.6004 3.3811 -2.0425 5.5575 q -4.3339 2.5118 -7.4575 -1.3775 q -1.8363 -2.9764 0.095 -5.89 a 1.7765 1.7765 90 0 0 0.5225 -0.665 a 3.0685 3.0685 90 0 0 0.855 -0.7125 q 1.1048 -0.5833 2.28 -0.9025 m 0.855 1.9 q -0.2195 0.114 -0.475 0.095 q -0.1197 -0.2679 -0.095 -0.57 h 0.57 z m -1.235 0.19 q -0.1719 0.1045 -0.38 0.095 q -0.2042 -0.1824 -0.19 -0.475 q 0.5766 -0.2812 0.57 0.38 m 2.185 -0.38 q -0.2327 0.3895 0.19 0.57 q 0.6374 -0.4987 -0.19 -0.57 m -3.325 0.95 q -0.247 0.1055 -0.285 0.38 q -0.7153 -0.3372 -0.0475 -0.76 q 0.094 0.2603 0.3325 0.38 m 4.655 0.475 a 0.8493 0.8493 90 0 1 -0.285 -0.38 q 0.4322 -0.4493 0.665 0.1425 q -0.1387 0.2109 -0.38 0.2375 m -5.51 0.57 q -0.0693 0.2128 -0.19 0.38 q -0.6602 -0.1453 -0.1425 -0.57 q 0.208 0.0437 0.3325 0.19 m 6.175 0.665 q -0.1748 -0.2565 -0.19 -0.57 q 0.5938 -0.2128 0.57 0.475 q -0.208 -0.0095 -0.38 0.095 m -6.555 0.57 v 0.475 h -0.475 q -0.1548 -0.7011 0.475 -0.475 m 6.65 0.475 v -0.475 q 0.5595 -0.1805 0.475 0.475 z m -6.46 0.57 v 0.285 q -0.037 0.2945 -0.3325 0.38 a 6.365 6.365 90 0 1 -0.2375 -0.57 a 0.9367 0.9367 90 0 1 0.57 -0.095 m 6.27 0.19 q 0.798 0.1719 0.19 0.665 a 0.6507 0.6507 90 0 0 -0.38 -0.095 q 0.1748 -0.2565 0.19 -0.57 m -5.795 0.95 q 0.0617 0.1719 0.19 0.285 q -0.2726 0.7524 -0.57 0 q 0.1548 -0.2042 0.38 -0.285 m 5.035 0.38 q 0.7324 0.2299 0 0.57 q -0.2299 -0.1168 -0.19 -0.38 q 0.0475 -0.1425 0.19 -0.19 m -3.895 0.665 q 0.1824 0.0399 0.285 0.19 q -0.113 0.627 -0.57 0.095 q 0.0541 -0.2442 0.285 -0.285 m 2.945 0.095 a 1.9665 1.9665 90 0 1 0.095 0.475 a 0.6507 0.6507 90 0 0 -0.38 0.095 q -0.2299 -0.1168 -0.19 -0.38 q 0.1824 -0.209 0.475 -0.19 m -1.805 0.19 q 0.2375 0.19 0.475 0 v 0.475 h -0.475 z"></path>
+                    			    <path id="mopppad2-SVG-level" class="MopleftAnimation" style="opacity:.9" fill="#3498db" d="M 9.5525 20.5225 q 5.8796 -0.8692 9.4525 3.8 a 9.804 9.804 90 0 1 1.33 3.135 q 1.0269 5.9479 -3.7525 9.5475 q -5.7038 3.3402 -11.02 -0.57 Q 0.9161 32.027 3.045 25.9375 q 1.9399 -4.3044 6.5075 -5.415 m 2.185 5.605 q -0.2195 0.114 -0.475 0.095 q -0.1197 -0.2679 -0.095 -0.57 h 0.57 z m -1.235 0.19 q -0.1719 0.1045 -0.38 0.095 q -0.2042 -0.1824 -0.19 -0.475 q 0.5766 -0.2812 0.57 0.38 m 2.185 -0.38 q 0.8274 0.0712 0.19 0.57 q -0.4227 -0.1805 -0.19 -0.57 m -3.325 0.95 q -0.247 0.1055 -0.285 0.38 q -0.7153 -0.3372 -0.0475 -0.76 q 0.094 0.2603 0.3325 0.38 m 4.655 0.475 a 0.8493 0.8493 90 0 1 -0.285 -0.38 q 0.4322 -0.4493 0.665 0.1425 q -0.1387 0.2109 -0.38 0.2375 m -5.51 0.57 q -0.0693 0.2128 -0.19 0.38 q -0.6602 -0.1453 -0.1425 -0.57 q 0.208 0.0437 0.3325 0.19 m 6.175 0.665 q -0.1748 -0.2565 -0.19 -0.57 q 0.5938 -0.2128 0.57 0.475 q -0.208 -0.0095 -0.38 0.095 m -6.555 0.57 v 0.475 h -0.475 q -0.1548 -0.7011 0.475 -0.475 m 6.65 0.475 v -0.475 q 0.5595 -0.1805 0.475 0.475 z m -6.46 0.57 v 0.285 q -0.037 0.2945 -0.3325 0.38 a 6.365 6.365 90 0 1 -0.2375 -0.57 a 0.9367 0.9367 90 0 1 0.57 -0.095 m 6.27 0.19 q 0.798 0.1719 0.19 0.665 a 0.6507 0.6507 90 0 0 -0.38 -0.095 q 0.1748 -0.2565 0.19 -0.57 m -5.795 0.95 q 0.0617 0.1719 0.19 0.285 q -0.2726 0.7524 -0.57 0 q 0.1548 -0.2042 0.38 -0.285 m 5.035 0.38 q 0.7324 0.2299 0 0.57 q -0.2299 -0.1168 -0.19 -0.38 q 0.0475 -0.1425 0.19 -0.19 m -3.895 0.665 q 0.1824 0.0399 0.285 0.19 q -0.113 0.627 -0.57 0.095 q 0.0541 -0.2442 0.285 -0.285 m 2.945 0.095 a 1.9665 1.9665 90 0 1 0.095 0.475 a 0.6507 0.6507 90 0 0 -0.38 0.095 q -0.2299 -0.1168 -0.19 -0.38 q 0.1824 -0.209 0.475 -0.19 m -1.805 0.19 q 0.2375 0.19 0.475 0 v 0.475 h -0.475 z"/>
+									<path style="opacity:0.4" fill="#2d2d2d" d="M 10.7825 24.2775 q 4.3007 -0.0437 5.7475 3.99 q 0.6004 3.3811 -2.0425 5.5575 q -4.3339 2.5118 -7.4575 -1.3775 q -1.8363 -2.9764 0.095 -5.89 a 1.7765 1.7765 90 0 0 0.5225 -0.665 a 3.0685 3.0685 90 0 0 0.855 -0.7125 q 1.1048 -0.5833 2.28 -0.9025 m 0.855 1.9 q -0.2195 0.114 -0.475 0.095 q -0.1197 -0.2679 -0.095 -0.57 h 0.57 z m -1.235 0.19 q -0.1719 0.1045 -0.38 0.095 q -0.2042 -0.1824 -0.19 -0.475 q 0.5766 -0.2812 0.57 0.38 m 2.185 -0.38 q -0.2327 0.3895 0.19 0.57 q 0.6374 -0.4987 -0.19 -0.57 m -3.325 0.95 q -0.247 0.1055 -0.285 0.38 q -0.7153 -0.3372 -0.0475 -0.76 q 0.094 0.2603 0.3325 0.38 m 4.655 0.475 a 0.8493 0.8493 90 0 1 -0.285 -0.38 q 0.4322 -0.4493 0.665 0.1425 q -0.1387 0.2109 -0.38 0.2375 m -5.51 0.57 q -0.0693 0.2128 -0.19 0.38 q -0.6602 -0.1453 -0.1425 -0.57 q 0.208 0.0437 0.3325 0.19 m 6.175 0.665 q -0.1748 -0.2565 -0.19 -0.57 q 0.5938 -0.2128 0.57 0.475 q -0.208 -0.0095 -0.38 0.095 m -6.555 0.57 v 0.475 h -0.475 q -0.1548 -0.7011 0.475 -0.475 m 6.65 0.475 v -0.475 q 0.5595 -0.1805 0.475 0.475 z m -6.46 0.57 v 0.285 q -0.037 0.2945 -0.3325 0.38 a 6.365 6.365 90 0 1 -0.2375 -0.57 a 0.9367 0.9367 90 0 1 0.57 -0.095 m 6.27 0.19 q 0.798 0.1719 0.19 0.665 a 0.6507 0.6507 90 0 0 -0.38 -0.095 q 0.1748 -0.2565 0.19 -0.57 m -5.795 0.95 q 0.0617 0.1719 0.19 0.285 q -0.2726 0.7524 -0.57 0 q 0.1548 -0.2042 0.38 -0.285 m 5.035 0.38 q 0.7324 0.2299 0 0.57 q -0.2299 -0.1168 -0.19 -0.38 q 0.0475 -0.1425 0.19 -0.19 m -3.895 0.665 q 0.1824 0.0399 0.285 0.19 q -0.113 0.627 -0.57 0.095 q 0.0541 -0.2442 0.285 -0.285 m 2.945 0.095 a 1.9665 1.9665 90 0 1 0.095 0.475 a 0.6507 0.6507 90 0 0 -0.38 0.095 q -0.2299 -0.1168 -0.19 -0.38 q 0.1824 -0.209 0.475 -0.19 m -1.805 0.19 q 0.2375 0.19 0.475 0 v 0.475 h -0.475 z"></path>
+                    			</svg>\`,
+                            type: 'wear'
+                        },
+                        {
+                            id: 'DetergentLeft',
+                    		timeId: 'DetergentTimeLeft',
+                            label: 'Detergent',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                                    <style> .Detergent { animation: detergentPulse 2s ease-in-out infinite; }  @keyframes detergentPulse { 0%, 100% { transform: translate(0px, 5px); opacity: 0.5; } 50% { transform: translate(0px, 6px); opacity: 1; } } </style>
+                                    <path id="detergent-SVG-level" class="Detergent" fill="#5ebdff" opacity=".6" d="M13 15 16 15 19 14 30 10 23 9 18 10 12 12 9 13M9 13 11 14 13 15 16 15l14-5L30 17 30 22 30 25 29 26v0L24 29 20 32C19 32 19 33 17 32.5L15 32 12 31 9 30 9 26z"> </path>
+                                    <path style="opacity:1" fill="#000000" d="M29.675 3.063q0.492 0.281 0.61 0.845 0.094 13.516 0 27.032 -0.157 0.694 -0.704 1.126v-0.188q0.344 -0.416 0.516 -0.939 0.094 -12.906 0 -25.811 -0.349 0.327 -0.798 0.469 -0.094 0 -0.094 -0.094 0.504 -0.241 0.892 -0.657 0.262 -1.019 -0.516 -1.689 0 -0.094 0.094 -0.094m-0.469 2.44q0 0.094 0.094 0.094a581.722 581.722 90 0 1 -1.877 1.22 51.333 51.333 90 0 0 -0.141 3.097q-0.1 1.521 -1.267 2.487a45.5 45.5 90 0 1 -3.003 1.783q-0.889 0.099 -1.079 -0.798l-0.094 -3.191a46.833 46.833 90 0 0 -1.736 1.032v-0.188a261.5 261.5 90 0 0 1.783 -1.126q-0.097 -1.368 -1.361 -1.877a101.278 101.278 90 0 1 -2.487 1.549 2.233 2.233 90 0 1 -0.751 0.141 162.944 162.944 90 0 1 -6.664 -2.018q-0.458 -0.157 -0.751 -0.516a167.944 167.944 90 0 0 7.509 2.44 33.222 33.222 90 0 0 2.91 -1.643q-0.744 -0.477 -0.282 -1.22a45.611 45.611 90 0 1 3.379 -1.971q1.22 -0.263 2.44 -0.188l2.253 -1.314q0.272 -0.19 0.375 -0.516 0.188 0.235 0 0.469a44.611 44.611 90 0 0 -2.346 1.502q1.158 0.578 1.267 1.877a56.5 56.5 90 0 1 1.83 -1.126M24.325 4.753q1.472 -0.192 2.487 0.845a1.922 1.922 90 0 1 0.282 0.751q0.094 1.83 0 3.661 -0.16 1.14 -0.892 2.018a26.944 26.944 90 0 1 -3.426 2.018q-0.782 -0.268 -0.751 -1.126a44.889 44.889 90 0 0 -0.188 -3.942q-0.532 -0.914 -1.549 -1.267 -0.49 -0.381 -0.094 -0.845a40.444 40.444 90 0 1 3.191 -1.877 12.667 12.667 90 0 0 0.939 -0.235m-5.444 0a5.239 5.239 90 0 1 1.502 0.141q0.629 0.674 -0.282 0.939 -0.81 0.12 -1.596 -0.094 -0.364 -0.215 -0.235 -0.61 0.283 -0.246 0.61 -0.376m0 0.188a4.311 4.311 90 0 1 1.408 0.141q0.389 0.408 -0.188 0.563a3.667 3.667 90 0 0 -0.657 0.141 3.667 3.667 90 0 0 -0.657 -0.141q-0.757 -0.443 0.094 -0.704m10.794 -1.877q-0.094 0 -0.094 0.094 -1.067 -0.568 -2.253 -0.892l-4.881 -1.502q-1.049 -0.308 -2.065 0.094a67 67 90 0 0 -2.91 1.689Q16.7 3.133 16.817 4.096q0.53 -0.03 0.939 -0.375 0.171 0.109 0 0.235a51.278 51.278 90 0 0 -2.534 1.502 4.6 4.6 90 0 1 -1.126 0.141 11.944 11.944 90 0 0 -1.502 -0.047 29.556 29.556 90 0 0 -2.722 1.643l-0.375 0.094q-0.094 0 -0.094 -0.094a4834.056 4834.056 90 0 1 2.91 -1.736q0.915 -0.241 1.83 0.047 1.379 -0.22 2.44 -1.126 -0.147 -1.157 0.704 -1.924a27.389 27.389 90 0 1 3.379 -1.877q1.089 -0.269 2.159 0.094l6.007 1.877q0.518 0.123 0.845 0.516M9.402 7.193q0 0.094 0.094 0.094 -0.754 0.615 -0.845 1.596 0.098 0.497 0.563 0.704a206.667 206.667 90 0 0 6.664 2.159 6.478 6.478 90 0 0 1.877 0.235q-0.392 0.138 -0.845 0.094a3.167 3.167 90 0 1 -1.032 -0.141 389.222 389.222 90 0 1 -6.476 -2.065 2.667 2.667 90 0 1 -0.704 -0.422q-0.07 1.172 -0.047 2.346h-0.094q-0.023 -1.784 0.047 -3.567 0.218 -0.663 0.798 -1.032m10.7 3.848v0.188a2.911 2.911 90 0 1 -0.422 0.282 128.5 128.5 90 0 0 0 6.946q0.136 -0.559 0.61 -0.892a6.944 6.944 90 0 1 1.173 -0.61q0.178 0.036 0.282 0.188a20.611 20.611 90 0 1 0.094 3.848q-0.079 0.511 -0.422 0.892 0.203 0.053 0.282 0.235 -0.094 0 -0.094 0.094a4.111 4.111 90 0 1 -0.188 -0.094 10.7 10.7 90 0 0 -1.361 0.939 6.806 6.806 90 0 0 -0.375 1.032q-0.07 3.754 -0.047 7.509 0 0.094 -0.094 0.094 -0.028 -9.997 -0.188 -19.992 -1.188 0.558 -2.44 0.375 0.452 0.044 0.845 -0.094 1.284 -0.196 2.346 -0.939m1.22 6.101q0.269 0.01 0.329 0.282 0.094 1.83 0 3.661 -0.085 0.429 -0.422 0.704a13.167 13.167 90 0 1 -1.126 0.704 0.681 0.681 90 0 1 -0.235 -0.188 39.444 39.444 90 0 1 0 -3.848q0.145 -0.428 0.516 -0.704a7.056 7.056 90 0 0 0.939 -0.61m-1.689 5.256a2.556 2.556 90 0 0 0.469 0.329q-0.337 0.275 -0.422 0.704a5.722 5.722 90 0 1 -0.047 -1.032M8.557 11.792h0.094q0.123 11.756 0.235 23.559 0.158 0.741 0.798 1.126 0 0.094 -0.094 0.094 -0.826 -0.382 -0.892 -1.314a3237.5 3237.5 90 0 1 -0.141 -23.465m13.14 10.325q0.102 0.059 0.141 0.188 0.117 7.139 -0.047 14.267 0.064 0.112 0.188 0.094 0 0.094 0.094 0.094 -0.323 0.303 -0.751 0.469 0 -0.094 -0.094 -0.094a6 6 90 0 0 0.422 -0.751q0.117 -7.096 -0.047 -14.173 0 -0.094 0.094 -0.094m-2.065 9.48q0.094 2.511 0.188 5.068l1.408 -0.892q0.16 -0.106 0.282 0.047 -0.837 0.629 -1.783 1.032a21 21 90 0 1 -0.047 1.22 13.167 13.167 90 0 1 1.549 -0.939q0.094 0 0.094 0.094a17.556 17.556 90 0 1 -0.235 1.408q-1.233 0.894 -2.628 0.282 -0.731 0.278 -1.455 0.094 0.182 0.033 0.282 -0.094 1.022 0.049 1.877 -0.516 0.256 -0.253 0.329 -0.61 0.07 -3.05 0.047 -6.101 0.094 0 0.094 -0.094m1.22 5.913q0.178 0.143 0.188 0.422 0.05 0.451 -0.282 0.751 -0.95 0.5 -1.971 0.188a51.444 51.444 90 0 0 2.065 -1.361m8.729 -5.632v0.188a292.278 292.278 90 0 1 -7.509 4.693q-0.094 0 -0.094 -0.094a463.944 463.944 90 0 1 7.603 -4.787m-19.898 4.599a285.444 285.444 90 0 0 6.758 2.3 6.667 6.667 90 0 0 0.845 0.141q-0.1 0.127 -0.282 0.094a133.833 133.833 90 0 1 -7.133 -2.206q-0.203 -0.053 -0.282 -0.235 0.094 0 0.094 -0.094"/>
+                    			</svg>\`,
+                            type: 'consumable'
+                        },
+                        {
+                            id: 'SensorLeft',
+                    		timeId: 'SensorTimeLeft',
+                            label: 'Sensor',
+                            svg: \`<svg width="40" height="40" style="fill-rule:evenodd" viewBox="0 0 40 40">
+                                    <style> .Sensorpath { animation: blinkSensorPath 1.5s infinite; animation-delay: calc(var(--order) * 0.2s); transition: fill 0.3s ease; }
+                                    @keyframes blinkSensorPath {  0%, 100% { opacity: 1; }  50% { opacity: 0.2; } }
+                                    </style>
+                                    <path style="opacity:1" fill="#8d8d8d" d="m32.9 27.1 -0.4 -0.6q-0.1 -0.3 -0.4 -0.4v-1.2q-0.76 0.072 -1 -0.6 0 -0.2 0.2 -0.2 0.085 0.237 0.3 0.4 0.19 -0.917 -0.1 -1.8v-0.4q-1.529 -5.454 -6.7 -7.8 -0.823 1.213 -0.9 2.7 -1.281 0.397 -1.9 -0.7 -0.898 1.759 -2.7 0.9 -1.726 -1.841 0.4 -3.2 1.904 -0.372 2.5 1.5a1.396 1.396 0 0 1 0.7 -0.5 2.28 2.28 0 0 1 -0.7 -0.3 3.7 3.7 0 0 1 -0.1 -1.2h-3.6a3.68 3.68 0 0 1 -0.1 1.2 2.28 2.28 0 0 1 -0.7 0.3q0.275 0.112 0.5 0.3 0.149 0.895 0.1 1.8 -0.884 0.083 -1.7 -0.2 0.058 -1.456 -0.8 -2.6a19.4 19.4 0 0 0 -2.8 1.8 4.08 4.08 0 0 1 -0.3 1.1q0.48 0.082 0.9 0.3 0.461 0.992 0.2 2l2.4 2q0.145 0.284 0.1 0.6 -1.739 -0.782 -3.1 -2.2 -0.852 0.601 -1.9 0.3 -0.55 -0.15 -0.7 -0.7 -0.875 0.755 -1.3 1.8 -0.2 0 -0.2 -0.2 0.461 -1.644 -0.6 -0.4v-0.2q-0.1 -0.4 -0.2 0h-0.6q-0.066 -0.352 0.2 -0.6a3.8 3.8 0 0 0 1 -0.6q1.357 -2.613 3.7 -4.4 0.204 -0.609 0.2 -1.2 -0.43 0.582 -1.1 0.8h-0.2a11.5 11.5 0 0 0 1.8 -1.8v0.4q-0.033 0.185 -0.2 0.3 0.44 0.329 0.5 0.9 2.968 -1.905 6.5 -1.8v-2.8h5.2q0.241 -6.291 6.5 -6.8 5.96 0.41 6.5 6.4 -1.231 7.569 -8.8 6.1 -3.73 -1.51 -4.2 -5.5h-5q-0.089 1.28 0.2 2.5 10.944 0.944 12.6 11.8a3.84 3.84 0 0 1 -0.4 1.3q-0.269 -0.302 -0.4 0 0.706 0.524 0.6 1.4m3.4 -19.6q0.218 -0.804 0.5 -1.6 0.195 0.963 -0.5 1.6m-8.2 -3q5.141 1.536 -0.1 3 -1.012 -0.111 -1.7 -0.8 0.585 -1.382 1.8 -2.2m5.6 -0.8q1.814 0.412 2.8 2 -1.25 3.9 -5.2 5.1a19.08 19.08 0 0 1 -5.4 0.9l-0.4 -2.2q0.003 -1.459 1.2 -0.7 2.113 0.384 4 -0.6 0.668 -0.486 0.8 -1.3 -0.276 -0.74 -0.5 -1.4 1.485 -0.741 2.7 -1.8m-3 -0.4q1.43 -0.093 2.8 0.3a29.8 29.8 0 0 1 -2.8 1.7q-0.865 -0.783 -2 -1.1 0.961 -0.601 2 -0.9m0 3.2q0.553 0.211 0.3 0.8a3.34 3.34 0 0 1 -0.8 0.8q-0.15 -0.55 -0.7 -0.7 0.782 -0.238 1.2 -0.9m6.6 0.8q0.74 3.776 -2.6 5.9 -2.658 1.753 -5.8 1.8 -1.485 -0.785 -2.4 -2.2 5.641 -0.079 9.9 -3.7 0.618 -0.836 0.9 -1.8m-11.4 0.2q1.805 1.022 3.7 0.2 0.185 0.285 -0.1 0.5 -1.5 0.6 -3 0 -0.578 -0.127 -0.6 -0.7m10 0.6q0.022 0.458 -0.4 0.6 -0.022 -0.458 0.4 -0.6m1.8 1.2q0.091 5.072 -5 6.3 -1.417 0.187 -2.8 -0.2 4.521 -0.733 7.3 -4.3a3.98 3.98 0 0 0 0.5 -1.8m-2.4 0.2q-0.142 0.422 -0.6 0.4 0.142 -0.422 0.6 -0.4m-1.2 0.8q-0.142 0.422 -0.6 0.4 0.142 -0.422 0.6 -0.4m-1 0.6q-0.384 0.429 -1 0.4 0.384 -0.429 1 -0.4m-2.2 0.8q-2.189 0.864 -4.6 0.7a127.4 127.4 0 0 0 4.6 -0.7m-4.6 2.8q-0.397 -0.051 -0.7 0.2 -2.215 -1.566 -4.9 -1.3a0.89 0.89 0 0 0 -0.4 -0.3q-0.931 0.661 -2 0.2a71 71 0 0 0 -4 1.2q4.535 -2.504 9.6 -1.1 1.294 0.412 2.4 1.1m-8.6 -0.8q0.842 0.464 0.2 1.1 -1.166 0.783 -1.8 -0.4a8.48 8.48 0 0 1 1.6 -0.7m4.8 0a17.6 17.6 0 0 0 1.8 0.4q0.175 0.828 -0.6 1 -1.554 -0.044 -1.2 -1.4m-8.2 0.8q0.066 0.352 -0.2 0.6a2.188 2.188 0 0 0 -0.9 0.6q0.045 -0.998 1.1 -1.2m12 0q2.571 1.371 4.2 3.8 -1.397 -0.941 -2.6 -2.3 -1.164 -0.42 -1.6 -1.5m-6.4 0.2q1.749 -0.102 1.5 1.6 -0.089 -1.009 -1.1 -0.8 -0.817 -0.136 -1.1 0.6 -0.127 -0.946 0.7 -1.4m0 1q1.545 0.046 0.8 1.3 -1.597 0.054 -0.8 -1.3m-10.4 3.6q0.183 -0.58 0.6 -1 0.875 -1.327 2.1 -2.4 0.221 1.427 -1.2 1.8a21.2 21.2 0 0 0 -0.5 1.3 8.6 8.6 0 0 1 -1 0.3m7.6 -3.4h0.8v0.8h-1q-0.02 -0.438 0.2 -0.8m5.6 0h0.8v0.8h-0.8zm-10 2q0.388 -0.343 0.7 0.2 0.242 0.624 -0.1 1.2 -0.142 -0.815 -0.6 -1.4m-1 0.2a0.486 0.486 0 0 1 0.4 0.1 1.396 1.396 0 0 0 -0.5 0.7q-0.476 -0.404 0.1 -0.8m18.8 0.2q1.739 2.412 2.2 5.4h-0.6q-0.181 -2.394 -1.5 -4.4a2.58 2.58 0 0 1 -0.1 -1m-18.4 0.2q0.382 0.173 0 0.4 -0.289 -0.141 0 -0.4m-1 1q0.705 0.565 1.5 0.2l0.3 0.3q-1.219 0.721 -1.8 -0.5m6 -0.2q3.202 -0.05 6.4 0.1 0.335 0.922 0.1 1.9a35.74 35.74 0 0 1 -6.5 0.1q-0.389 -1.05 0 -2.1m15.2 4.8q0.358 0.141 0.4 0.6l-0.1 0.6q-0.396 -0.525 -0.3 -1.2m0.4 -16.4q1.472 0.516 0 1.3l-2.2 1.1q-0.915 -0.149 -0.6 -0.9a29 29 0 0 1 2.8 -1.5m-8.2 1.6q0.308 0.119 0.1 0.4a0.486 0.486 0 0 1 -0.1 -0.4m-9.8 7.4q1.338 0.164 0.3 1 -0.753 -0.346 -0.3 -1m10.6 0q1.365 0.13 0.3 1 -0.753 -0.346 -0.3 -1m-15.2 1.6q0.742 0.134 0.1 0.6a0.986 0.986 0 0 1 -0.1 -0.6m6.6 0.8q3.601 -0.05 7.2 0.1 0.338 1.123 0.1 2.3a45 45 0 0 1 -7.3 0.1q-0.391 -1.25 0 -2.5m0.4 0.2q-0.389 1.05 0 2.1 3.273 0.246 6.5 -0.1 0.235 -0.978 -0.1 -1.9a102.6 102.6 0 0 0 -6.4 -0.1m-3.8 -6v-0.4q-1.108 -0.574 -2.4 -0.3 -1.379 0.997 -3 0.9a0.73 0.73 0 0 1 0.2 -0.3 11 11 0 0 0 1.8 -0.8q-3.381 -0.724 -6.2 -2.6a9.04 9.04 0 0 1 -1.5 -1.7q-0.404 6.546 6.1 7.4a9.42 9.42 0 0 0 3.2 -0.8h0.2q-2.075 1.334 -4.6 1v6.4q0.493 0.064 0.9 -0.2l0.3 -1.2h0.2v0.2l-0.6 2.8h0.6q0.025 -1.301 0.6 -2.4 0 0.2 0.2 0.2 -0.461 0.615 0.2 1a2.28 2.28 0 0 0 0.4 -0.5 8.5 8.5 0 0 1 2.6 0q0.272 0.51 0.2 1.1a80.8 80.8 0 0 1 4.8 -0.3q-0.264 -0.407 -0.2 -0.9 1.237 0.067 0.4 0.9 2.6 0.2 5.2 0 -0.837 -0.833 0.4 -0.9 0.064 0.493 -0.2 0.9a23.48 23.48 0 0 0 4.8 0.3v-1a5.7 5.7 0 0 0 1.9 -0.2q0.748 0.099 1.3 0.6 0.205 -0.109 0.4 -0.2v0.4q-0.414 0.139 -0.4 0.6a68.8 68.8 0 0 1 0.2 0.8q-0.2 0 -0.2 0.2 -0.363 1.235 -0.4 2.6 -1.07 0.078 -0.8 1.2h0.8q0.13 -0.8 0.3 -1.6 0.433 -0.497 1.1 -0.4a23.8 23.8 0 0 1 -0.4 2.7 1.9 1.9 0 0 1 0.3 0.5 7 7 0 0 0 0.5 -2.8l0.4 0.6q-2.838 11.824 -15 10.7 -8.788 -2.072 -10.2 -11 0.1 -0.652 0.6 -1.1 -0.131 -0.302 -0.4 0 -0.718 -1.645 0 -3.3a2.58 2.58 0 0 0 -1 -0.1q0.05 -3.301 -0.1 -6.6 -5.872 -2.042 -4.8 -8.2Q3.997 2.375 9.5 3 15.14 4.625 14.6 10.5q-0.258 1.614 -1.3 2.8m-4.2 -4.6a64.4 64.4 0 0 0 5.4 0.5q-2.794 0.308 -5.4 -0.5m-4 -1q4.459 2.061 9.4 2a8.48 8.48 0 0 1 -0.8 2.4q-4.542 0.502 -8.5 -1.8a17 17 0 0 1 -0.1 -2.6m0.6 -0.2q0.822 0.062 1.4 0.6 -0.822 -0.062 -1.4 -0.6m-2.8 -1.4q0.776 0.738 1.8 1a9.98 9.98 0 0 1 -0.2 2.8q-1.293 -0.743 -2.1 -2 0.062 -0.932 0.5 -1.8m10 -0.4q0.299 -0.026 0.5 0.2 0.781 1.192 0.9 2.6 -2.014 0.041 -4 -0.3 -0.987 -0.076 -1.8 -0.6 1.019 -0.575 2.2 -0.6 1.119 -0.658 2.2 -1.3m-5.6 -2.6q3.352 -0.221 5.6 2.2 -2.411 1.91 -5.4 2.1 -2.11 -0.754 -3.6 -2.4 1.46 -1.429 3.4 -1.9m3.2 19.2a6.5 6.5 0 0 1 1.6 0.1 3.7 3.7 0 0 1 -1.2 0.1 10.86 10.86 0 0 1 0 3.6q-0.471 -0.364 -0.5 -1 -0.232 -1.426 0.1 -2.8m18 0.2q0.819 -0.395 1.7 0a13.44 13.44 0 0 1 -0.1 3.6h-0.6q0.001 -1.807 0.2 -3.6zm-19.4 0.2q0.727 0.812 0 1.8 -0.303 -0.892 0 -1.8m2.2 0.6q0.551 0.042 0.2 0.4 -0.239 -0.137 -0.2 -0.4m1.6 0.2q0.32 -0.28 0.8 -0.2 0.05 2.003 -0.1 4 -0.387 -1.748 -0.4 -3.6 -0.115 -0.167 -0.3 -0.2m1.2 -0.2h1.8v0.6h-1.8zm2 0h2v0.6h-2zm2.2 0h1.6v0.6h-1.6zm1.8 0h1.8v0.6h-1.8zm2 0h1.8v0.6h-1.8zm2.2 0h1.8v0.6h-1.8zm2 0q0.707 -0.049 1.4 0.1l-0.3 0.3 -0.2 3.4q-0.407 0.264 -0.9 0.2zm-15 0.6q0.551 0.042 0.2 0.4 -0.239 -0.137 -0.2 -0.4m1.4 0q0.436 0.965 0.4 2.1 0.033 0.81 -0.3 1.5 -0.15 -1.797 -0.1 -3.6m15 0q0.346 1.746 0.1 3.6 -0.334 -0.741 -0.3 -1.6a17.6 17.6 0 0 1 0.2 -2m-19.8 0.2q0.743 0.486 0.1 1.2a3.68 3.68 0 0 1 -0.1 -1.2m0.6 2q-0.049 -0.707 0.1 -1.4 0.581 0.408 1 -0.2a34.4 34.4 0 0 1 0.3 2.4q1.07 0.078 0.8 1.2h-0.8a33.6 33.6 0 0 0 -0.3 -1.6q-0.433 -0.497 -1.1 -0.4m2.8 -1.6q0.551 0.042 0.2 0.4 -0.239 -0.137 -0.2 -0.4m6.6 0q0.382 0.173 0 0.4 -1.85 0.759 -3.8 0.4a0.892 0.892 0 0 1 0.4 -0.3 36.8 36.8 0 0 0 3.4 -0.5m0.4 0q0.75 0.003 0.1 0.4a0.486 0.486 0 0 1 -0.1 -0.4m3 0.2q0.266 -0.383 0.6 0 -0.22 0.176 -0.6 0m0.8 0.2q0.388 -0.197 0.9 -0.2l2.7 0.3a0.892 0.892 0 0 1 0.4 0.3q-2.043 0.262 -4 -0.4m-10.8 0.2q0.551 0.042 0.2 0.4 -0.239 -0.137 -0.2 -0.4m7.2 0a22.6 22.6 0 0 1 3 0.1 0.892 0.892 0 0 1 0.4 0.3q-1.002 0.412 -1.9 -0.2 -0.798 0.6 -1.7 0.2 0.109 -0.205 0.2 -0.4m-8.4 0.6q0.271 0.213 0.2 0.6h0.8v1.6a3.7 3.7 0 0 1 1.2 0.1q-0.693 0.149 -1.4 0.1v-1.4q-1.023 0.035 -0.8 -1m1.2 0q0.237 0.085 0.4 0.3 -0.395 0.158 -0.4 -0.3m19 0q0.532 0.953 -0.6 1v1.4a5 5 0 0 1 -1.4 -0.1 3.7 3.7 0 0 1 1.2 -0.1v-1.6h0.8zm-21.8 0.4q0.151 1.255 0.4 2.5a2.2 2.2 0 0 1 -0.2 0.7q-0.762 -1.384 -0.5 -3 0.115 -0.167 0.3 -0.2m2.8 0.2q0.237 0.085 0.4 0.3 -0.395 0.158 -0.4 -0.3m-2.4 0.2q0.375 0.023 0.5 0.4 0.227 0.681 -0.1 1.3l22.2 0.2q-11.2 0.15 -22.4 0.1zm6.2 0a14.48 14.48 0 0 1 2.4 0.1q0.335 0.568 1 0.5v-0.6h3v0.6h1v-0.6h2.4v0.6q0.597 0.052 1 -0.4 0.286 0.464 0.2 1h-1.4v-1h-2v0.6h-5.4v-0.6h-2v0.6h-1.2a0.986 0.986 0 0 1 0.1 -0.6q0.315 0.482 0.9 0.4zm16.2 0q0.345 0.087 0.4 0.5a2.2 2.2 0 0 1 -0.4 1.1q-0.334 -0.797 0 -1.6m-2.4 0.2q0.75 0.003 0.1 0.4a0.486 0.486 0 0 1 -0.1 -0.4m-17.6 0.2q0.237 0.085 0.4 0.3 -0.395 0.158 -0.4 -0.3m4.4 0h0.6v0.8h-0.6zm8 0h0.8v0.8h-0.8zm-14 1.8q0.213 0.718 0.4 1.5a1.9 1.9 0 0 0 -0.5 0.3q-0.512 -0.723 -0.5 -1.6 0.387 0.071 0.6 -0.2m0.8 0q9.802 -0.1 19.6 0.2l-0.2 0.4q0.242 1.129 0.8 2.1 -6.294 8.799 -16.2 4.4 -2.743 -1.593 -4.4 -4.3l0.4 -0.6a17 17 0 0 0 0 -2.2m20.2 0q1.646 0.442 0.3 1.8 -0.418 -0.833 -0.3 -1.8m-19.2 0.8q0.635 0.476 0.2 1.2 -0.672 -0.49 -0.2 -1.2m17.4 0q0.635 0.476 0.2 1.2 -0.672 -0.49 -0.2 -1.2m-17.6 -0.2q1.428 0.157 0.8 1.5 -0.49 0.148 -1 0.1 -0.066 -0.834 0.2 -1.6m0.2 0.2q-0.472 0.71 0.2 1.2 0.435 -0.724 -0.2 -1.2m17.2 -0.2h0.8q0.703 1.597 -1 1.6 -0.066 -0.834 0.2 -1.6m0.2 0.2q-0.472 0.71 0.2 1.2 0.435 -0.724 -0.2 -1.2m-12 6.2q1.098 -0.045 0.6 0.9 -0.285 0.185 -0.5 -0.1a1.688 1.688 0 0 1 -0.1 -0.8m6.2 0q1.098 -0.045 0.6 0.9 -0.285 0.185 -0.5 -0.1a1.68 1.68 0 0 1 -0.1 -0.8"/>
+                    				<g id="sensor-SVG-level">
+                    				    <path class="Sensorpath" style="--order: 1;" d="M30.5 5.7q0.675 0.695 0.8 1.7 -0.473 0.623 -1.2 0.9 -0.414 -0.15 -0.4 -0.6a6.24 6.24 0 0 1 0.7 -1.2 1.68 1.68 0 0 0 0.1 -0.8"/>
+                                	    <path class="Sensorpath" style="--order: 2;" style="opacity:1" fill="#cee9ff" d="M30.7 6.7q0.322 0.225 0.1 0.6l-0.6 0.6q-0.2 -0.3 0 -0.6a2.1 2.1 0 0 0 0.5 -0.6"/>
+                                	    <path class="Sensorpath" style="--order: 3;" d="M7.3 8.5q2.17 0.232 1.5 2.4 -1.804 0.919 -1.9 -1.2 0.033 -0.664 0.4 -1.2"/>
+                                	    <path class="Sensorpath" style="--order: 4;" style="opacity:1" fill="#cae7ff" d="M7.3 8.9q0.667 -0.097 1.1 0.4 0.149 0.794 0.1 1.6 -0.667 0.097 -1.1 -0.4a6.48 6.48 0 0 1 -0.1 -1.6"/>
+                                	    <path class="Sensorpath" style="--order: 5;" d="M36.3 8.7h0.6q0.524 1.883 -0.4 3.6 -0.392 -0.424 -0.5 -1a5.36 5.36 0 0 1 -0.7 1.5 11.86 11.86 0 0 1 -2.6 1.3q-0.344 -0.095 -0.5 -0.4 -0.245 -1.039 0.2 -2 0.7 -0.3 1 -1 0.452 0.31 0.9 -0.1 0.523 -0.333 0.8 -0.9 0.665 0.427 0.9 1.2 0.072 -1.126 0.3 -2.2"/>
+                                	    <path class="Sensorpath" style="--order: 6;" style="opacity:1" fill="#c2e4ff" d="M36.5 8.9q0.414 1.181 -0.1 2.4a5.64 5.64 0 0 1 0.1 -2.4"/>
+                                	    <path class="Sensorpath" style="--order: 7;" style="opacity:1" fill="#d3ebff" d="M35.3 10.5q0.206 1.136 -0.6 1.9l-1.9 1.1a5 5 0 0 1 -0.1 -1.4q0.136 -0.287 0.4 -0.5z"/>
+                                	    <path class="Sensorpath" style="--order: 8;" style="opacity:1" fill="#aedbff" d="M32.7 12.1q-0.049 0.707 0.1 1.4l1.9 -1.1q0.806 -0.764 0.6 -1.9 0.403 0.681 0 1.8 -1.164 1.182 -2.8 1.4 -0.092 -0.866 0.2 -1.6"/>
+                                	    <path class="Sensorpath" style="--order: 9;" d="M30.3 12.1q0.59 -0.072 1.1 0.2a6.1 6.1 0 0 1 0 2.2q-0.725 0.654 -1.6 0.2a5.04 5.04 0 0 1 0 -2q0.209 -0.357 0.5 -0.6"/>
+                                	    <path class="Sensorpath" style="--order: 10;" style="opacity:1" fill="#9cd4ff" d="M30.5 12.5q0.266 -0.383 0.6 0 0.418 1.022 -0.1 2 -0.387 0.387 -0.7 0 0.299 0.026 0.5 -0.2l0.1 -0.9q-0.021 -0.596 -0.4 -0.9"/>
+                                	    <path class="Sensorpath" style="--order: 11;" style="opacity:1" fill="#d3ebff" d="M30.5 12.5q0.379 0.304 0.4 0.9l-0.1 0.9q-0.201 0.226 -0.5 0.2 -0.341 -0.841 -0.1 -1.8 0.115 -0.167 0.3 -0.2"/>
+                                	    <path class="Sensorpath" style="--order: 12;" d="M21.7 13.7q0.018 -0.163 0.2 -0.2a38.8 38.8 0 0 0 2.6 0.8q0.091 0.82 -0.7 1a6.86 6.86 0 0 1 -1.5 -0.6q-0.137 -0.629 -0.6 -1"/>
+                                	    <path class="Sensorpath" style="--order: 13;" style="opacity:1" fill="#cbe8ff" d="M22.5 14.1q0.795 0.297 1.6 0.6 -0.701 0.304 -1.4 -0.1 -0.226 -0.201 -0.2 -0.5"/>
+                                	    <path class="Sensorpath" style="--order: 14;" d="M17.9 13.7q1.059 0.333 0.2 1.1 -1.248 0.838 -2.6 0.2l0.6 -0.6q0.965 -0.27 1.8 -0.7"/>
+                                	    <path class="Sensorpath" style="--order: 15;" style="opacity:1" fill="#cbe7ff" d="M17.7 14.1q0.615 0.062 0.2 0.5 -0.699 0.404 -1.4 0.1 0.674 -0.212 1.2 -0.6"/>
+                                	    <path class="Sensorpath" style="--order: 16;" style="opacity:.561" fill="#a3d5ff" d="M9.7 23.5q0.08 0.48 -0.2 0.8 -0.248 -0.25 -0.5 0.2 -0.06 -0.905 0.2 -1.8a10.2 10.2 0 0 1 0.5 0.8"/>
+                                	    <path class="Sensorpath" style="--order: 17;" d="M31.1 22.5h0.8a6.4 6.4 0 0 0 0.2 1.7q-0.491 1.35 -1.1 -0.1 -0.217 -0.828 0.1 -1.6"/>
+                                	    <path class="Sensorpath" style="--order: 18;" style="opacity:1" fill="#c3e4ff" d="M31.3 22.7q0.732 0.774 -0.2 0.8 -0.02 -0.438 0.2 -0.8"/>
+                                	    <path class="Sensorpath" style="--order: 19;" d="M9.7 23.5a10.2 10.2 0 0 0 -0.5 -0.8q-0.26 0.895 -0.2 1.8 0.252 -0.45 0.5 -0.2 -0.233 0.742 -0.9 0.4a7.6 7.6 0 0 1 0.2 -2q1.26 -0.449 0.9 0.8"/>
+                                	    <path class="Sensorpath" style="--order: 20;" d="M31.3 26.1q0.734 -0.125 0.8 0.6a17.2 17.2 0 0 1 -0.4 1.6q-0.357 0.279 -0.8 0.2 -0.126 -1.273 0.4 -2.4"/>
+                                	    <path class="Sensorpath" style="--order: 21;" style="opacity:.345" fill="#a6d6ff" d="M9.5 26.5q0.28 0.32 0.2 0.8a14.2 14.2 0 0 0 -0.4 0.8q-0.497 -0.777 -0.2 -1.6 0.345 0.728 0.4 0"/>
+                    					<path class="Sensorpath" style="--order: 22;" style="opacity:1" fill="#c7e6ff" d="M31.3 26.5q0.326 0.036 0.4 0.4a4.12 4.12 0 0 1 -0.4 1.2q-0.212 -0.777 0 -1.6"/>
+                                	    <path class="Sensorpath" style="--order: 23;" d="M9.5 26.5q-0.055 0.728 -0.4 0 -0.297 0.823 0.2 1.6a14.2 14.2 0 0 1 0.4 -0.8q0.463 0.812 -0.4 1.2 -0.344 -0.095 -0.5 -0.4a8.16 8.16 0 0 1 -0.2 -1.8q0.575 -0.425 0.9 0.2"/>
+                                	</g>
+                    			</svg>\`,
+                            type: 'status'
+                        },
+						{
+                            id: 'WaterTank',
+							timeId: 'WaterTankLeft',
+                            label: 'WaterTank',
+                            svg: \`<svg width="40" height="40" viewBox="0 0 40 40" style="fill-rule:evenodd">
+									    <defs>
+									        <clipPath id="pureWaterTankWave">
+									            <path style="opacity:.585" d="M0 24q11-1 10 0t10 0 10 0 10 0v36H0Z">
+									                <animateTransform  attributeName="transform"  type="translate" values="0 -20;2 -20;-2 -20;0 -20" dur="2s" repeatCount="indefinite" />
+									            </path>
+									        </clipPath>
+									    </defs>
+									    <path style="opacity:1" fill="#8d8d8d" d="M6.3-.1h25a17 17 0 0 1 .2 1.5 11.2 11.2 0 0 0-.4 3.3q1.002.117 2 .3.786.788-.1 1.5a3.8 3.8 0 0 0-.3 1.6q-.585-.082-.9.4-.005 2.209-.5 4.3a16626 16626 0 0 0 0 13.4 431 431 0 0 0-.4 8.5 11.3 11.3 0 0 0 .2 2q-.14.49-.6.7a61 61 0 0 0-6.6.4 1.9 1.9 0 0 0-.5.3 6.1 6.1 0 0 0-.3 1.8H11.3c-.267-.267-.3-.1-.8 0h-.6q-2.041-.592-2.6-2.7a1697 1697 0 0 0-1-29.1h-1v-.8q2.354.221 4.6.8l.6-.3c3.799-.1 7.599-.133 19.9-.2 0 .2-.2.6 0 .8-9.494.233-10.494.333-11.2.4-.62.357-.4-.2-1 0s-.8 0-.8 0c-.8 0-.8.2-1.6.2H11c-2.2-.4-1.4-.4-3.6-.6.2 4.2 0 5.2 0 6.4.2.897.066 1.631.1 2.4.123 3.189.389 6.356.3 9.6v1.8c0 2.7-.4 1.3.4 8.5-.2-.7 0 .1.3.3q.035.569.4 1a9.8 9.8 0 0 0 2.6.8 116 116 0 0 0 10.4.3 13.6 13.6 0 0 1 .4-3.2 4.6 4.6 0 0 0-.2-1.2.9.9 0 0 1 .3-.4q.15-2.998.1-6c-.213-.27.054-.403.1-1.2a469 469 0 0 1 .4-14.6 1.4 1.4 0 0 1 .5-.7 20 20 0 0 1 1.8-.5c.3-.3.9-.3.9-.3.2.2.2-.2.5.1h1.8a15 15 0 0 1-.2-2q.63.007 1.1-.4a.8.8 0 0 1 .4.2q.15 1.196.1 2.4.733.114.4-.4a1.46 1.46 0 0 0 .4-.6 134 134 0 0 0-.4-3q.917-.131 1.6-.7-.794-.386-.6-1.3-1.552.123-3-.4-.306-.58-.1-1.2.104.504.6.6.432-.194.9-.2.06-.738.4-1.4a.9.9 0 0 1 .3.4 13 13 0 0 0-.2-3q-.544-.378-1.1 0-.126 1.051-.5 2.2-.514 1.361-1.9.9.892-.938 1.4-2.1-.693-.438 0-1.1a344 344 0 0 0-16.6 0l.3.3q.922-.335 1.9-.1c-.744.203-1.477.436-4.5.2-1.6 1.4-1.6 1.8-.8 2.8.6.6 1.2.6 4.2.4 3.6 0 7.2.2 11-.4 3.3.1 4.7.1 3.7-.1 1.4-1.2.8 1 1.2 1.6-.1-.7-.7.1-4.6.1.8.067 1.6.133 4.3 0-4.2 0-6.2-.2-9 .3a750 750 0 0 1-11.7.3l-.3.3q-1.353-1.033-1.7.6a4.2 4.2 0 0 1-.2-1.8h.8a42 42 0 0 0 .2-5m21.8 1.6q-.076-.698.4-1.2l.2.1q-.219.617-.6 1.1M7.3.5q1.284-.305 1.4 1a4 4 0 0 0-.7.8.73.73 0 0 0-.3-.2 21 21 0 0 1-.3 2.6q-.323-.485-.3-1.1A20.5 20.5 0 0 0 7.3.5m.8 3q.75.003.1.4a.5.5 0 0 1-.1-.4m0 .8q.745.069.3.4-.309-.101-.3-.4m20.8 8q.867.271 1.8.2-.335 12.03-.6 24a48 48 0 0 0-4.2-.2 10.5 10.5 0 0 0-2.8.4 2.96 2.96 0 0 1 .4-1.3 3.6 3.6 0 0 1-.4-.7q.315-10.791.7-21.6 1.372-.505 2.9-.6a1842 1842 0 0 0 .6 10.4q.24-4.754-.2-9.5-.002-.544.4-.9a945 945 0 0 0 .9 13.8 926 926 0 0 1-.3-13.8q.48.08.8-.2"/>
+									    <g clip-path="url(#pureWaterTankWave)">
+									        <path id="pureWaterTankFill" style="opacity:.585" fill="#1d3679" d="M6.2 7.8c26.584-.787 25.2-1.2 25.2 0-.492 27.577-.426 28.244-.3 28.9q-.14.49-.6.7a61 61 0 0 0-6.6.4 1.9 1.9 0 0 0-.5.3 6.1 6.1 0 0 0-.3 1.8H11.3c-.267-.267-.3-.1-.8 0h-.6q-2.041-.592-2.6-2.7c-.25-9.705-.584-19.405-1.1-29.4 5.2.8 12.6.4 24.6 0 .111-.188.645-.421 1.1-.8Z"/>
+									    </g>
+									</svg>\`,
+                            type: 'status'
+						}
+                    ];
+
+					const ComponentStatusText = {
+                        EN: {
+                            general: [
+                                { min: 95, text: "Perfect",    color: "#1B5E20" },
+                                { min: 90, text: "Excellent",  color: "#2E7D32" },
+                                { min: 80, text: "Great",      color: "#43A047" },
+                                { min: 70, text: "Very Good",  color: "#4CAF50" },
+                                { min: 55, text: "Good",       color: "#7CB342" },
+                                { min: 40, text: "Fair",       color: "#EEFF41" },
+                                { min: 25, text: "Worn",       color: "#FFC107" },
+                                { min: 15, text: "Poor",       color: "#FF9800" },
+                                { min: 5,  text: "Very Poor", color: "#FF5722" },
+                                { min: 0,  text: "Replace",   color: "#C62828" }
+                            ],
+                            refill: [
+                                { min: 95, text: "Completely Full", color: "#1B5E20" },
+                                { min: 85, text: "Full",            color: "#2E7D32" },
+                                { min: 75, text: "High",            color: "#4CAF50" },
+                                { min: 60, text: "Medium High",     color: "#7CB342" },
+                                { min: 45, text: "Medium",          color: "#8BC34A" },
+                                { min: 30, text: "Medium Low",      color: "#CDDC39" },
+                                { min: 20, text: "Low",             color: "#FFC107" },
+                                { min: 10, text: "Very Low",        color: "#FF9800" },
+                                { min: 3,  text: "Critical",        color: "#FF5722" },
+                                { min: 0,  text: "Refill Now",      color: "#C62828" }
+                            ],
+                            sensor: [
+                                { min: 97, text: "Flawless",        color: "#1B5E20" },
+                                { min: 93, text: "Perfect",         color: "#2E7D32" },
+                                { min: 85, text: "Excellent",       color: "#43A047" },
+                                { min: 75, text: "Very Clean",      color: "#4CAF50" },
+                                { min: 65, text: "Clean",          color: "#7CB342" },
+                                { min: 55, text: "Slightly Dusty", color: "#8BC34A" },
+                                { min: 45, text: "Dusty",          color: "#CDDC39" },
+                                { min: 35, text: "Quite Dirty",    color: "#FFC107" },
+                                { min: 25, text: "Dirty",          color: "#FF9800" },
+                                { min: 15, text: "Very Dirty",      color: "#FF7043" },
+                                { min: 5,  text: "Extremely Dirty", color: "#F44336" },
+                                { min: 1,  text: "Critical",        color: "#D32F2F" },
+                                { min: 0,  text: "Error",           color: "#B71C1C" }
+                            ],
+                            battery: [
+                                { min: 95, text: "Fully Charged",  color: "#1B5E20" },
+                                { min: 80, text: "High",           color: "#4CAF50" },
+                                { min: 65, text: "Medium High",    color: "#7CB342" },
+                                { min: 50, text: "Medium",         color: "#CDDC39" },
+                                { min: 35, text: "Medium Low",     color: "#FFC107" },
+                                { min: 20, text: "Low",            color: "#FF9800" },
+                                { min: 10, text: "Very Low",       color: "#FF5722" },
+                                { min: 5,  text: "Critical",       color: "#F44336" },
+                                { min: 0,  text: "Depleted",       color: "#C62828" }
+                            ]
+                        },
+                        DE: {
+                            general: [
+                                { min: 95, text: "Perfekt",      color: "#1B5E20" },
+                                { min: 90, text: "Ausgezeichnet", color: "#2E7D32" },
+                                { min: 80, text: "Großartig",    color: "#43A047" },
+                                { min: 70, text: "Sehr Gut",     color: "#4CAF50" },
+                                { min: 55, text: "Gut",          color: "#7CB342" },
+                                { min: 40, text: "Akzeptabel",   color: "#EEFF41" },
+                                { min: 25, text: "Abgenutzt",    color: "#FFC107" },
+                                { min: 15, text: "Schlecht",     color: "#FF9800" },
+                                { min: 5,  text: "Sehr Schlecht", color: "#FF5722" },
+                                { min: 0,  text: "Ersetzen",     color: "#C62828" }
+                            ],
+                            refill: [
+                                { min: 95, text: "Vollständig voll", color: "#1B5E20" },
+                                { min: 85, text: "Voll",             color: "#2E7D32" },
+                                { min: 75, text: "Hoch",             color: "#4CAF50" },
+                                { min: 60, text: "Mittel Hoch",      color: "#7CB342" },
+                                { min: 45, text: "Mittel",           color: "#8BC34A" },
+                                { min: 30, text: "Mittel Niedrig",   color: "#CDDC39" },
+                                { min: 20, text: "Niedrig",         color: "#FFC107" },
+                                { min: 10, text: "Sehr Niedrig",     color: "#FF9800" },
+                                { min: 3,  text: "Kritisch",         color: "#FF5722" },
+                                { min: 0,  text: "Jetzt nachfüllen", color: "#C62828" }
+                            ],
+                            sensor: [
+                                { min: 97, text: "Makellos",       color: "#1B5E20" },
+                                { min: 93, text: "Perfekt",        color: "#2E7D32" },
+                                { min: 85, text: "Ausgezeichnet",  color: "#43A047" },
+                                { min: 75, text: "Sehr Sauber",    color: "#4CAF50" },
+                                { min: 65, text: "Sauber",         color: "#7CB342" },
+                                { min: 55, text: "Leicht Staubig", color: "#8BC34A" },
+                                { min: 45, text: "Staubig",        color: "#CDDC39" },
+                                { min: 35, text: "Ziemlich Schmutzig", color: "#FFC107" },
+                                { min: 25, text: "Schmutzig",      color: "#FF9800" },
+                                { min: 15, text: "Sehr Schmutzig", color: "#FF7043" },
+                                { min: 5,  text: "Extrem Schmutzig", color: "#F44336" },
+                                { min: 1,  text: "Kritisch",       color: "#D32F2F" },
+                                { min: 0,  text: "Fehler",         color: "#B71C1C" }
+                            ]
+                        }
+                    };
+
+                    // Language texts for the component detail overlay
+                    const ComponentDetailTexts = {
+                        EN: {
+                            status: "Status:",
+                            remaining: "Remaining:",
+                            remainingTime: "Remaining Time:",
+                            remainingLiter: "Remaining Liter",
+                            consumption: "Consumption:",
+                            average: "Average:",
+                            resetButton: "Reset",
+							resetText: "Reset",
+							resetConfirm: "Click to Confirm",
+							reseStart: "Resetting...",
+							reseSuccessfully: "Successfully Reset!",
+                            notAvailable: "N/A",
+                            dataNotAvailable: "Data not available",
+                            units: {
+                                consumption: "ml/m²",
+                                averageFormat: "ø {avg} ml/m² (\u2193 {min} | \u2191 {max})"
+                            }
+                        },
+                        DE: {
+                            status: "Status:",
+                            remaining: "Verbleibend:",
+                            remainingTime: "Verbleibende Zeit:",
+                            remainingLiter: "Verbleibende Liter",
+                            consumption: "Verbrauch:",
+                            average: "Durchschnitt:",
+                            resetButton: "Zurücksetzen",
+							resetText: "zurücksetzen",
+							resetConfirm: "Klicken zum Bestätigen",
+							reseStart: "Wird zurückgesetzt...",
+							reseSuccessfully: "Erfolgreich zurückgesetzt!",
+                            notAvailable: "Nicht verfügbar",
+                            dataNotAvailable: "Daten nicht verfügbar",
+                            units: {
+                                consumption: "ml/m²",
+                                averageFormat: "ø {avg} ml/m² (\u2193 {min} | \u2191 {max})"
+                            }
+                        }
+                    };
+
+
+                    const ComponentNames = {
+                        "EN": {
+                          "MainBrush": "Main Brush",
+                          "Sidebrush": "Side Brush",
+                          "MoppPad": "Mop Pad",
+                          "Detergent": "Detergent",
+                          "Sensor": "Sensors",
+                          "WaterTank": "Water Tank"
+                        },
+                        "DE": {
+                          "MainBrush": "Hauptbürste",
+                          "Sidebrush": "Seitenbürste",
+                          "MoppPad": "Wischpad",
+                          "Detergent": "Reinigungsmittel",
+                          "Sensor": "Sensoren",
+                          "WaterTank": "Wassertank"
+                        }
+                    }
+
+
+                    initializeComponents();
+
+                    // Initialize components display
+                    function initializeComponents() {
+                        const componentList = document.getElementById('component-list');
+                        if (!componentList) return;
+
+                        components.forEach(component => {
+                            const componentElement = document.createElement('div');
+                            componentElement.className = 'compact-component';
+                            componentElement.style = 'display: inline-flex; flex-direction: column; align-items: center; ' +
+                                                     'min-width: 25px; padding: 1px; border-radius: 1px; ' +
+                                                     'background: rgba(255,255,255,0.05); cursor: pointer; ' +
+                                                     'transition: transform 0.2s ease;';
+
+                            componentElement.innerHTML =
+                                '<div style="margin-bottom: 3px; transition: transform 0.2s ease;">' + component.svg + '</div>' +
+                                '<div id="' + component.id + '-value" style="font-size: 12px; font-weight: bold; margin-top: 3px;">-</div>' +
+                                (component.timeId ?
+                                    '<div id="' + component.timeId + '-value" style="font-size: 12px; margin-top: 2px; color: #aaa;">-</div>'
+                                    : '');
+
+                            // Hover effect
+                            componentElement.addEventListener('mouseenter', () => {
+                                componentElement.style.transform = 'scale(1.05)';
+                                componentElement.querySelector('div').style.transform = 'scale(1.1)';
+                            });
+
+                            componentElement.addEventListener('mouseleave', () => {
+                                componentElement.style.transform = 'scale(1)';
+                                componentElement.querySelector('div').style.transform = 'scale(1)';
+                            });
+
+                            // Click event to show component details
+                            componentElement.addEventListener('click', () => {
+                                showComponentDetail(component);
+                            });
+
+                            componentList.appendChild(componentElement);
+                        });
+                    }
+
+                    // Status update for both values
+                    function updateComponentStatus() {
+						let componentPercentages = {}; // An object to store the percentage for each component
+                        components.forEach(component => {
+
+							// Special case for Water Tank
+                            if (component.id === 'WaterTank') {
+                                getState('${prefix}.state.water.PureWaterTank')
+                                    .then(value => {
+                                        updateComponentValue(component.label, component.id, value, '%');
+                                        //updateWaterLevel(value);
+                                    })
+                                    .catch(err => console.error('Error with WaterTank:', err));
+                            } else {
+                                // Get the remaining lifespan in %
+                                getState('${prefix}.state.' + component.id)
+                                    .then(value => {
+										componentPercentages[component.label] = value;
+                                        updateComponentValue(component.label, component.id, value, '%');
+                                    })
+                                    .catch(err => console.error('Error with ' + component.id + ':', err));
+
+                                // Get the remaining time (if available)
+                                if (component.timeId) {
+                                    getState('${prefix}.state.' + component.timeId)
+                                        .then(value => {
+											const percentage = componentPercentages[component.label] ?? 80;
+                                            const hours = value;
+											const maxTime = calculateMaxTime(hours, percentage);
+											updateComponentValue(component.label, component.timeId, hours, 'h', maxTime);
+
+                                        })
+                                        .catch(err => console.error('Error with ' + component.timeId + ':', err));
+							    }
+						    }
+
+
+                        });
+						componentPercentages = {}; // Empty the componentPercentages object after each new update
+                    }
+
+                    // Helper function to update the component value
+                    function updateComponentValue(elementLabel, elementId, value, unit, maxTime = 24) {
+                        const element = document.getElementById(elementId + '-value');
+                        if (!element) return;
+
+                        let displayValue, color, isYellowRange = false;
+
+                        // Handling percentage unit
+                        if (unit === '%') {
+                            displayValue = Math.max(0, Math.min(100, value)) + '%';
+							const retCalculatedHSL = getComponentValueColor(value);
+                            color = retCalculatedHSL.HSL;
+							isYellowRange = retCalculatedHSL.isYellow;
+                        }
+                        // Handling hours unit
+                        else if (unit === 'h') {
+                            displayValue = value + 'h';
+							const ratio = Math.min(value / maxTime, 1); // Normalize to 0�1 for up to 24h
+							const hue = ratio * 120;
+                            color = color = 'hsl(' + hue + ', 100%, 50%)';
+							isYellowRange = hue >= 50 && hue <= 65;
+                        }
+                        // Default case for unknown unit
+                        else {
+                            displayValue = value ? value : '?';
+                            color = value ? '#4CAF50' : '#F44336';
+                        }
+
+                        // Set the display value and apply the color
+                        element.textContent = displayValue;
+                        element.style.color = color;
+
+						if (isYellowRange) {
+							element.classList.add("Component-with-outline");
+						} else {
+							element.classList.remove("Component-with-outline");
+						}
+
+                    	updateSVGFillColor(elementLabel, value, unit);
+
+                    	if (elementLabel === 'Sensor' && unit === '%') {
+                            updateSensorPathColor(value);
+                        }
+
+                    	if (elementLabel === 'MoppPad' && unit === '%') {
+                            updateMoppPadPathColor(value);
+                        }
+
+						if (elementLabel === 'WaterTank' && unit === '%') {
+                            updateWaterLevel(value);
+							getTankWaterLevel();
+                        }
+
+                    }
+
+					function getComponentValueColor(value) {
+                        // Clamp between 0�100
+                        value = Math.max(0, Math.min(100, value));
+                        const ratio = value / 100;       // Normalize 0�1
+                        const hue = ratio * 120;         // 0 (red) to 120 (green)
+						const isYellowRange = hue >= 50 && hue <= 65;
+                        return {
+								HSL: 'hsl(' + hue + ', 100%, 50%)',
+                                isYellow: isYellowRange
+                               };
+                    }
+
+					function calculateMaxTime(hours, percentage) {
+                      return (hours / percentage) * 100;
+                    }
+
+                    // Function to handle SVG color updates based on element label and value
+                    function updateSVGFillColor(elementLabel, value, unit) {
+
+                        if (typeof value !== 'number' || value < 0 || value > 100 || unit !== '%') {
+                            return;
+                        }
+
+                        const elementConfig = {
+                            'Detergent': { id: 'detergent-SVG-level', reverseHue: false },
+                            'Sidebrush': { id: 'sidebrush-SVG-level', reverseHue: false },
+                    		'Filter': {id: 'filter-SVG-level', reverseHue: false },
+                    		'MainBrush': {id: 'mainbrush-SVG-level', reverseHue: false },
+
+                        };
+
+                        if (!elementConfig[elementLabel]) return;
+
+                        // Get configuration for this element
+                        const config = elementConfig[elementLabel];
+                        const svgElement = document.getElementById(config.id);
+
+                        if (!svgElement) {
+                            return;
+                        }
+
+                        let hue = (value / 100) * 120; // Calculate hue (0-120 from red to green)
+
+                        // Reverse hue if configured (green to red)
+                        if (config.reverseHue) {
+                            hue = 120 - hue;
+                        }
+
+                        const color = 'hsl(' + hue + ', 100%, 50%)';
+
+                        svgElement.setAttribute('fill', color);
+
+                    	// Add class for extreme values
+                        svgElement.classList.toggle('critical-level', value < 5);
+                    }
+
+                    function updateSensorPathColor(value) {
+                        // Select all sensor path elements
+                        const sensorPaths = document.querySelectorAll('.Sensorpath');
+
+                        if (typeof value !== 'number' || value < 0 || value > 100) {
+                            return;
+                        }
+
+                        // Color calculation (Red for low values, Green for high values)
+                        const hue = (value / 100) * 120; // HSL color value from 0 (red) to 120 (green)
+                        const color = 'hsl(' + hue + ', 100%, 50%)';
+
+                        // Temporarily disable animation while changing the color
+                        sensorPaths.forEach(path => {
+                            path.style.animation = 'none';
+                            path.setAttribute('fill', color);
+
+                            // Re-enable animation after a short delay
+                            setTimeout(() => {
+                                path.style.animation = '';
+                            }, 50);
+                        });
+
+                    	const svgElement = document.getElementById('sensor-SVG-level');
+                        svgElement.classList.toggle('critical-level', value < 5); // Add class for extreme values
+                    }
+
+                    function updateMoppPadPathColor(value) {
+
+                        if (typeof value !== 'number' || value < 0 || value > 100) {
+                            return;
+                        }
+
+                        const leftMop = document.getElementById('mopppad2-SVG-level');
+                        const rightMop = document.getElementById('mopppad1-SVG-level');
+
+                        if (!leftMop || !rightMop) return;
+
+                        // Color calculation (Red for low values, green for high values)
+                        const hue = (value / 100) * 120; // HSL color value from 0 (red) to 120 (green)
+                        const color = 'hsl(' + hue + ', 100%, 50%)';
+
+                        [leftMop, rightMop].forEach(mop => {
+                            mop.setAttribute('fill', color);
+                            mop.style.opacity = '0.9';
+                    	    mop.classList.toggle('critical-level', value < 5); // Add class for extreme values
+                        });
+                    }
+
+					function updateWaterLevel(level) {
+					    // Convert the percentage value (0-100) to a Y offset (0 to 32)
+					    const maxHigh = 0;
+					    const minHigh = 32;
+					    const y = minHigh + (maxHigh - minHigh) * (level / 100);
+
+					    // Find all wave elements (also in the detail view)
+					    document.querySelectorAll('#pureWaterTankWave').forEach(wave => {
+					        wave.setAttribute("transform", 'translate(0, ' + y + ')');
+					    });
+
+					    // Change water color based on fill level
+					    const waterFillElements = document.querySelectorAll('#pureWaterTankFill');
+					    const hue = 120 * (level / 100); // Green (120) to Red (0)
+					    waterFillElements.forEach(el => {
+					        el.setAttribute('fill', 'hsl(' + hue + ', 100%, 50%)');
+					    });
+					}
+
+					function getTankWaterLevel() {
+						const element = document.getElementById('WaterTankLeft-value');
+                        getState('${prefix}.state.water.current')
+                            .then(value => {
+                                // Handle invalid values (null, undefined or NaN)
+                                if (value === null || value === undefined || isNaN(value)) {
+                                    console.warn('Invalid water level value received');
+                                    element.textContent = '-- L';
+                                    element.style.color = '#9E9E9E';
+                                    return;
+                                }
+
+                                // Convert ml to liters
+                                const liters = (value / 1000).toFixed(2);
+
+                                let color;
+                                const percentFull = (value / 4500) * 100;
+								const retCalculatedHSL = getComponentValueColor(percentFull);
+								color = retCalculatedHSL.HSL;
+
+                                // Apply directly to UI elements
+                                element.textContent = liters + ' L';
+                                element.style.color = color;
+								if (retCalculatedHSL.isYellow) {
+									element.classList.add("Component-with-outline");
+                                } else {
+									element.classList.remove("Component-with-outline");
+                                }
+
+                            })
+                            .catch(err => {
+                                console.error('Error fetching water level:', err);
+                                element.textContent = '-- L';
+                                element.style.color = '#9E9E9E';
+                            });
+                    }
+
+
+                    // Initialize the detail view
+                    const detailOverlay = document.getElementById('component-detail-overlay');
+                    const detailClose = document.getElementById('component-detail-close');
+                    const detailSvgContainer = document.getElementById('component-detail-svg');
+                    const detailName = document.getElementById('component-detail-name');
+                    const detailStatus = document.getElementById('component-detail-status');
+                    const detailRemaining = document.getElementById('component-detail-remaining');
+                    const detailTime = document.getElementById('component-detail-time');
+                    const detailReset = document.getElementById('component-detail-reset');
+					const detailcurrentMlPerSqmLabel = document.getElementById('component-detail-currentMlPerSqm-Label');
+					const detailcurrentMlPerSqm = document.getElementById('component-detail-currentMlPerSqm');
+					const detailcurrentMlMaxMinLabel = document.getElementById('component-detail-currentMlMaxMin-Label');
+					const detailcurrentMlMaxMin = document.getElementById('component-detail-currentMlMaxMin');
+
+                    // Helper function to update all UI texts when language changes
+					updateComponentDetailLanguage();
+                    function updateComponentDetailLanguage() {
+                        const texts = ComponentDetailTexts[UserLang] || ComponentDetailTexts.EN;
+
+                        // Update static labels
+                        document.querySelectorAll('.component-detail-info div:nth-child(1)')[0].textContent = texts.status;
+                        document.querySelectorAll('.component-detail-info div:nth-child(1)')[1].textContent = texts.remaining;
+                        document.getElementById('component-detail-currentMlPerSqm-Label').textContent = texts.consumption;
+                        document.getElementById('component-detail-currentMlMaxMin-Label').textContent = texts.average;
+                    }
+
+                    // Updated showComponentDetail function with multilingual support
+                    function showComponentDetail(component) {
+                        currentComponent = component;
+                        const texts = ComponentDetailTexts[UserLang] || ComponentDetailTexts.EN;
+
+                        // Copy and enlarge the SVG
+                        const originalSvg = document.querySelector('#' + component.id + '-value').previousElementSibling.querySelector('svg');
+                        const clonedSvg = originalSvg.cloneNode(true);
+
+                        // Adjust SVG attributes for size
+                        clonedSvg.removeAttribute('width');
+                        clonedSvg.removeAttribute('height');
+                        clonedSvg.style.width = '100%';
+                        clonedSvg.style.height = '100%';
+
+                        // Insert the SVG into the container
+                        detailSvgContainer.innerHTML = '';
+                        detailSvgContainer.appendChild(clonedSvg);
+
+                        // Set values
+                        detailName.textContent = ComponentNames[UserLang][component.label];
+
+                        const valueElement = document.getElementById(component.id + '-value');
+                        const statusText = updateComponentStatusText(component.label, parseFloat(valueElement.textContent), UserLang);
+                        detailStatus.textContent = statusText.text;
+                        detailStatus.style.color = statusText.color;
+
+                        if (statusText.isYellow) {
+                            detailStatus.classList.add("Component-with-outline");
+                        } else {
+                            detailStatus.classList.remove("Component-with-outline");
+                        }
+
+                        detailRemaining.textContent = valueElement.textContent;
+                        detailRemaining.style.color = valueElement.style.color;
+
+                        if (component.timeId) {
+                            const timeElement = document.getElementById(component.timeId + '-value');
+                            detailTime.textContent = timeElement.textContent || texts.notAvailable;
+                            detailTime.style.color = timeElement.style.color || '#aaa';
+                        } else {
+                            detailTime.textContent = texts.notAvailable;
+                            detailTime.style.color = '#aaa';
+                        }
+
+                        // Special case for Water Tank
+                        if (component.id === 'WaterTank') {
+                            detailReset.style.display = 'none';
+                            document.getElementById('component-detail-remaining-String').textContent = texts.remainingLiter;
+                            detailcurrentMlPerSqmLabel.style.display = 'block';
+                            detailcurrentMlPerSqm.style.display = 'block';
+                            detailcurrentMlMaxMinLabel.style.display = 'block';
+                            detailcurrentMlMaxMin.style.display = 'block';
+
+                            // Fetch the values for current milliliters per square meter and learning statistics
+                            getState('${prefix}.state.water.currentMlPerSqm')
+                                .then(currentVal => {
+                                    return getState('${prefix}.state.water.learningStats')
+                                        .then(statsVal => {
+                                            const stats = JSON.parse(statsVal || '{}');
+
+                                            // Format the values
+                                            const current = (currentVal && !isNaN(currentVal)) ? currentVal : '--';
+                                            const min = stats.minConsumption || '--';
+                                            const max = stats.maxConsumption || '--';
+                                            const avg = stats.avgConsumption || '--';
+
+                                            detailcurrentMlPerSqm.textContent = current + ' ' + texts.units.consumption;
+                                            detailcurrentMlMaxMin.textContent =
+                                                texts.units.averageFormat
+                                                    .replace('{avg}', avg)
+                                                    .replace('{min}', min)
+                                                    .replace('{max}', max);
+
+                                            // Check if current value is a number before applying color
+                                            if (typeof current === 'number') {
+                                                if (current > max) {
+                                                    detailcurrentMlPerSqm.style.color = '#ff5722';
+                                                    detailcurrentMlMaxMin.style.color = '#2196f3';
+                                                } else if (current < min) {
+                                                    detailcurrentMlPerSqm.style.color = '#4caf50';
+                                                    detailcurrentMlMaxMin.style.color = '#2196f3';
+                                                } else {
+                                                    detailcurrentMlPerSqm.style.color = '#2196f3';
+                                                    detailcurrentMlMaxMin.style.color = '#2196f3';
+                                                }
+                                            } else {
+                                                detailcurrentMlPerSqm.style.color = '#9e9e9e';
+                                            }
+                                        });
+                                })
+                                .catch(err => {
+                                    console.error('Error loading data:', err);
+                                    detailcurrentMlPerSqm.textContent = texts.dataNotAvailable;
+                                    detailcurrentMlPerSqm.style.color = '#9e9e9e';
+                                });
+
+                        } else {
+                            // For other components
+                            detailReset.style.display = 'block';
+                            detailcurrentMlPerSqmLabel.style.display = 'none';
+                            detailcurrentMlPerSqm.style.display = 'none';
+                            detailcurrentMlMaxMinLabel.style.display = 'none';
+                            detailcurrentMlMaxMin.style.display = 'none';
+                            document.getElementById('component-detail-remaining-String').textContent = texts.remainingTime;
+                        }
+
+                        // Update reset button text
+                        detailReset.innerHTML = '<i class="fas fa-sync-alt"></i> ' + (UserLang === "DE" ? ComponentNames[UserLang][currentComponent.label] + ' ' + ComponentDetailTexts[UserLang].resetText :
+						ComponentDetailTexts[language].resetText + ' ' + ComponentNames[UserLang][currentComponent.label]);
+                        detailReset.style.background = 'linear-gradient(135deg, rgba(0,150,255,0.6) 0%, rgba(0,100,200,0.8) 100%)';
+
+                        // Show the overlay
+                        detailOverlay.classList.add('active');
+
+                        // Restart SVG animations
+                        restartSvgAnimations(clonedSvg);
+                    }
+
+                    let currentComponent = null;
+
+                    // Close the overlay when the close button is clicked
+                    detailClose.addEventListener('click', () => {
+                        detailOverlay.classList.remove('active');
+                    });
+
+                    // Close the overlay when clicking outside the overlay
+                    detailOverlay.addEventListener('click', (e) => {
+                        if (e.target === detailOverlay) {
+                            detailOverlay.classList.remove('active');
+                        }
+                    });
+
+
+                	// 2-step reset confirmation process
+                    let resetPending = false;
+
+                    detailReset.addEventListener('click', () => {
+                        // If no component is currently selected, exit the function
+                        if (!currentComponent) return;
+
+                        if (!resetPending) {
+                            // 1. First click - Request confirmation
+                            resetPending = true;
+                            detailReset.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + ComponentDetailTexts[UserLang].resetConfirm;
+                            detailReset.style.background = 'linear-gradient(135deg, rgba(255,179,0,0.6) 0%, rgba(255,145,0,0.8) 100%)';
+
+                            // Reset button reverts to original state after 5 seconds if not confirmed
+                            const resetTimeout = setTimeout(() => {
+                                if (resetPending) {
+                                    resetPending = false;
+                                    detailReset.innerHTML = '<i class="fas fa-sync-alt"></i> Reset ' + ComponentNames[UserLang][currentComponent.label];
+                                    detailReset.style.background = 'linear-gradient(135deg, rgba(0,150,255,0.6) 0%, rgba(0,100,200,0.8) 100%)';
+                                }
+                            }, 5000);
+
+                			// Cleanup when the component is changed
+                            const cleanup = () => {
+                                clearTimeout(resetTimeout);
+                                document.removeEventListener('componentChanged', cleanup);
+                            };
+                            document.addEventListener('componentChanged', cleanup);
+
+                        } else {
+                            // 2. Second click - Confirmation received
+                            resetPending = false;
+                            detailReset.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ' + ComponentDetailTexts[UserLang].reseStart;
+                            detailReset.disabled = true;
+
+                            setTimeout(() => {
+                                //3. Reset logic
+                				(async () => {
+                					try {
+                						await setState('${prefix}.control.Reset' + currentComponent.id.replace('Left', ''), true);
+                					    console.log('Reset ' + currentComponent.label + ' confirmed');
+                						// 4. Wait a moment before updating (adjust time as needed)
+                						setTimeout(() => {
+                						    // 5. Update all components
+                						    updateComponentStatus()
+                							// 6. Refresh detail view
+                							showComponentDetail(currentComponent);
+                						    // 7. Show success state
+                						    showResetSuccess();
+                						}, 1500);
+                					} catch (err) {
+                					    console.error('Error resetting the ' + currentComponent.label + ' component', err);
+                						showResetError();
+                					}
+                				})();
+                            }, 800);
+                        }
+                    });
+
+                    function showResetSuccess() {
+                        detailReset.innerHTML = '<i class="fas fa-check"></i> ' +ComponentDetailTexts[UserLang].reseSuccessfully;
+                        detailReset.style.background = 'linear-gradient(135deg, rgba(0,200,83,0.6) 0%, rgba(0,170,50,0.8) 100%)';
+
+                        setTimeout(resetButtonToDefault, 2000);
+                    }
+
+                	function showResetError() {
+                		detailReset.innerHTML = '<i class="fas fa-times"></i> Failed!';
+                        detailReset.style.background = 'linear-gradient(135deg, rgba(255,50,50,0.6) 0%, rgba(200,0,0,0.8) 100%)';
+                        detailReset.disabled = false;
+
+                        setTimeout(resetButtonToDefault, 2000);
+                    }
+
+                	function resetButtonToDefault() {
+                        detailReset.innerHTML = '<i class="fas fa-sync-alt"></i> ' + (UserLang === "DE" ? ComponentNames[UserLang][currentComponent.label] + ' ' +ComponentDetailTexts[UserLang].resetText :
+						ComponentDetailTexts[language].resetText + ' ' + ComponentNames[UserLang][currentComponent.label]);
+                        detailReset.style.background = 'linear-gradient(135deg, rgba(0,150,255,0.6) 0%, rgba(0,100,200,0.8) 100%)';
+                		resetPending = false;
+                		detailReset.disabled = false;
+                    }
+
+                    function updateComponentStatusText(elementLabel, value, language = "EN") {
+                        // Validate language input
+                        const lang = ComponentStatusText[language] ? language : "EN";
+                        const levels = ComponentStatusText[lang];
+
+                        // Determine the category based on element label
+                        let category;
+
+                        if (elementLabel === "Sensor") {
+                            category = "sensor";
+                        } else if (elementLabel === "WaterTank" || elementLabel === "Detergent") {
+                            category = "refill";
+                        } else {
+                            category = "general";
+                        }
+
+                        // Find the matching level (fallback to unknown if not found)
+                        const matchedLevel = levels[category].find(level => value >= level.min) ||
+                                            { text: lang === "DE" ? "Unbekannt" : "Unknown",
+                                              color: "#9E9E9E" };
+
+                        // Define which colors should be considered "yellow" for outline
+                        const yellowColors = [
+                            "#FFC107", // Material Amber 500 (main yellow)
+                            "#FFA000", // Amber 700
+                            "#FFD740", // Amber 300
+                            "#FFAB00", // Amber 600
+                            "#FFC400", // Amber 400
+                            "#FFD600", // Amber A400
+                            "#FFAB40", // Deep Orange 200 (yellow-orange)
+                            "#FF9800", // Orange 500
+                            "#EEFF41", // Lime A200 (yellowish)
+                            "#CDDC39", // Lime 500
+                            "#FFEB3B"  // Yellow 500
+                        ];
+
+                        return {
+                            text: matchedLevel.text,
+                            color: matchedLevel.color,
+                            isYellow: yellowColors.includes(matchedLevel.color.toUpperCase())
+                        };
+                    }
+
+
+                    // Restart SVG animations
+                    function restartSvgAnimations(svgElement) {
+                        const animatedElements = svgElement.querySelectorAll('*[style*="animation"]');
+                        animatedElements.forEach(el => {
+                            const style = el.getAttribute('style');
+                            el.setAttribute('style', '');
+                            void el.offsetWidth; // Trigger reflow
+                            el.setAttribute('style', style);
+                        });
+                    }
+
+					// =============================================
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     // Clean selected logic
                     // =============================================
 
@@ -5930,7 +8312,10 @@ class Dreamehome extends utils.Adapter {
 								  <style>
 								    .icon-drop-container { animation: none; /* Disabled by default */ transform-origin: center 10%; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
+<<<<<<< HEAD
+=======
 								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -5943,7 +8328,10 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+<<<<<<< HEAD
+=======
 								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -5957,7 +8345,10 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+<<<<<<< HEAD
+=======
 								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -5972,7 +8363,10 @@ class Dreamehome extends utils.Adapter {
 									.icon-drop-wave { animation: none; /* Disabled by default */ } .icon-drop-wave-1 { animation-delay: -0.5s; } .icon-drop-wave-2 { animation-delay: -1.0s; } .icon-drop-wave-3 { animation-delay: -1.5s; }
 								    @keyframes icon-drop-wobble { 0%, 100% { transform: rotate(0.5deg) translateY(0); } 25% { transform: rotate(-0.7deg) translateY(-0.8px); } 50% { transform: rotate(2.3deg) translateY(0.5px); } 75% { transform: rotate(-2.2deg) translateY(0.4px); } }
 								    @keyframes icon-drop-wave { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.2); } }
+<<<<<<< HEAD
+=======
 								    clipPath path { d: path('M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6'); }
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 								  </style>
 								  <defs> <clipPath id="dropClip"> <path d="M18.5-.1h1q.71.385 1.3 1a146 146 0 0 0 3.2 8l6.6 11.6q2.994 7.552-1.6 14.2-2.553 2.854-6.2 4a1.26 1.26 0 0 1-.6-.2 3.2 3.2 0 0 1-1.1.7q-9.865.742-13.9-8.3-1.509-5.164.4-10.2l6.2-10.8a59.5 59.5 0 0 0 3.6-8.8q.408-.757 1.1-1.2m.6 1.6a179 179 0 0 0 4.1 9.6 359 359 0 0 1 5.8 9.8q3.413 8.19-2.9 14.3-6.727 4.882-13.6.2-6.855-6.473-2.9-15.1a150 150 0 0 0 7.2-12.8 318 318 0 0 1 2.3-6"/> </clipPath> </defs>
 								  <g class="icon-drop-container" clip-path="url(#dropClip)">
@@ -6250,6 +8644,27 @@ class Dreamehome extends utils.Adapter {
                         ${Object.entries(elements.carpets).map(([id, rect]) => {
     const color = ColorsCarpet[id % ColorsCarpet.length];
     const [x1, y1, x2, y2] = rect;
+<<<<<<< HEAD
+
+    // Transform all four corners
+    const [tx1, ty1] = toCanvas(x1, y1);
+    const [tx2, ty2] = toCanvas(x2, y1);
+    const [tx3, ty3] = toCanvas(x2, y2);
+    const [tx4, ty4] = toCanvas(x1, y2);
+
+    // Draw as polygon to handle rotation correctly
+    return `
+                                colorMapCtx.fillStyle = '${color}';
+                                colorMapCtx.beginPath();
+                                colorMapCtx.moveTo(${tx1}, ${ty1});
+                                colorMapCtx.lineTo(${tx2}, ${ty2});
+                                colorMapCtx.lineTo(${tx3}, ${ty3});
+                                colorMapCtx.lineTo(${tx4}, ${ty4});
+                                colorMapCtx.closePath();
+                                colorMapCtx.fill();`;
+  }).join('')}
+
+=======
     const [tx1, ty1] = toCanvas(x1, y1);
     const width = (x2-x1)*scale;
     const height = (y2-y1)*scale;
@@ -6258,6 +8673,7 @@ class Dreamehome extends utils.Adapter {
                                 colorMapCtx.fillStyle = '${color}';
                                 colorMapCtx.fillRect(${tx1}, ${ty1}, ${width}, ${height});`;
   }).join('')}
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Change and reloading map size
@@ -6553,6 +8969,48 @@ class Dreamehome extends utils.Adapter {
 					let isMenuOpen = false;
 					let radialMenu = null;
 					let lastRoomId = null;
+<<<<<<< HEAD
+					let autoCloseTimeout = null; // for automatic closing
+					let actionDetected = false; // Flag to track if any action has been detected
+					const orderIconsCache = {}; // Global cache object for order icons
+					let mainOptions = [];
+
+					// Initialize menu with Order options
+					async function initializeMenu() {
+					    try {
+					        const options = await getMainOptions();
+					        mainOptions = options;
+					    } catch (error) {
+					        console.error('Menu initialization failed:', error);
+					    }
+					}
+
+					// Get all main options including Order
+					async function getMainOptions() {
+					    const orderOptions = await getOrderOptions();
+
+					    return [
+					        {
+					            name: 'Order',
+					            icon: generateOrderIcon(1, orderOptions.length),
+					            options: orderOptions
+					        },
+					        {
+					            name: 'Mode',
+					            icon: '',
+					            options: Object.keys(VisCleaningModes).map(key => ({
+					                value: key,
+					                label: VisCleaningModes[key].name,
+					                svg: VisCleaningModes[key].icon
+					            }))
+					        },
+					        { name: 'Suction', icon: '', options: VisCleaningOptions.Suction },
+					        { name: 'Water', icon: '', options: VisCleaningOptions.Water },
+					        { name: 'Route', icon: '', options: VisCleaningOptions.Route },
+					        { name: 'Repeat', icon: '', options: VisCleaningOptions.Repeat }
+					    ];
+					}
+=======
 					let autoCloseTimeout; // for automatic closing
 					let actionDetected = false; // Flag to track if any action has been detected
 
@@ -6572,6 +9030,7 @@ class Dreamehome extends utils.Adapter {
 					  { name: 'Route', icon: '', options: VisCleaningOptions.Route },
 					  { name: 'Repeat', icon: '', options: VisCleaningOptions.Repeat }
 					];
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					// Toggle menu visibility
 					function toggleRadialMenu(x, y, roomId) {
@@ -6590,6 +9049,16 @@ class Dreamehome extends utils.Adapter {
 					    radialMenu.style.top = y + 'px';
 					    radialMenu.classList.add('active');
 					    isMenuOpen = true;
+<<<<<<< HEAD
+						actionDetected = false; // Timer reset when opening
+
+					    // Start the timeout for auto-closing
+					    startAutoCloseTimeout();
+
+					    // Add event listener for clicks outside the menu
+					    document.addEventListener('click', outsideClickListener);
+					    radialMenu.addEventListener('click', menuClickListener); // Reset timeout if clicked inside the menu
+=======
 
 					    // Start the timeout for auto-closing
 					    autoCloseTimeout = setTimeout(() => {
@@ -6601,11 +9070,17 @@ class Dreamehome extends utils.Adapter {
 					    // Add event listener for clicks outside the menu
 					    document.addEventListener('click', outsideClickListener);
 					    radialMenu.addEventListener('click', resetTimeout); // Reset timeout if clicked inside the menu
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Close the radial menu
 					function closeRadialMenu() {
 					    clearTimeout(autoCloseTimeout); // Stop the timeout if the menu is manually closed
+<<<<<<< HEAD
+						actionDetected = false; // Timer reset when closing
+						isMenuOpen = false;
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    // Hide all sub-options
 					    document.querySelectorAll('.sub-options').forEach(el => el.classList.remove('active'));
@@ -6629,7 +9104,11 @@ class Dreamehome extends utils.Adapter {
 
 					    // Remove the listener for clicks outside the menu
 					    document.removeEventListener('click', outsideClickListener);
+<<<<<<< HEAD
+					    radialMenu?.removeEventListener('click', menuClickListener); // Remove reset listener
+=======
 					    radialMenu.removeEventListener('click', resetTimeout); // Remove reset listener
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Open a sub-menu for a main option
@@ -6643,6 +9122,11 @@ class Dreamehome extends utils.Adapter {
 					    activeMainOption = mainBtn;
 
 					    setTimeout(() => subOptions.classList.add('active'), 300);
+<<<<<<< HEAD
+					    actionDetected = true; // Mark as "Action Detected"
+					    startAutoCloseTimeout(); // Restart the timer
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					}
 
 					// Close the sub-menu
@@ -6656,6 +9140,11 @@ class Dreamehome extends utils.Adapter {
 
 					    setTimeout(() => {
 					        document.querySelectorAll('.main-option').forEach(btn => btn.classList.remove('hidden'));
+<<<<<<< HEAD
+							actionDetected = false; // Reset after closing the submenu
+							startAutoCloseTimeout(); // Restart the timer
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					    }, 150);
 					}
 
@@ -6710,11 +9199,25 @@ class Dreamehome extends utils.Adapter {
 					        document.body.appendChild(radialMenu);
 					        lastRoomId = roomId;
 
+<<<<<<< HEAD
+			                // 1. Create Mode Button FIRST
+			                createModeButton(roomId, labelContent);
+
+			        		// 1. Then create Order Button
+			                const orderOption = mainOptions.find(opt => opt.name === 'Order');
+			                if (orderOption) {
+			                    createMainButton(orderOption, 1, mainOptions.length, roomId, labelContent, false);
+			                }
+
+			                // 3. Then create other buttons based on current mode
+			                createModeSpecificButtons(roomId, labelContent);
+=======
 					        // Create mode selection button first
 					        createModeButton(roomId, labelContent);
 
 					        // Then create other buttons based on current mode
 					        createModeSpecificButtons(roomId, labelContent);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    } catch (error) {
 					        console.error("Error updating radial menu:", error);
@@ -6747,11 +9250,28 @@ class Dreamehome extends utils.Adapter {
 					    btn.style.setProperty('--ty', ty);
 					    btn.dataset.optionType = option.name;
 
+<<<<<<< HEAD
+				       // SPECIAL HANDLING FOR ORDER BUTTON
+				       if (option.name === 'Order') {
+				           const currentOrder = getCurrentOrder(roomId);
+				           const maxOrder = option.options?.length || 1;
+				              // Use cached icon or generating new one
+				       btn.innerHTML = orderIconsCache[currentOrder] || generateOrderIcon(currentOrder, maxOrder);
+				       }
+				       else {
+				           const currentValue = labelContent.dataset[option.name.toLowerCase()];
+				           const matchedOption = option.options?.find(opt => opt.value.toString() === currentValue);
+				           //btn.innerHTML = matchedOption?.svg || '';
+				   		const labelIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + option.name.toLowerCase() + ' svg');
+				   		btn.innerHTML = labelIcon ? labelIcon.outerHTML : (matchedOption ? matchedOption.svg : '');
+				       }
+=======
 					    // Set icon
 					    const currentValue = labelContent.dataset[option.name.toLowerCase()];
 					    const matchedOption = option.options && option.options.find(opt => opt.value.toString() === currentValue);
 					    const labelIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-' + option.name.toLowerCase() + ' svg');
 					    btn.innerHTML = labelIcon ? labelIcon.outerHTML : (matchedOption ? matchedOption.svg : '');
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					    const subOptions = document.createElement('div');
 					    subOptions.className = 'sub-options';
@@ -6765,22 +9285,47 @@ class Dreamehome extends utils.Adapter {
 
 					            const subBtn = document.createElement('div');
 					            subBtn.className = 'sub-option';
+<<<<<<< HEAD
+					            //subBtn.innerHTML = subOpt.svg || subOpt.label[0];
+=======
 					            subBtn.innerHTML = subOpt.svg || subOpt.label[0];
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            subBtn.style.setProperty('--tx', subTx);
 					            subBtn.style.setProperty('--ty', subTy);
 					            subBtn.dataset.value = subOpt.value;
 					            subBtn.title = subOpt.label;
 
+<<<<<<< HEAD
+		            			// SPECIAL HANDLING FOR ORDER SUB-OPTIONS
+		                        if (option.name === 'Order') {
+		                            subBtn.innerHTML = generateOrderIcon(subOpt.value, option.options.length);
+		                        } else {
+		                            subBtn.innerHTML = subOpt.svg || subOpt.label[0];
+		                        }
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            subBtn.addEventListener('click', function(e) {
 					                e.stopPropagation();
 					                actionDetected = true;
 
+<<<<<<< HEAD
+					                if (option.name === 'Order') {
+										handleOrderChange(subOpt.value, roomId);
+									}
+									else if (isModeButton) {
+=======
 					                if (isModeButton) {
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					                    // Handle mode change
 										const commandModeName = subOpt.value;
 										const commandModeCode = getModeCode(commandModeName);
 					                    labelContent.dataset.mode = commandModeCode;
+<<<<<<< HEAD
+										//console.log("Mode change -> name: " + commandModeName + ", code: " + commandModeCode + ", old: " + labelContent.dataset.mode + ", labelContent:", labelContent);
+=======
 										console.log("Mode change -> name: " + commandModeName + ", code: " + commandModeCode + ", old: " + labelContent.dataset.mode + ", labelContent:", labelContent);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 					                    // Update icon
 					                    const labelIconContainer = document.querySelector('#room-label-' + roomId + '-fixed .icon-mode');
@@ -6824,10 +9369,24 @@ class Dreamehome extends utils.Adapter {
 					}
 
 					function recreateModeSpecificButtons(roomId, labelContent) {
+<<<<<<< HEAD
+				        // Update the order icon IMMEDIATELY
+				        const orderBtn = radialMenu.querySelector('.main-option[data-option-type="Order"]');
+				        if (orderBtn) {
+				            const currentOrder = getCurrentOrder(roomId);
+				            const maxOrder = mainOptions.find(opt => opt.name === 'Order')?.options?.length || 1;
+				            orderBtn.innerHTML = orderIconsCache[currentOrder] || generateOrderIcon(currentOrder, maxOrder);
+				        }
+					    // Remove existing buttons (except mode and order buttons)
+					    const buttons = radialMenu.querySelectorAll('.main-option');
+					    buttons.forEach((btn, index) => {
+					        if (index > 1) { // Keep mode button (index 0) and room oder (index 1)
+=======
 					    // Remove existing buttons (except mode button)
 					    const buttons = radialMenu.querySelectorAll('.main-option');
 					    buttons.forEach((btn, index) => {
 					        if (index > 0) { // Keep mode button (index 0)
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					            btn.remove();
 					            // Remove corresponding sub-options
 					            const subOptions = radialMenu.querySelectorAll('.sub-options')[index];
@@ -6844,7 +9403,11 @@ class Dreamehome extends utils.Adapter {
 					    const availableOptions = getAvailableOptionsForMode(currentMode);
 
 					    availableOptions.forEach((option, index) => {
+<<<<<<< HEAD
+					        createMainButton(option, index + 2, availableOptions.length + 2, roomId, labelContent, false);
+=======
 					        createMainButton(option, index + 1, availableOptions.length + 1, roomId, labelContent, false);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					    });
 					}
 
@@ -6870,6 +9433,152 @@ class Dreamehome extends utils.Adapter {
 					    });
 					}
 
+<<<<<<< HEAD
+					// Get room order options
+					async function getOrderOptions() {
+					    try {
+					        const saData = await getState('${prefix}.mqtt.sa');
+					        let roomOrder = JSON.parse(saData).map(room => room[0]);
+
+					        if (roomOrder.length === 0) {
+					            const currentOrder = await getState('${prefix}.control.CleanOrder');
+					            roomOrder = currentOrder ? JSON.parse(JSON.parse(currentOrder)[0].value).cleanOrder : [];
+					        }
+
+							// Update cache if necessary
+					        updateOrderIconsCache(roomOrder.length);
+
+					        return roomOrder.map((_, index) => {
+					            const order = index + 1;
+					            return {
+					                value: order,
+					                label: order + '. Position',
+					                svg: orderIconsCache[order] // Use cached icon
+					            };
+					        });
+					    } catch (error) {
+					        console.error('Error getting order options:', error);
+					        // Fallback with caching
+					        const fallbackLength = 5;
+					        if (Object.keys(orderIconsCache).length !== fallbackLength) {
+					            generateAllOrderIcons(fallbackLength);
+					        }
+					        return Array.from({ length: fallbackLength }, (_, i) => ({
+					            value: i + 1,
+					            label: (i + 1) + '. Position',
+					            svg: orderIconsCache[i + 1] // Use cached icon
+					        }));
+					    }
+					}
+
+					// Generate all possible order icons once
+					function generateAllOrderIcons(maxRooms) {
+					    for (let order = 1; order <= maxRooms; order++) {
+					        orderIconsCache[order] = generateOrderIcon(order, maxRooms);
+					    }
+					}
+
+					// Updates the icon cache if the maximum number of rooms has changed
+					function updateOrderIconsCache(newMaxRooms) {
+					    if (newMaxRooms !== Object.keys(orderIconsCache).length) {
+					        console.log('Updating Order-Icons-Cache for ' + newMaxRooms + ' rooms.');
+					        generateAllOrderIcons(newMaxRooms); // Generate new
+					    }
+					}
+					// Helper function to get current order for a room
+					function getCurrentOrder(roomId) {
+					    const orderIcon = document.querySelector('#room-label-' + roomId + '-fixed .icon-order');
+					    return orderIcon?.dataset.order || 1;
+					}
+
+					// Generate order icon SVG
+					function generateOrderIcon(order, maxOrder) {
+					    const hue = (order * 360 / maxOrder) % 360;
+					    const color = 'hsl(' + hue + ', 80%, 50%)';
+
+					    // Adjust font size based on number of digits
+					    const fontSize = order.toString().length > 2 ? '16' : '24';
+					    const yPosition = order.toString().length > 2 ? '26' : '28'; // Adjust vertical position
+
+					    return '<svg class="mode-option-svg" width="40" height="40" viewBox="0 0 40 40" style="fill-rule:evenodd">' +
+					                '<circle cx="20" cy="20" r="17" fill="none" stroke="#fff" stroke-width="2"/>' +
+					                '<text x="20" y="' + yPosition + '" text-anchor="middle" font-size="' + fontSize + '" fill="none" stroke="#fff" stroke-width="2">' + order + '</text>' +
+					                '<text x="20" y="' + yPosition + '" text-anchor="middle" font-size="' + fontSize + '" fill="' + color + '">' + order + '</text>' +
+					            '</svg>';
+					}
+
+
+					// Handle order changes
+					async function handleOrderChange(newOrder, roomId) {
+					    try {
+					        const saData = await getState('${prefix}.mqtt.sa');
+					        let roomOrder = JSON.parse(saData).map(room => room[0]);
+
+					        if (roomOrder.length === 0) {
+					            const currentOrder = await getState('${prefix}.control.CleanOrder');
+					            roomOrder = currentOrder ? JSON.parse(JSON.parse(currentOrder)[0].value).cleanOrder : [];
+					        }
+
+					        const currentIndex = roomOrder.indexOf(parseInt(roomId));
+					        if (currentIndex === -1) return;
+
+					        newOrder = Math.max(1, Math.min(newOrder, roomOrder.length));
+					        const newIndex = newOrder - 1;
+
+					        const [movedRoom] = roomOrder.splice(currentIndex, 1);
+					        roomOrder.splice(newIndex, 0, movedRoom);
+
+					        await sendCleanOrder(roomOrder);
+					        await updateAllRoomOrders(roomOrder);
+
+					        // Update the order button in the menu (if open)
+					        if (isMenuOpen && currentRoomId === roomId) {
+					            const orderBtn = radialMenu.querySelector('.main-option[data-option-type="Order"]');
+					            if (orderBtn) {
+					                orderBtn.innerHTML = generateOrderIcon(newOrder, roomOrder.length);
+					            }
+					        }
+
+					    } catch (error) {
+					        console.error('Error changing room order:', error);
+					    }
+					}
+
+					// Update all room orders in UI
+					async function updateAllRoomOrders(roomOrder) {
+					    roomOrder.forEach((roomId, index) => {
+					        const order = index + 1;
+					        const label = document.querySelector('#room-label-' + roomId + '-fixed .icon-order');
+					        if (label) {
+					            label.innerHTML = generateOrderIcon(order, roomOrder.length);
+					            label.dataset.order = order;
+					        }
+					    });
+					}
+
+					// Generates the CleanOrder command
+					function buildCleanOrderCommand(roomOrderArray) {
+					    return [{
+					        piid: 4,
+					        value: JSON.stringify({
+					            cleanOrder: roomOrderArray
+					        })
+					    }];
+					}
+
+					// Sends the CleanOrder command
+					async function sendCleanOrder(roomOrderArray) {
+					    const command = buildCleanOrderCommand(roomOrderArray);
+					    try {
+					        await setState('${prefix}.control.CleanOrder', JSON.stringify(command));
+					        console.log('CleanOrder sent:', command);
+					    } catch (error) {
+					        console.error('Error sending CleanOrder:', error);
+					    }
+					}
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					function handleOptionSelection(optionName, value, roomId, labelContent, btn) {
 					    let convertedValue = value;
 
@@ -6960,6 +9669,8 @@ class Dreamehome extends utils.Adapter {
 						//updateSummaryDisplay();
 					}
 
+<<<<<<< HEAD
+=======
 					// Function to reset the timeout
 					function resetTimeout() {
 					    clearTimeout(autoCloseTimeout); // Stop the current timeout
@@ -6972,13 +9683,39 @@ class Dreamehome extends utils.Adapter {
 					    }, 15000); // Menu will close after 15 seconds if no action is detected
 					}
 
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					// Close the menu if clicked outside
 					function outsideClickListener(e) {
 					    if (!radialMenu.contains(e.target)) {
 					        closeRadialMenu();
+<<<<<<< HEAD
+							document.removeEventListener('click', outsideClickListener);
 					    }
 					}
 
+					function menuClickListener(e) {
+					    actionDetected = true;
+					    startAutoCloseTimeout(); // Timer restart on click
+					}
+
+					// Function to reset the timeout
+					function startAutoCloseTimeout() {
+						clearTimeout(autoCloseTimeout); // Always delete old timeout first
+					    console.log("Timeout started");
+					    autoCloseTimeout = setTimeout(() => {
+					        console.log("Timeout expired, actionDetected:", actionDetected);
+					        if (!actionDetected) {
+					            console.log("Menu closes");
+					            closeRadialMenu();
+					        }
+					    }, 15000); // Menu will close after 15 seconds if no action is detected
+					}
+
+=======
+					    }
+					}
+
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 					// Function: =============> Reverse mapping functions for Suction
 					function getSuctionCode(name) {
 					    const suctionReverseMap = {
@@ -7047,10 +9784,23 @@ class Dreamehome extends utils.Adapter {
                     // Changing the robot vacuum position
                     // =============================================
                     // Transformation function for the script part
+<<<<<<< HEAD
+                    function toCanvas(x, y, customAngle = null) {
+						const angle = customAngle !== null ? customAngle : rotationAngle;
+                        const angleRad = angle * Math.PI / 180;
+
+                        const rotatedX = x * Math.cos(angleRad) - y * Math.sin(angleRad);
+                        const rotatedY = x * Math.sin(angleRad) + y * Math.cos(angleRad);
+
+                        return [
+                            Math.round(rotatedX * scale + offsetX),
+                            Math.round(rotatedY * scale + offsetY)
+=======
                     function toCanvas(x, y) {
                         return [
                             Math.round(x * scale + offsetX),
                             Math.round(y * scale + offsetY)
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         ];
                     }
 
@@ -7113,10 +9863,26 @@ class Dreamehome extends utils.Adapter {
                             pathData += ' L ' + currentPathPoints[i][0] + ' ' + currentPathPoints[i][1];
                         }
 
+<<<<<<< HEAD
+                        pathElement.innerHTML =
+                            '<path d="' + pathData + '" ' +
+                            'stroke="rgba(0,150,255,0.2)" ' +
+                            'stroke-width="10" ' +
+                            'stroke-linecap="round" ' +
+                            'stroke-linejoin="round" ' +
+                            'fill="none" />' +
+                            '<path d="' + pathData + '" ' +
+                            'stroke="rgba(0,150,255,0.8)" ' +
+                            'stroke-width="4" ' +
+                            'stroke-linecap="round" ' +
+                            'stroke-linejoin="round" ' +
+                            'fill="none" />';
+=======
                         pathElement.innerHTML = '<path d="' + pathData + '" ' +
                                                'stroke="rgba(0,150,255,0.8)" ' +
                                                'stroke-width="4" ' +
                                                'fill="none" />';
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }
 
                     function updateHistoryPath() {
@@ -7128,10 +9894,26 @@ class Dreamehome extends utils.Adapter {
                             pathData += ' L ' + historyPathPoints[i][0] + ' ' + historyPathPoints[i][1];
                         }
 
+<<<<<<< HEAD
+                        pathElement.innerHTML =
+                            '<path d="' + pathData + '" ' +
+                            'stroke="rgba(255,50,50,0.4)" ' +
+                            'stroke-width="20" ' +
+                    		'stroke-linecap="round" ' +
+                    		'stroke-linejoin="round" ' +
+                            'fill="none" />' +
+                            '<path d="' + pathData + '" ' +
+                            'stroke="rgba(255,50,50,0.6)" ' +
+                            'stroke-width="4" ' +
+						    'stroke-linecap="round" ' +
+                            'stroke-linejoin="round" ' +
+                            'fill="none" />';
+=======
                         pathElement.innerHTML = '<path d="' + pathData + '" ' +
                                                'stroke="rgba(255,50,50,0.6)" ' +
                                                'stroke-width="4" ' +
                                                'fill="none" />';
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }
 
                     // Draw robot path
@@ -7362,8 +10144,13 @@ class Dreamehome extends utils.Adapter {
                         font-weight: bold;
                         white-space: nowrap;
                         backdrop-filter: blur(1px);
+<<<<<<< HEAD
+                        min-width: 170px;
+                        max-width: 195px;
+=======
                         min-width: 145px;
                         max-width: 175px;
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         min-height: 80px;
                         text-align: center;
                         color: #000000;
@@ -7700,7 +10487,11 @@ class Dreamehome extends utils.Adapter {
                       },
 
                       // Function: =============> Create label HTML content
+<<<<<<< HEAD
+                     createLabelContent: function(roomId, roomInfo, settings, stats) {
+=======
                      createLabelContent: function(roomInfo, settings, stats) {
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                          // Settings SVG Icon
                          const settingsIcon = \`
                              <svg class="settings-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -7745,6 +10536,68 @@ class Dreamehome extends utils.Adapter {
                             })
                             .join(' ');
 
+<<<<<<< HEAD
+                        // Default values for RoomOrder
+                        let orderDisplay = '-';
+                        let orderColor = '#cccccc';
+
+                        // RoomOrder SVG generator
+                        const getOrderIcon = function() {
+							// Adjust font size based on number of digits
+                            const fontSize = orderDisplay.toString().length > 2 ? '16' : '24';
+                            const yPosition = orderDisplay.toString().length > 2 ? '26' : '28'; // Adjust vertical position
+                            return  '<svg class="mode-option-svg" width="40" height="40" viewBox="0 0 40 40" style="fill-rule:evenodd">' +
+        					            '<circle cx="20" cy="20" r="17" fill="none" stroke="#fff" stroke-width="2"/>' +
+        					            '<text x="20" y="' + yPosition + '" text-anchor="middle" font-size="' + fontSize + '" fill="none" stroke="#fff" stroke-width="2">' + orderDisplay + '</text>' +
+        					            '<text x="20" y="' + yPosition + '" text-anchor="middle" font-size="' + fontSize + '" fill="' + orderColor + '">' + orderDisplay + '</text>' +
+        							'</svg>';
+                        };
+
+                        // Process SA data
+                        getState('${prefix}.mqtt.sa')
+                            .then(function(saData) {
+                                try {
+                                    if (!saData) {
+                                        return; // No SA data received
+                                    }
+
+                                    const rooms = JSON.parse(saData);
+
+                                    if (!Array.isArray(rooms)) {
+                                        return; // SA data is not an array
+                                    }
+
+                                    const foundRoom = rooms.find(function(r) {
+                                        const currentId = parseInt(r[0]);
+                                        return currentId == roomId; // Comparing: currentId with roomId
+                                    });
+
+                                    //console.log('Found room:', foundRoom, 'for ID:', roomId);
+
+                                    if (foundRoom) {
+                                        orderDisplay = parseInt(foundRoom[4]) || '-';
+                                        if (orderDisplay !== '-') {
+                                            const maxOrder = rooms.length;
+                                            const hue = Math.round((orderDisplay / maxOrder) * 360);
+                                            orderColor = 'hsl(' + hue + ', 80%, 50%)';
+                                        }
+
+                                        const label = document.querySelector('#room-label-' + roomId + '-fixed .icon-order');
+                                        if (label) {
+                                            label.innerHTML = getOrderIcon();
+                                            label.dataset.order = orderDisplay;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('SA processing error:', e);
+                                }
+                            })
+                            .catch(function(e) {
+                                console.error('Failed to load SA data:', e);
+                            });
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         // Assemble HTML with data attributes
                         return '<div class="label-content" ' + dataAttributes + '>' +
                           '<div class="label-header">' +
@@ -7753,6 +10606,13 @@ class Dreamehome extends utils.Adapter {
                             '<div class="settings-button"> ' + settingsIcon + '</div>' +
                           '</div>' +
                           '<div class="icon-container">' +
+<<<<<<< HEAD
+                            // Order icon with data attribute
+                            '<div class="setting-item" title="CleanOrder" data-setting="order">' +
+                            '<div class="icon-scale icon-order" data-order="-">' + getOrderIcon() + '</div>' +
+                            '</div>' +
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             // Mode icon with data attribute
                             '<div class="setting-item" title="Mode" data-setting="mode">' +
                               '<div class="icon-scale icon-mode">' + icons.mode + '</div>' +
@@ -7764,6 +10624,10 @@ class Dreamehome extends utils.Adapter {
                             this.createIconItem('Repeat', values.repeat, 3, icons.repeat) +
                           '</div>' +
                           '<div class="progress-container">' +
+<<<<<<< HEAD
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             '<div class="progress-bar">' +
                               '<div class="progress-fill" style="width:' + stats.CoveragePercent + '%"></div>' +
                             '</div>' +
@@ -8081,6 +10945,10 @@ class Dreamehome extends utils.Adapter {
 
                           // 8. INSERT GENERATED CONTENT (most important part!)
                           fixedLabel.innerHTML = labelManager.createLabelContent(
+<<<<<<< HEAD
+							roomId,
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             roomInfo,
                             roomSettings[roomId] || {},
                             roomStats[roomId]?.stats || {}
@@ -8227,8 +11095,13 @@ class Dreamehome extends utils.Adapter {
                           if (roomElement) {
                             const path = roomElement.querySelector('path');
                             if (path) {
+<<<<<<< HEAD
+                              roomElement.style.opacity = 0.3 + (coverageRatio * 0.5);
+                              path.style.fill = 'hsla(' + (120 * coverageRatio) + ', 100%, 50%, 0.3)'; // Calculate the cleaned area in the room and update the room color accordingly
+=======
                               roomElement.style.opacity = 0.3 + (coverageRatio * 0.7);
                               path.style.fill = 'hsla(' + (120 * coverageRatio) + ', 100%, 50%, 0.5)';
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                             }
                           }
 
@@ -10819,6 +13692,10 @@ class Dreamehome extends utils.Adapter {
                         initCleaningMenu();
                         initRobotControl();
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                         console.log('Initialization completed');
                     }
 
@@ -10833,14 +13710,28 @@ class Dreamehome extends utils.Adapter {
                         // Position initial for summary
                         positionSummaryTooltip();
 
+<<<<<<< HEAD
+						initializeMenu(); // Initialize the radial menu when the page loads
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
 
 
                         // Wait briefly until everything is loaded
                         setTimeout(() => {
                             startSpectacularAnimation();
                             document.querySelector('.map-container').classList.add('animation-active');
+<<<<<<< HEAD
+							stabilizeLabels();
+                        }, 1500);
+
+						setTimeout(() => {
+							debouncedStabilizeLabels(); // Wait 3 seconds to update all label positions to avoid the slippery view
+							//
+                        }, 3000);
+=======
 							stabilizeLabels(); // Wait 1.5 seconds to update all label positions to avoid the slippery view
                         }, 1500);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
                     }, 0);
 
                 </script>
@@ -11256,7 +14147,11 @@ class Dreamehome extends utils.Adapter {
 
   /**
  * Calculates the geometric center of a room based on wall coordinates
+<<<<<<< HEAD
+ * Handles coordinate system wrapping for angular values (>180�cases)
+=======
  * Handles coordinate system wrapping for angular values (>180� cases)
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
  *
  * @param {Array<Object>} WAr - Array of wall objects containing start/end coordinates
  * @param {number} WAr[].beg_pt_x - X-coordinate of wall start point
@@ -11614,26 +14509,63 @@ class Dreamehome extends utils.Adapter {
     }
     if (InSetPropSPID == 'S4P1' /*"Status"*/ ) {
       DH_NowStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
+<<<<<<< HEAD
+      if (LogData) {
+        this.log.info(`=======> from DH_SetPropSPID: DH_NowStatus is ${DH_NowStatus}  (${InSetPropSPID}) Set to : ${InSetvalue}`);
+      }
+=======
       this.log.warn(`=======> from DH_SetPropSPID: DH_NowStatus is ${DH_NowStatus}  (${InSetPropSPID}) Set to : ${InSetvalue}`);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P4' /*"Suction level"*/ ) {
       InSetvalue = DreameSuctionLevel[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P5' /*"Water volume"*/ ) {
+
+      // Invalidate cache after successful update
+      consumptionDataCache = {
+        data: null,  // Clear cache
+        lastUpdate: 0 // Reset timestamp
+      };
       InSetvalue = DreameWaterVolume[UserLang][parseInt(InSetvalue)];
+	  waterTrackingCache.waterLevel = InSetvalue;
     }
+
     if (InSetPropSPID == 'S4P6' /*"Water tank"*/ ) {
       InSetvalue = DreameWaterTank[UserLang][parseInt(InSetvalue)];
     }
+
     if (InSetPropSPID == 'S4P7' /*"Task status"*/ ) {
 
       DH_NowTaskStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
+<<<<<<< HEAD
+      if (LogData) {
+	  this.log.info(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
+      }
+=======
 	  this.log.warn(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P23' /*"Cleaning mode"*/ ) {
+
+      // Invalidate cache after successful update
+      consumptionDataCache = {
+        data: null,  // Clear cache
+        lastUpdate: 0 // Reset timestamp
+      };
+      // Check Mopp Mode to calculate water consumption
+      waterTracking.isMopping = WATER_TRACKING.MOPPING_MODES.includes(parseInt(InSetvalue));
+	  if (LogData) {
+        this.log.info(`=======> from DH_SetPropSPID: isMopping is : ${waterTracking.isMopping} => ${InSetvalue}`);
+      }
+
       InSetvalue = DreameCleaningMode[UserLang][parseInt(InSetvalue)];
+
+	  waterTrackingCache.mode = InSetvalue;
+
+
     }
     if (InSetPropSPID == 'S4P25' /*"Self wash base status"*/ ) {
       InSetvalue = DreameSelfWashBaseStatus[UserLang][parseInt(InSetvalue)];
@@ -11692,6 +14624,11 @@ class Dreamehome extends utils.Adapter {
       } else if (InSetvalue == 3) {
         await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
       }
+
+      //this.log.warn(`Water tank removed. InSetvalue: ${InSetvalue} and firstStartWaterTrack: ${firstStartWaterTrack}`);
+      // Handle tank status changes
+      await this.handleTankStatusChange(InSetvalue);
+
       InSetvalue = DreamePureWaterTank[UserLang][parseInt(InSetvalue)];
     }
 
@@ -11702,6 +14639,8 @@ class Dreamehome extends utils.Adapter {
   // Optimized for minimal resource consumption
   async DH_uncompress(In_Compressed, In_path) {
   // Replace URL-safe characters with the standard Base64 characters
+<<<<<<< HEAD
+=======
     let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
 
     let decode;
@@ -11743,22 +14682,41 @@ class Dreamehome extends utils.Adapter {
   }
 
   async DH_uncompressOld(In_Compressed, In_path) {
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
     let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
-    let decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
-    let jsondecode = decode.toString().match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-    let jsonread = (_ => {
-      try {
-        return JSON.parse(jsondecode);
-      } catch (err) {
-        this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
-        return 'undefined';
-      }
-    })();
-    if (!jsonread) {
-      return;
+
+    let decode;
+    try {
+    // Decompress the data synchronously using inflateSync and convert the buffer to a string
+      decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
+    } catch (err) {
+    // Log a warning if decompression fails
+      this.log.warn('Error during decompression: ' + err);
+      return; // Exit if decompression fails
     }
 
+    // Use a regular expression to extract the JSON-like structure from the decompressed string
+    let jsondecode = decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
+
+    let jsonread;
+    try {
+    // Try to parse the extracted JSON string
+      jsonread = JSON.parse(jsondecode);
+    } catch (err) {
+    // Log a warning if JSON parsing fails
+      this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
+      return; // Exit if JSON parsing fails
+    }
+
+    // If JSON is valid, proceed to process it further
+    if (!jsonread) {
+      return; // Exit if no valid JSON found
+    }
+
+    // Call another method to handle the decoded JSON data
     await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
+
+    // Nullify variables to release memory after processing
     input_Raw = null;
     decode = null;
     jsondecode = null;
@@ -11827,10 +14785,25 @@ class Dreamehome extends utils.Adapter {
               DH_CleanStatus = false;
               DH_SetLastStatus = false;
               await this.resetVariables();
+<<<<<<< HEAD
+
+			  // Water level tracking at the end of cleaning
+			    if (waterTracking.isMopping) {
+                await this.handleCleaningComplete();
+                waterTracking.isMopping = false; // Reset Mopping-Flag
+              }
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
             }
 
             // If cleaning is in progress but not yet complete, record history
             if (DH_CompletStatus < 100 && DH_CleanStatus && !DH_SetLastStatus) {
+
+              // Update water level state when cleaning starts
+              if (waterTracking.isMopping && DH_CompletStatus == 0) {
+                await this.handleCleaningStart();
+              }
+
               DH_SetLastStatus = true;
             // Optionally, uncomment this line if needed to set history back to base position
             // await this.DH_SetHistory("{}", DH_Did + ".vis.PosHistory" + DH_CurMap);
@@ -11894,6 +14867,20 @@ class Dreamehome extends utils.Adapter {
         throw new Error(`Invalid position format: ${typeof NewRobVal}`);
       }
 
+<<<<<<< HEAD
+	  // Update water consumption if mopping is active
+      if (waterTracking.isMopping && historyEntry.CleanedArea && historyEntry.currentRoom) {
+        isCleaningActive = true;
+        await this.updateWaterConsumption(historyEntry.CleanedArea, historyEntry.currentRoom);
+
+        // Check the current robot status at startup
+        if (!firstWaterTrackingActive) {
+          await this.checkInitialCleaningStatus();
+        }
+      }
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
       // 2. Load existing history data
       let history = {};
       const historyState = await this.getStateAsync(InRobPath);
@@ -11941,6 +14928,680 @@ class Dreamehome extends utils.Adapter {
     }
   }
 
+  //==================> Initialization
+  async initWaterTracking() {
+    waterTracking = {
+      currentMl: WATER_TRACKING.MAX_ML,
+      initialMl: WATER_TRACKING.MAX_ML,
+      roomData: {},
+      isMopping: false,
+      lastRoom: null,
+      lastUpdate: Date.now()
+    };
+
+    // Create state objects
+    const states = [
+      { id: 'consumptionData', name: 'Water consumption data', type: 'string', role: 'json', def: '{}' },
+      { id: 'currentMlPerSqm', name: 'Current water consumption', type: 'number', role: 'value', unit: 'ml/m²', def: WATER_TRACKING.DEFAULT_ML_PER_SQM },
+      { id: 'PureWaterTank', name: 'Current pure water tank level', type: 'number', role: 'value.percent', unit: '%', def: 100, min: 0, max: 100 },
+      { id: 'beforeRemoval', name: 'Water level before tank removal', type: 'number', role: 'value', unit: 'ml', def: 0, min: 0, max: WATER_TRACKING.MAX_ML },
+      { id: 'roomConsumption', name: 'Water consumption by room', type: 'string', role: 'json' },
+      { id: 'lastRemovalTime', name: 'Last water tank removal time', type: 'number', role: 'value.time', def: 0 },
+      { id: 'current', name: 'Current water level', type: 'number', role: 'value.water', unit: 'ml', min: 0, max: WATER_TRACKING.MAX_ML, def: WATER_TRACKING.MAX_ML },
+      { id: 'learningStats', name: 'Water consumption statistics', type: 'string', role: 'json' },
+      { id: 'lastError', name: 'Last water tracking error', type: 'string', role: 'json' }
+    ];
+
+    for (const state of states) {
+      await this.setObjectNotExistsAsync(`${DH_Did}.state.water.${state.id}`, {
+        type: 'state',
+        common: {
+          name: state.name,
+          type: state.type,
+          role: state.role,
+          read: true,
+          write: state.id !== 'roomConsumption' && state.id !== 'learningStats',
+          def: state.def,
+          ...(state.unit && { unit: state.unit }),
+          ...(state.min !== undefined && { min: state.min }),
+          ...(state.max !== undefined && { max: state.max })
+        },
+        native: {}
+      });
+    }
+  }
+
+  //==================> Core functions
+  async updateWaterConsumption(currentAreaM2, currentRoom) {
+    try {
+      if (!waterTracking) await this.initWaterTracking();
+
+      // Validation
+      if (!waterTracking.isMopping || !currentRoom || currentAreaM2 <= 0) {
+        //if (LogData) this.log.debug('Water tracking skipped - invalid conditions');
+        this.log.debug('Water tracking skipped - invalid conditions');
+        return;
+      }
+
+      // Initialize room data
+      waterTracking.roomData[currentRoom] ??= {
+        lastRecordedArea: 0,
+        consumedMl: 0,
+        firstContactArea: null,
+        maxCleanedArea: 0,
+        lastUpdateTime: Date.now(),
+        consumptionRates: []
+      };
+      const room = waterTracking.roomData[currentRoom];
+
+      if (!room.consumptionRates) {
+        room.consumptionRates = [];
+      }
+
+
+      // Recognize room changes
+      if (room.firstContactArea === null || waterTracking.lastRoom !== currentRoom) {
+        room.firstContactArea = currentAreaM2;
+        room.lastRecordedArea = currentAreaM2;
+        waterTracking.lastRoom = currentRoom;
+        //if (LogData) this.log.info(`New room: ${currentRoom} | Area: ${currentAreaM2.toFixed(2)}m²`);
+        this.log.info(`New room: ${currentRoom} | Area: ${currentAreaM2.toFixed(2)}m²`);
+        return;
+      }
+
+      // Calculate area progress
+      const newArea = currentAreaM2 - room.lastRecordedArea;
+      if (newArea < WATER_TRACKING.MIN_AREA_DELTA) {
+        if (LogData) this.log.info(`Area delta too small: ${newArea.toFixed(3)}m²`);
+        return;
+      }
+
+      // Calculate consumption
+      const mlConsumptionRate = await this.getWaterConsumptionRate();
+      const mlPerSqm = Math.min(150, Math.max(10, mlConsumptionRate || WATER_TRACKING.DEFAULT_ML_PER_SQM));
+
+      const estimatedConsumption = newArea * mlPerSqm;
+      const actualConsumption = Math.min(estimatedConsumption, waterTracking.currentMl);
+      const consumptionAccuracy = await this.calculateConsumptionAccuracy(
+        estimatedConsumption, actualConsumption, newArea);
+
+      // Update tracking
+      waterTracking.currentMl -= actualConsumption;
+      room.consumedMl += actualConsumption;
+      room.lastRecordedArea = currentAreaM2;
+      room.maxCleanedArea = Math.max(room.maxCleanedArea, currentAreaM2);
+      room.lastUpdateTime = Date.now();
+      waterTracking.lastUpdate = Date.now();
+
+      // Save consumption rate
+      if (actualConsumption > 0 && newArea > 0.1) {
+        const actualMlPerSqm = actualConsumption / newArea;
+        room.consumptionRates.push({
+          rate: actualMlPerSqm,
+          area: newArea,
+          timestamp: Date.now(),
+          confidence: consumptionAccuracy
+        });
+
+        if (room.consumptionRates.length > 10) {
+          room.consumptionRates.shift();
+        }
+      }
+
+      // Update learning model
+      if (actualConsumption > 0) {
+        const adjustedRate = mlPerSqm * (actualConsumption / estimatedConsumption);
+        await this.updateConsumptionData(adjustedRate, {
+          confidence: consumptionAccuracy,
+          area: newArea,
+          room: currentRoom,
+          isPartial: actualConsumption < estimatedConsumption
+        });
+      }
+
+      // Update states
+      await this.updateWaterLevelState();
+
+      // if (LogData) {
+      this.log.info([
+        `[WATER] Room: ${currentRoom}`,
+        `Area: +${newArea.toFixed(2)}m² (total ${currentAreaM2.toFixed(2)}m²)`,
+        `Used: ${actualConsumption}ml (est ${estimatedConsumption.toFixed(1)}ml)`,
+        `Rate: ${mlPerSqm.toFixed(1)}?${(actualConsumption/newArea).toFixed(1)}ml/m²`,
+        `Accuracy: ${(consumptionAccuracy*100).toFixed(0)}%`,
+        `Remaining: ${waterTracking.currentMl}ml/${WATER_TRACKING.MAX_ML}ml`
+      ].join(' | '));
+      //}
+
+      // Autosave when significant progress is made
+      if (newArea > 1.0) {
+        await this.saveWaterData();
+      }
+
+    } catch (error) {
+      this.log.error(`Water calculation error: ${error.stack || error.message}`);
+      await this.setStateAsync(`${DH_Did}.state.water.lastError`, {
+        val: JSON.stringify({
+          message: error.message,
+          stack: error.stack,
+          timestamp: Date.now()
+        }),
+        ack: true
+      });
+    }
+  }
+
+  //==================> Learning functions
+  async updateConsumptionData(mlPerSqm, context = {}) {
+    try {
+      const { confidence = 1.0, area = 0, room = 'unknown', isPartial = false } = context;
+
+      // Validation
+      if (typeof mlPerSqm !== 'number' || isNaN(mlPerSqm)) {
+        this.log.warn(`Invalid consumption value: ${mlPerSqm}`);
+        return;
+      }
+
+      // Limit value range
+      const clampedMl = Math.max(5, Math.min(200, mlPerSqm));
+
+      // Generate learning key
+      const mode = waterTrackingCache.mode; //await this.getStateValue(`${DH_Did}.state.CleaningMode`) || 0;
+      const waterLevel = waterTrackingCache.waterLevel; //await this.getStateValue(`${DH_Did}.state.WaterVolume`) || 0;
+
+      const key = `${room}_${mode}_${waterLevel}`;
+      const globalKey = `global_${mode}_${waterLevel}`;
+
+      // Load data
+      const data = await this.getConsumptionData();
+      data[key] = data[key] || [];
+      data[globalKey] = data[globalKey] || [];
+
+      // Create new entry
+      const newEntry = {
+        value: clampedMl,
+        weight: confidence * (isPartial ? 0.7 : 1.0),
+        area: area,
+        timestamp: Date.now(),
+        remainingMl: waterTracking.currentMl,
+        room: room
+      };
+
+      // Add entries
+      data[key].push(newEntry);
+      data[globalKey].push({ ...newEntry, weight: newEntry.weight * 0.6 });
+
+      // Clean up data
+      [key, globalKey].forEach(k => {
+        data[k] = data[k]
+          .sort((a, b) => b.weight - a.weight || b.timestamp - a.timestamp)
+          .slice(0, WATER_TRACKING.LEARNING_SAMPLES);
+      });
+
+      // Statistical analysis
+      const stats = await this.calculateConsumptionStats(data[key]);
+      if (stats.stdDev > 30 && data[key].length > 5) {
+        data[key] = data[key].filter(entry =>
+          Math.abs(entry.value - stats.median) < 2 * stats.mad
+        );
+      }
+
+      // Update LearningStats
+      await this.updateLearningStats();
+
+      // Save
+      await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
+        val: JSON.stringify(data),
+        ack: true
+      });
+
+      // Update average
+      await this.updateWeightedAverage(data[key]);
+
+      // Invalidate cache after successful update
+      consumptionDataCache = {
+        data: null,  // Clear cache
+        lastUpdate: 0 // Reset timestamp
+      };
+
+
+    } catch (error) {
+      this.log.error(`updateConsumptionData failed: ${error.stack}`);
+    }
+  }
+
+  //=================> Historical averages
+  async updateLearningStats() {
+    try {
+      const data = await this.getConsumptionData();
+
+      // 1. Collect ALL consumption data (global + per room)
+      const allSamples = Object.values(data).flatMap(entries =>
+        entries.map(entry => entry.value)
+      );
+
+      // 2. Calculate statistical key figures
+      const stats = {
+        lastUpdated: new Date().toISOString(),
+        avgConsumption: allSamples.length > 0
+          ? parseFloat((allSamples.reduce((a, b) => a + b, 0) / allSamples.length).toFixed(1))
+          : null,
+        minConsumption: allSamples.length > 0
+          ? Math.min(...allSamples).toFixed(1)
+          : null,
+        maxConsumption: allSamples.length > 0
+          ? Math.max(...allSamples).toFixed(1)
+          : null,
+        totalSamples: allSamples.length,
+        roomsTracked: Object.keys(data).filter(k => k.startsWith('room_')).length
+      };
+
+      // 3. Save the statistics
+      await this.setStateAsync(`${DH_Did}.state.water.learningStats`, {
+        val: JSON.stringify(stats),
+        ack: true
+      });
+
+    } catch (error) {
+      this.log.error(`Failed to update learning stats: ${error.message}`);
+    }
+  }
+  //=================> Tank management
+  async handleTankStatusChange(InSetvalue) {
+    if (InSetvalue == 0 && firstStartWaterTrack) { // Tank removed
+      await this.setStateAsync(`${DH_Did}.state.water.beforeRemoval`, {
+        val: waterTracking.currentMl,
+        ack: true
+      });
+      await this.setStateAsync(`${DH_Did}.state.water.lastRemovalTime`, {
+        val: Date.now(),
+        ack: true
+      });
+      this.log.info(`Water tank removed. Saved level: ${waterTracking.currentMl}ml`);
+    }
+    else if ((InSetvalue == 2 || InSetvalue == 3) && firstStartWaterTrack) { // Tank inserted
+      const beforeRemoval = await this.getStateValue(`${DH_Did}.state.water.beforeRemoval`) || 0;
+      const lastRemovalTime = await this.getStateValue(`${DH_Did}.state.water.lastRemovalTime`) || 0;
+
+      const removalDuration = Date.now() - lastRemovalTime;
+      const MIN_REMOVAL_TIME = 5000;
+      const MAX_REMOVAL_TIME = 3600000;
+
+      if (removalDuration >= MIN_REMOVAL_TIME && removalDuration <= MAX_REMOVAL_TIME) {
+        const refillRatio = await this.calculateSmartRefillRatio(beforeRemoval, lastRemovalTime);
+        waterTracking.currentMl = Math.min(
+          WATER_TRACKING.MAX_ML,
+          beforeRemoval + (WATER_TRACKING.MAX_ML - beforeRemoval) * refillRatio
+        );
+
+        await this.updateWaterLevelState();
+        this.log.info(`Tank refilled: ${waterTracking.currentMl}ml (${Math.round(refillRatio * 100)}%)`);
+      }
+    }
+  }
+
+  //=================> Helper function for the water consumption
+  async calculateConsumptionAccuracy(estimatedMl, actualMl, areaM2) {
+    if (actualMl <= 0 || areaM2 < 0.1 || estimatedMl <= 0) return 0.3;
+
+    const actualRate = actualMl / areaM2;
+    const expectedRate = estimatedMl / areaM2;
+    const rateDeviation = Math.abs(actualRate - expectedRate) / expectedRate;
+    const absErrorNorm = Math.abs(actualMl - estimatedMl) / WATER_TRACKING.MAX_ML;
+
+    const accuracy = 1 - Math.min(0.7, (rateDeviation * 0.6 + absErrorNorm * 0.4));
+    return Math.max(0.3, Math.min(1.0, accuracy));
+  }
+
+  async updateWeightedAverage(entries) {
+    if (!entries?.length) return;
+
+    const now = Date.now();
+    const weightedValues = entries.map(entry => {
+      const ageHours = (now - entry.timestamp) / (1000 * 60 * 60);
+      const timeWeight = Math.max(0.2, 1 - Math.pow(ageHours / 72, 2));
+      return {
+        value: entry.value,
+        weight: entry.weight * timeWeight
+      };
+    });
+
+    const totalWeight = weightedValues.reduce((sum, e) => sum + e.weight, 0);
+    const weightedAvg = weightedValues.reduce((sum, e) =>
+      sum + (e.value * e.weight), 0) / totalWeight;
+
+    if (entries.length >= 5) {
+      const prevValue = await this.getStateValue(`${DH_Did}.state.water.currentMlPerSqm`)
+      || WATER_TRACKING.DEFAULT_ML_PER_SQM;
+      const learningRate = Math.min(0.9, 0.3 + (0.6 * (entries.length / WATER_TRACKING.LEARNING_SAMPLES)));
+      const smoothedValue = (weightedAvg * learningRate) + (prevValue * (1 - learningRate));
+
+      await this.setStateAsync(`${DH_Did}.state.water.currentMlPerSqm`, {
+        val: Math.round(smoothedValue * 10) / 10,
+        ack: true
+      });
+    }
+  }
+
+  async calculateConsumptionStats(entries) {
+    const values = entries.map(e => e.value);
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const stdDev = Math.sqrt(values.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / values.length);
+    const median = values.sort((a,b) => a-b)[Math.floor(values.length/2)];
+    const mad = values.reduce((s, v) => s + Math.abs(v - median), 0) / values.length;
+
+    return {
+      mean, stdDev, median, mad,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      count: values.length
+    };
+  }
+
+  async calculateSmartRefillRatio(beforeRemoval, lastRemovalTime) {
+    const removalDuration = (Date.now() - lastRemovalTime) / 1000;
+
+    if (beforeRemoval < WATER_TRACKING.MAX_ML * 0.1) return 1.0;
+    if (removalDuration < 30) return 0.0;
+    if (removalDuration < 60) return 0.8;
+
+    return 1.0;
+  }
+
+  async updateWaterLevelState() {
+    const percent = Math.round((waterTracking.currentMl / WATER_TRACKING.MAX_ML) * 100);
+    await this.setStateAsync(`${DH_Did}.state.water.PureWaterTank`, {
+      val: percent,
+      ack: true
+    });
+
+    await this.setStateAsync(`${DH_Did}.state.water.current`, {
+      val: waterTracking.currentMl,
+      ack: true
+    });
+  }
+
+  async getWaterConsumptionRate() {
+    const rate = await this.getStateValue(`${DH_Did}.state.water.currentMlPerSqm`);
+    return rate ?? WATER_TRACKING.DEFAULT_ML_PER_SQM;
+  }
+
+  async getConsumptionData() {
+    const now = Date.now();
+
+    // Use cache if available and valid
+    if (consumptionDataCache.data &&
+        now - consumptionDataCache.lastUpdate < consumptionDataCache.cacheTTL) {
+      return consumptionDataCache.data;
+    }
+
+    try {
+      // Only query state if cache is invalid
+      const state = await this.getStateAsync(`${DH_Did}.state.water.consumptionData`);
+      let data = {};
+
+      // Only parse data if available
+      if (state?.val) {
+        try {
+          data = JSON.parse(state.val);
+
+          // Data cleaning
+          data = Object.entries(data).reduce((acc, [key, entries]) => {
+            if (Array.isArray(entries)) {
+              const filtered = entries.filter(entry =>
+                entry?.value > 0 && entry.value < 200
+              );
+              if (filtered.length) acc[key] = filtered.slice(-WATER_TRACKING.LEARNING_SAMPLES);
+            }
+            return acc;
+          }, {});
+
+        } catch (e) {
+          this.log.warn('Consumption data parse error - using empty set');
+        }
+      }
+
+      // Refresh cache
+      consumptionDataCache = {
+        data: data,
+        lastUpdate: now
+      };
+
+      return data;
+
+    } catch (e) {
+      this.log.error(`Failed to get consumption data: ${e.message}`);
+      return consumptionDataCache.data || {}; // Fallback to cache or empty object
+    }
+  }
+
+  async saveWaterData() {
+    try {
+    // Save roomData (Room-specific consumption)
+      await this.setStateAsync(`${DH_Did}.state.water.roomConsumption`, {
+        val: JSON.stringify(waterTracking.roomData),
+        ack: true
+      });
+
+      // Save consumptionData (Learning algorithm values)
+      const consumptionData = await this.getConsumptionData();
+      if (Object.keys(consumptionData).length > 0) {
+        await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
+          val: JSON.stringify(consumptionData),
+          ack: true
+        });
+      }
+
+      this.log.debug('All water tracking data saved');
+    } catch (e) {
+      this.log.error('Error saving data: ' + e.message);
+    }
+  }
+
+  //=================> Cleaning Lifecycle
+  async handleCleaningStart() {
+    waterTracking.initialMl = await this.getCurrentWater();
+    waterTracking.roomData = {}; // Reset room-specific data
+    isCleaningActive = true;
+    waterTracking.lastRoom = null;
+    await this.startAutoSave();
+    this.log.info('Water tracking initialized for new cleaning job');
+  }
+
+  async handleCleaningComplete() {
+    isCleaningActive = false;
+    this.stopAutoSave();
+    try {
+      if (!waterTracking?.isMopping || !waterTracking.roomData) return;
+
+      // Calculate total consumption from room data
+      const totalConsumed = await this.calculateTotalConsumption();
+      const totalArea = await this.getTotalCleanedArea();
+
+      if (totalArea > 1 && totalConsumed > 1) {
+        await this.updateWaterConsumptionStats(totalConsumed, totalArea);
+      }
+
+      await this.updateLearningStats(); // Generate new statistics
+      waterTracking.roomData = {}; // Reset tracking for next job
+
+    } catch (error) {
+      this.log.error(`Cleaning completion handler failed: ${error.message}`);
+    }
+  }
+
+  async calculateTotalConsumption() {
+    const total = Object.values(waterTracking.roomData)
+      .reduce((sum, room) => sum + room.consumedMl, 0);
+    return Math.round(total * 1000) / 1000; // Round to 3 decimal places
+  }
+
+  async getTotalCleanedArea() {
+    if (!waterTracking.roomData) return 0;
+
+    const totalArea = Object.values(waterTracking.roomData)
+      .reduce((sum, room) => sum + (room.maxCleanedArea || 0), 0);
+
+    return Math.round(totalArea * 100) / 100;
+  }
+
+  async updateWaterConsumptionStats(totalConsumed, totalArea) {
+    if (totalArea <= 0 || totalConsumed <= 0) {
+      this.log.warn(`Invalid consumption data: Area=${totalArea}m², Consumed=${totalConsumed}ml`);
+      return;
+    }
+
+    const actualMlPerSqm = totalConsumed / totalArea;
+    await this.updateConsumptionData(actualMlPerSqm);
+
+    const litersConsumed = (totalConsumed / 1000).toFixed(2);
+    this.log.info(`Cleaning completed: ${totalArea.toFixed(2)}m², ${litersConsumed}L, ${actualMlPerSqm.toFixed(2)}ml/m²`);
+  }
+
+  //=================> AutoSave Management
+  async startAutoSave() {
+    await this.stopAutoSave(); // Stop to be on the safe side
+    autoSaveInterval = setInterval(() => {
+      if (isCleaningActive) {
+        this.saveWaterData().catch(e =>
+          this.log.error('Autosave failed: ' + e.message)
+        );
+      }
+    }, 2 * 60 * 1000); // Every 2 minutes
+  }
+
+  async stopAutoSave() {
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+      autoSaveInterval = null;
+    }
+  }
+
+  //=================> Initialization Check
+  async checkInitialCleaningStatus() {
+    try {
+      await this.restorePersistedData();
+      await this.startAutoSave();
+      this.log.info('Active cleaning session detected - restored water tracking data');
+    } catch (e) {
+      this.log.error('Initial status check failed: ' + e.message);
+    }
+    firstWaterTrackingActive = true;
+  }
+
+  //=================> Tank Data Restoration
+  async restoreWaterTankData() {
+    try {
+    // 1. Restoration of water levels from persisted states
+      const beforeRemoval = await this.getStateValue(`${DH_Did}.state.water.beforeRemoval`) || 0;
+      const tankPercent = await this.getStateValue(`${DH_Did}.state.water.PureWaterTank`);
+      const currentMl = await this.getStateValue(`${DH_Did}.state.water.current`);
+
+      // Priority order for restoration:
+      // 1. Current ml value if available
+      // 2. Before removal value if available
+      // 3. Calculated from percentage if available
+      // 4. Default to MAX_ML
+      waterTracking.currentMl = currentMl !== null ? currentMl :
+        beforeRemoval > 0 ? beforeRemoval :
+          tankPercent !== null ? (tankPercent / 100) * WATER_TRACKING.MAX_ML :
+            WATER_TRACKING.MAX_ML;
+
+      // 2. Restoration of learning data
+      const consumptionData = await this.getStateValue(`${DH_Did}.state.water.consumptionData`);
+      if (consumptionData) {
+        try {
+          const parsedData = JSON.parse(consumptionData);
+          // Validate and clean the restored data
+          Object.keys(parsedData).forEach(key => {
+            if (!Array.isArray(parsedData[key])) {
+              delete parsedData[key];
+            } else {
+              parsedData[key] = parsedData[key].filter(entry =>
+                entry && typeof entry.value === 'number' && entry.value > 0 && entry.value < 200
+              );
+            }
+          });
+          await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
+            val: JSON.stringify(parsedData),
+            ack: true
+          });
+        } catch (e) {
+          this.log.warn('Failed to parse persisted consumption data: ' + e.message);
+        }
+      }
+
+      // 3. Update the water level display
+      await this.updateWaterLevelState();
+
+      this.log.info(`Restored water level: ${waterTracking.currentMl}ml` +
+      (beforeRemoval > 0 ? ` (from beforeRemoval: ${beforeRemoval}ml)` :
+        tankPercent !== null ? ` (from tankPercent: ${tankPercent}%)` :
+          currentMl !== null ? ` (from currentMl: ${currentMl}ml)` :
+            ' (using default)'));
+
+    } catch (e) {
+      this.log.error('Water tank data restoration failed - resetting to default: ' + e.message);
+      waterTracking.currentMl = WATER_TRACKING.MAX_ML;
+      await this.updateWaterLevelState();
+    }
+  }
+
+  async restorePersistedData() {
+    if (!isCleaningActive) return;
+    try {
+    // 1. Restore water tank data first
+      await this.restoreWaterTankData();
+
+      // 2. Restore room consumption data
+      const roomData = await this.getStateValue(`${DH_Did}.state.water.roomConsumption`);
+      if (roomData) {
+        waterTracking.roomData = JSON.parse(roomData);
+
+        // Validate room data structure
+        Object.keys(waterTracking.roomData).forEach(room => {
+          if (!waterTracking.roomData[room].consumedMl) {
+            waterTracking.roomData[room].consumedMl = 0;
+          }
+          if (!waterTracking.roomData[room].maxCleanedArea) {
+            waterTracking.roomData[room].maxCleanedArea =
+            waterTracking.roomData[room].lastRecordedArea || 0;
+          }
+        });
+
+        this.log.info(`Restored room data for ${Object.keys(waterTracking.roomData).length} rooms`);
+
+        // Set the last active room (if available)
+        if (waterTracking.roomData) {
+          const rooms = Object.keys(waterTracking.roomData);
+          waterTracking.lastRoom = rooms[rooms.length - 1];
+        }
+      }
+
+    } catch (e) {
+      this.log.warn('Persisted data restoration failed - starting fresh: ' + e.message);
+      waterTracking.roomData = {};
+      waterTracking.currentMl = WATER_TRACKING.MAX_ML;
+      await this.updateWaterLevelState();
+    }
+  }
+
+  //=================> Helper Functions
+  async getCurrentWater() {
+    const current = await this.getStateValue(`${DH_Did}.state.water.current`);
+    return current ?? WATER_TRACKING.MAX_ML;
+  }
+
+  // Helper function to safely get state values
+  async getStateValue(stateId) {
+    try {
+      const state = await this.getStateAsync(stateId);
+      return state?.val;
+    } catch (error) {
+      this.log.error(`Failed to get state ${stateId}: ${error.message}`);
+      return null;
+    }
+  }
 
   async setcleansetPath(createpath, CsetS) {
     //let jsonString = `{${Object.entries(CsetS).map(([key, value]) => `"${key}":"${value}"`).join(', ')}}`;
@@ -12111,10 +15772,17 @@ class Dreamehome extends utils.Adapter {
         VarPointValue = JSON.parse(VarPointValue);
         break;
       case 'number':
+<<<<<<< HEAD
+        if (VarPointValue === 'Infinity' || VarPointValue === Infinity) {
+          VarPointValue = 0;
+        } else {
+          VarPointValue = JSON.parse(VarPointValue);
+=======
         if (VarPointValue !== 'Infinity') {
           VarPointValue = JSON.parse(VarPointValue);
         } else {
           VarPointValue = 0;
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         }
         break;
       case 'undefined':
@@ -12612,7 +16280,7 @@ class Dreamehome extends utils.Adapter {
         } else {
           // If cleaning is not complete, check again
           setTimeout(checkStatus, checkInterval);
-          this.log.info(`Checking cleaning status => Room: ${roomName} (${roomNumber}) => ${cleaningState.val}`);
+          //this.log.info(`Checking cleaning status => Room: ${roomName} (${roomNumber}) => ${cleaningState.val}`);
         }
       } catch (error) {
         this.log.error(`Error in checkCleaningStatus: ${error}`); // Log error
@@ -13467,6 +17135,19 @@ class Dreamehome extends utils.Adapter {
     try {
       this.log.info('cleaned everything up...');
       this.DH_Clean();
+
+      // Cleanup monitoring
+      if (this.monitor) {
+        this.monitor.stop();
+        this.log.info('Resource monitoring stopped');
+      }
+
+      // Cleanup memory cleaner
+      if (this.memoryCleaner) {
+        this.memoryCleaner.stopGuardian();
+        this.log.info('Memory cleaner stopped');
+      }
+
       callback();
     } catch (e) {
       callback();
@@ -13516,6 +17197,17 @@ class Dreamehome extends utils.Adapter {
 
         }
 
+<<<<<<< HEAD
+        // Handle map rotation changes
+        if ((id.toString().indexOf('.map.Rotation' + DH_CurMap) != -1) && (state.val || state.val === 0)){
+          const newRotation = parseInt(state.val);
+          // Trigger reload
+          this.log.info('New map rotation received: ' + newRotation + '°. Apply settings and generate new map');
+          await this.DH_GenerateMap();
+        }
+
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         if (id.toString().includes('.StartCleaningByRoomConfig') && state.val) {
           await this.setStateAsync(DH_Did + '.map.StartCleaningByRoomConfig', false, true);
 
@@ -13843,6 +17535,106 @@ class Dreamehome extends utils.Adapter {
           return;
         }
 
+<<<<<<< HEAD
+        // Handle manual cleanup trigger
+        if (id.endsWith('resources.memoryCleaner.triggerCleanup') && state.val === true) {
+          const MAX_RESET_ATTEMPTS = 3;
+          let resetAttempts = 0;
+
+          const safeReset = async () => {
+            while (resetAttempts < MAX_RESET_ATTEMPTS) {
+              try {
+                await this.setStateAsync(id, {
+                  val: false,
+                  ack: true
+                });
+                return;
+              } catch (err) {
+                resetAttempts++;
+                if (resetAttempts >= MAX_RESET_ATTEMPTS) {
+                  this.log.error(`Failed to reset trigger after ${MAX_RESET_ATTEMPTS} attempts: ${err.message}`);
+                  throw err;
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+          };
+
+          try {
+            this.log.info('Starting manual cleanup...');
+            const memBefore = process.memoryUsage();
+            this.log.debug(`Memory before: ${JSON.stringify(memBefore)}`);
+
+            const result = await this.memoryManager.comprehensiveClean('medium');
+
+            if (result.error) {
+              throw new Error(result.error);
+            }
+
+            const freedMB = result.freedBytes / (1024 * 1024);
+            this.log.info(`Cleanup completed. Freed: ${freedMB.toFixed(2)}MB`);
+
+            await Promise.all([
+              this.setStateAsync('resources.memoryCleaner.lastFreedMB', {
+                val: freedMB,
+                ack: true
+              }),
+              this.setStateAsync('resources.memoryCleaner.lastCleanup', {
+                val: new Date().toISOString(),
+                ack: true
+              }),
+              safeReset()
+            ]);
+
+          } catch (err) {
+            this.log.error(`Cleanup failed: ${err.message}`);
+            try {
+              await safeReset();
+            } catch (finalErr) {
+              this.log.error('CRITICAL: Final reset failed: ' + finalErr.message);
+            }
+          }
+          await this.setStateAsync(id, { val: false, ack: true });
+          return;
+        }
+
+        // Handle profiling enable/disable
+        if (id.endsWith('resources.profiling.enabled')) {
+          this.log.info('Handle profiling has been activated');
+          this.profiler.setEnabled(state.val);
+          return;
+        }
+
+        // Handle memory cleaner enable/disable
+        if (id.endsWith('resources.memoryCleaner.enabled')) {
+          if (state.val) {
+            this.log.info('Handle memory cleanup process has been turned on');
+            await this.memoryManager.enableAutoCleanup({
+              thresholdMB: await this.getStateAsync('resources.memoryCleaner.thresholdMB')?.val || 300,
+              intervalMinutes: (await this.getStateAsync('resources.memoryCleaner.intervalSec')?.val || 30) / 60
+            });
+          } else {
+            this.log.info('Handle memory cleanup process has been turned off');
+            this.memoryManager.disableAutoCleanup();
+          }
+          return;
+        }
+
+        // Handle memory cleaner settings changes
+        if (id.endsWith('resources.memoryCleaner.thresholdMB') ||
+    id.endsWith('resources.memoryCleaner.intervalSec')) {
+
+          if (await this.getStateAsync('resources.memoryCleaner.enabled')?.val) {
+            this.memoryManager.disableAutoCleanup();
+            await this.memoryManager.enableAutoCleanup({
+              thresholdMB: await this.getStateAsync('resources.memoryCleaner.thresholdMB')?.val || 300,
+              intervalMinutes: (await this.getStateAsync('resources.memoryCleaner.intervalSec')?.val || 30) / 60
+            });
+          }
+          return;
+        }
+=======
+>>>>>>> 56ca5c3de3f58e16230f41f36cd53a20bf9f5435
         if (id.endsWith('.alexaSpeakMode')) {
           await this.updateSpeakMode(state?.val);
         }
