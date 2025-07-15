@@ -24,7 +24,16 @@ Here, XXXXXX is the number of your robot.***
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-
+### 0.1.8 (15.07.2025)
+1. Admin Interface Updated:
+   - Allows adding multiple robots to different instances at once.
+2. Improvements:
+    - Improvement 1: Performance optimizations for resource consumption.
+    - Improvement 2: Enhanced user interface of the admin panel.
+    - VIS Improvements: Improved visualizations and UI elements.
+3. Language Support:
+    - German language added: German language support integrated under VIS.
+    
 ### 0.1.7 (08.07.2025)
 1. Memory Optimization
 2. Added Robots with Encrypted Maps
