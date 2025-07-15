@@ -19,7 +19,14 @@ const {
   Image
 } = require('canvas');
 
-const { ResourceMonitor, FunctionProfiler, SafeMemoryManager, initMonitoring } = require('./lib/resourceMonitor');
+const {
+  ResourceMonitor,
+  FunctionProfiler,
+  SafeMemoryManager,
+  RestartManager,
+  initMonitoring
+} = require('./lib/resourceMonitor');
+
 /**============> Check if canvas is installed using the following command:
 cd /opt/iobroker/
 npm list canvas
@@ -2148,55 +2155,73 @@ class Dreamehome extends utils.Adapter {
     this.subscribeStates('*.control.*');
     this.log.info('Login and request Dreame data from cloud');
 
+    // Check if we're recovering from a restart
+    const lastRestart = await this.getStateAsync('resources.system.lastRestartAttempt');
+
+    if (lastRestart && lastRestart.val) {
+      this.log.info(`Recovered from restart at ${new Date(lastRestart.val).toISOString()}`);
+    }
+
     try {
-    // Initialize configuration with defaults
+    // 1. Initialize configuration with mandatory defaults
       this.config = {
         intervalMs: this.config.intervalMs || 60000,
-        heapLimitMb: this.config.heapLimitMb || 150,
+        heapLimitMb: this.config.heapLimitMb || 100,
+        heapLimitMB: this.config.heapLimitMB || 150,
         eventLoopLagLimitMs: this.config.eventLoopLagLimitMs || 50,
         gcEnabled: this.config.gcEnabled !== undefined ? this.config.gcEnabled : true,
         memoryCleanerEnabled: this.config.memoryCleanerEnabled !== undefined ? this.config.memoryCleanerEnabled : true,
         memoryCleanerThresholdMB: this.config.memoryCleanerThresholdMB || 300,
         memoryCleanerIntervalSec: this.config.memoryCleanerIntervalSec || 30,
+        memoryCleanerPriority: this.config.memoryCleanerPriority || 'medium',
         ...this.config
       };
 
-      // Initialize monitoring, profiling and memory manager
+      // 2. Initialize monitoring system
       const { monitor, profiler, memoryManager } = await initMonitoring(this);
-
-      // Store references
       this.monitor = monitor;
       this.profiler = profiler;
       this.memoryManager = memoryManager;
 
-      this.subscribeStates('resources.profiling.enabled');
-      this.subscribeStates('resources.memoryCleaner.*');
+	  // Synchronize configuration with states
+      await this.syncConfigWithStates();
 
-      // Initialen Profiling-Status setzen
-      const initialProfilingState = await this.getStateAsync('resources.profiling.enabled');
-      this.profiler.setEnabled(initialProfilingState?.val || false);
+      // 3. Force initial state synchronization
+      await Promise.all([
+        this.setStateAsync('resources.memoryCleaner.heapLimitMB', {
+          val: this.config.heapLimitMB, // Set the restart threshold
+          ack: true
+        }),
+        this.setStateAsync('resources.memoryCleaner.enabled', {
+          val: this.config.memoryCleanerEnabled,
+          ack: true
+        })
+      ]);
 
-      // Start memory manager if enabled
+      // 4. Start services
+      this.subscribeStatesAsync('resources.profiling.enabled');
+      this.subscribeStatesAsync('resources.memoryCleaner.*');
+
       if (this.config.memoryCleanerEnabled) {
         this.memoryManager.enableAutoCleanup({
           thresholdMB: this.config.memoryCleanerThresholdMB,
-          intervalMinutes: this.config.memoryCleanerIntervalSec / 60 // Umrechnung von Sekunden zu Minuten
+          intervalMinutes: this.config.memoryCleanerIntervalSec / 60,
+          priority: this.config.memoryCleanerPriority
         });
-        this.log.info(`Memory management started (threshold: ${this.config.memoryCleanerThresholdMB}MB, interval: ${this.config.memoryCleanerIntervalSec}s)`);
       }
 
-      this.log.info('Adapter initialized with resource monitoring, profiling and memory management');
+      // 5. Initial status log
+      await this.logFullConfig();
 
     } catch (err) {
-      this.log.error(`Initialization failed: ${err.message}`);
-    // Consider terminating the adapter if critical
-    // this.terminate ? this.terminate() : process.exit(1);
+      this.log.error(`Initialization failed: ${err.stack}`);
     }
 
     if (typeof global.gc !== 'function') {
       this.log.warn('GARBAGE COLLECTION NOT AVAILABLE! Start Node.js with --expose-gc for proper memory management');
       this.log.warn('Current memory cleanup will be very limited in effectiveness');
     }
+
     // Create the setting object
     await this.setObjectNotExists('settings.alexaSpeakMode', {
       type: 'state',
@@ -2415,6 +2440,8 @@ class Dreamehome extends utils.Adapter {
   }
 
   async DH_CloudLogin() {
+
+    const selectedDeviceIndex = this.config.selectedDeviceIndex || 0;
     await this.DH_requestClient({
       method: 'post',
       maxBodyLength: Infinity,
@@ -2467,13 +2494,28 @@ class Dreamehome extends utils.Adapter {
         if (LogData) {
           this.log.info('Split ' + DH_URLLST + ' response: ' + JSON.stringify(GetListData));
         }
-        DH_Did = GetListData[0].did;
-        DH_Model = GetListData[0].model;
-        DH_Mac = GetListData[0].mac;
-        DH_BDomain = GetListData[0].bindDomain;
-        DH_Host = DH_BDomain.split('.')[0];
 
-        await this.DH_PropObject(GetListData[0], DH_Did + '.general.', 'Get listV2: ');
+        // Check if the selected index is within the list bounds
+        if (selectedDeviceIndex >= 0 && selectedDeviceIndex < GetListData.length) {
+
+          // Log the valid device index
+          this.log.info(`Selected device index is valid: ${selectedDeviceIndex}`);
+
+			 // Log device details - access DH_Model directly from the selectedDevice
+          const selectedDevice = GetListData[selectedDeviceIndex];
+			 // Log device details - access DH_Model directly from the selectedDevice
+          this.log.info(`====> Device details: Model = ${selectedDevice.model}, DID = ${selectedDevice.did}, MAC = ${selectedDevice.mac} <====`);
+
+          DH_Did = selectedDevice.did;
+          DH_Model = selectedDevice.model;
+          DH_Mac = selectedDevice.mac;
+          DH_BDomain = selectedDevice.bindDomain;
+          DH_Host = DH_BDomain.split('.')[0];
+
+          await this.DH_PropObject(selectedDevice, DH_Did + '.general.', 'Get listV2: ');
+        } else {
+          this.log.warn('Invalid device index: ' + selectedDeviceIndex);
+        }
 
         SETURLData = {
           did: DH_Did,
@@ -2561,6 +2603,8 @@ class Dreamehome extends utils.Adapter {
     await this.DH_RequestNewMap();
     //await this.DH_GetControl();
     await this.DH_RequestControlState();
+
+    await this.logFullConfig();
 
   }
 
@@ -6402,8 +6446,8 @@ class Dreamehome extends utils.Adapter {
                         <!-- Room information on the right side -->
                         <div class="room-info" style="display: inline-block; vertical-align: top;">
                             <div class="status-text-above" style="margin-bottom: 5px;"></div>
-                            <div>Current Cleaned: <span id="current-CleanedArea">0</span>m²</div>
-                            <div>Current Room: <span id="current-room">-</span></div>
+                            <div><span id="currentCleanedLabel"></span> <span id="current-CleanedArea">0</span>m²</div>
+                            <div><span id="currentRoomLabel"></span> <span id="current-room">-</span></div>
                         </div>
 
 						<!-- Battery indicator -->
@@ -6580,7 +6624,19 @@ class Dreamehome extends utils.Adapter {
                       99: "Monitoring paused"
                     };
 
+                    const translations = {
+                      'EN': {
+                        'currentCleaned': 'Current Cleaned:',
+                        'currentRoom': 'Current Room:',
+                      },
+                      'DE': {
+                        'currentCleaned': 'Gereinigte Fläche:',
+                        'currentRoom': 'Aktueller Raum:',
+                      },
+                    };
 
+					document.getElementById('currentCleanedLabel').textContent = translations[UserLang].currentCleaned;
+					document.getElementById('currentRoomLabel').textContent = translations[UserLang].currentRoom;
 
 					// =============================================
                     // Base station logic
@@ -7034,7 +7090,8 @@ class Dreamehome extends utils.Adapter {
                           "MoppPad": "Mop Pad",
                           "Detergent": "Detergent",
                           "Sensor": "Sensors",
-                          "WaterTank": "Water Tank"
+                          "WaterTank": "Water Tank",
+						  "Filter": "Filter"
                         },
                         "DE": {
                           "MainBrush": "Hauptbürste",
@@ -7042,7 +7099,8 @@ class Dreamehome extends utils.Adapter {
                           "MoppPad": "Wischpad",
                           "Detergent": "Reinigungsmittel",
                           "Sensor": "Sensoren",
-                          "WaterTank": "Wassertank"
+                          "WaterTank": "Wassertank",
+						  "Filter": "Filter"
                         }
                     }
 
@@ -11533,6 +11591,85 @@ class Dreamehome extends utils.Adapter {
                         }
                     });
 
+                    const statusTranslations = {
+                      'EN': {
+                        'sweeping': 'Sweeping',
+                        'mopping': 'Mopping',
+                        'sweeping-and-mopping': 'Sweeping and mopping',
+                        'charging': 'Charging',
+                        'smart-charging': 'Smart Charging',
+                        'charging-completed': 'Charging Completed',
+                        'auto-emptying': 'Auto-Emptying',
+                        'drying': 'Drying',
+                        'returning': 'Returning',
+                        'returning-to-wash': 'Returning to Wash',
+                        'returning-auto-empty': 'Returning to Empty',
+                        'clean-add-water': 'Adding Water',
+                        'washing-paused': 'Washing Paused',
+                        'returning-remove-mop': 'Removing Mop',
+                        'returning-install-mop': 'Installing Mop',
+                        'sleep': 'Sleeping',
+                        'paused': 'Paused',
+                        'remote-control': 'Remote Control',
+                        'water-check': 'Checking Water',
+                        'monitoring': 'Monitoring',
+                        'monitoring-paused': 'Monitoring Paused',
+                        'error': 'Error',
+                        'idle': 'Idle',
+                        'building': 'Building',
+                        'upgrading': 'Upgrading',
+                        'clean-summon': 'Clean summon',
+                        'station-reset': 'Station reset',
+                        'second-cleaning': 'Second cleaning',
+                        'human-following': 'Human following',
+                        'spot-cleaning': 'Spot cleaning',
+                        'shortcut': 'Shortcut',
+                        'washing': 'Washing',
+                        'add-clean-water': 'Add clean water'
+                      },
+                      'DE': {
+                        'sweeping': 'Staubsaugen',
+                        'mopping': 'Wischen',
+                        'sweeping-and-mopping': 'Staubsaugen und Wischen',
+                        'charging': 'Laden',
+                        'smart-charging': 'Intelligentes Laden',
+                        'charging-completed': 'Laden abgeschlossen',
+                        'auto-emptying': 'Automatisches Entleeren',
+                        'drying': 'Trocknen',
+                        'returning': 'Zurückkehren',
+                        'returning-to-wash': 'Zurück zum Waschen',
+                        'returning-auto-empty': 'Zurück zum Entleeren',
+                        'clean-add-water': 'Wasser nachfüllen',
+                        'washing-paused': 'Waschen pausiert',
+                        'returning-remove-mop': 'Mopp entfernen',
+                        'returning-install-mop': 'Mopp installieren',
+                        'sleep': 'Schlafen',
+                        'paused': 'Pausiert',
+                        'remote-control': 'Fernsteuerung',
+                        'water-check': 'Wasser prüfen',
+                        'monitoring': 'Überwachen',
+                        'monitoring-paused': 'Überwachung pausiert',
+                        'error': 'Fehler',
+                        'idle': 'Inaktiv',
+                        'building': 'Bauen',
+                        'upgrading': 'Upgrading',
+                        'clean-summon': 'Reinigungsruf',
+                        'station-reset': 'Station zurücksetzen',
+                        'second-cleaning': 'Zweite Reinigung',
+                        'human-following': 'Folge der Person',
+                        'spot-cleaning': 'Spot-Reinigung',
+                        'shortcut': 'Verknüpfung',
+                        'washing': 'Waschen',
+                        'add-clean-water': 'Sauberes Wasser nachfüllen'
+                      }
+                    };
+
+					function getTranslatedStatus(status) {
+                      const lang = UserLang || 'EN';
+                      const translations = statusTranslations[lang] || statusTranslations['EN'];
+                      return translations[status] || status;
+                    }
+
                     function getStatusColor(status) {
                         if (status.includes('charging')) return '#4a90e2';
                         if (status.includes('returning')) return '#f39c12';
@@ -11542,7 +11679,24 @@ class Dreamehome extends utils.Adapter {
                     }
 
 					// Function to update the charging station status
-                    function updateChargerStatus(status) {
+
+					let lastChargerStatus  =  "Unknown"; // To keep track of the last known charger status
+					let timestamp = Date.now(); // To store the timestamp when the status is changed to 'Charging Completed'
+					let totalTimeSwitch = 60;
+
+					function updateChargerStatus(status) {
+
+						if (status === "Charging completed") {
+                            if (Date.now() - timestamp >= (totalTimeSwitch * 2 * 1000)) timestamp = Date.now();
+                            if (Date.now() - timestamp >= (totalTimeSwitch * 1000)) status = "sleep";
+                        } else {
+							timestamp = Date.now();
+						}
+
+//status = 'drying';
+                        if (status === lastChargerStatus) return;
+						lastChargerStatus = status;
+
                         const chargers = document.querySelectorAll('.charger-station, .charger-station-mini');
 
                         chargers.forEach(charger => {
@@ -11556,7 +11710,7 @@ class Dreamehome extends utils.Adapter {
 
                             if (miniText && statusAbove) {
                                 miniText.textContent = status;
-                                statusAbove.textContent = status;
+                                statusAbove.textContent = getTranslatedStatus(statusSlug);
 
                                 // Set colors based on status
                                 const color = getStatusColor(statusSlug);
@@ -11578,7 +11732,6 @@ class Dreamehome extends utils.Adapter {
 
                             let effectsHTML = '';
                             let effectsCSS = '';
-
                             switch(statusSlug) {
                                 case 'sweeping':
                                     effectsHTML = \`
@@ -11673,62 +11826,206 @@ class Dreamehome extends utils.Adapter {
 
                                 case 'sweeping-and-mopping':
                                     effectsHTML = \`
-                                        <div class="status-effect sweep-mop-effect">
-                                            <div class="combo-beam"></div>
-                                            <div class="combo-water"></div>
-                                            <svg class="combo-icon" viewBox="0 0 24 24">
-                                                <path d="M19 11h-5V6h5m-6-1l-4 4l4 4m-7-3H5V6h3m0 11H5v-2h3m6 1l4-4l-4-4m7 3h-5v-2h5m-6-1l-4 4l4 4"/>
-                                            </svg>
+                                        <div class="status-effect extreme-effect">
+                                            <!-- 3D depth container -->
+                                            <div class="depth-container">
+                                                <!-- Energy beams -->
+                                                <div class="energy-beam beam-1"></div>
+                                                <div class="energy-beam beam-2"></div>
+
+                                                <!-- Particles -->
+                                                <div class="particle-emitter">
+                                                    ${Array.from({ length: 12 }).map(function(_, i) {
+    return '<div class="particle" style="--i:' + i + '"></div>';
+  }).join('')}
+                                                </div>
+
+                                                <!-- Animated tools -->
+                                                <div class="animated-tools">
+                                                    <svg class="broom-tool" viewBox="0 0 24 24">
+                                                        <path fill="#3498db" d="M19 11h-5V6h5m-6-1l-4 4 4 4m-7-3H5V6h3m0 11H5v-2h3m6 1l4-4-4-4m7 3h-5v-2h5m-6-1l-4 4 4 4"/>
+                                                    </svg>
+                                                    <svg class="mop-tool" viewBox="0 0 24 24">
+                                                        <path fill="#2ecc71" d="M15.5 14.5c0-2.8 2.2-5 5-5 .36 0 .71.04 1.05.11L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7L12 21.5l3.5-4.36V14.5z"/>
+                                                    </svg>
+                                                </div>
+
+                                                <!-- Water ripples -->
+                                                <div class="water-ripples">
+                                                    <div class="ripple r1"></div>
+                                                    <div class="ripple r2"></div>
+                                                </div>
+
+                                                <!-- Dust clouds -->
+                                                <div class="dust-cloud d1"></div>
+                                                <div class="dust-cloud d2"></div>
+                                            </div>
+
+                                            <!-- Light flare -->
+                                            <div class="light-flare"></div>
                                         </div>\`;
+
                                     effectsCSS = \`
-                                        .sweep-mop-effect {
+                                        .extreme-effect {
                                             position: absolute;
                                             width: 100%;
                                             height: 100%;
                                             top: 0;
                                             left: 0;
+                                            overflow: hidden;
+                                            background: transparent;
                                         }
-                                        .combo-beam {
+
+                                        .depth-container {
+                                            position: relative;
+                                            width: 100%;
+                                            height: 100%;
+                                            transform-style: preserve-3d;
+                                            animation: container-tilt 8s infinite alternate ease-in-out;
+                                        }
+
+                                        /* Energy beams */
+                                        .energy-beam {
+                                            position: absolute;
+                                            width: 150%;
+                                            height: 4px;
+                                            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.8), transparent);
+                                            top: 50%;
+                                            left: -25%;
+                                            transform-origin: center;
+                                            filter: blur(1px);
+                                        }
+                                        .beam-1 { transform: rotate(30deg); animation: beam-sweep 3s infinite linear; }
+                                        .beam-2 { transform: rotate(-30deg); animation: beam-sweep 3s infinite linear reverse; }
+
+                                        /* Particle system */
+                                        .particle-emitter {
                                             position: absolute;
                                             width: 100%;
                                             height: 100%;
-                                            background: conic-gradient(
-                                                from 0deg at 50% 50%,
-                                                rgba(52,152,219,0.8) 0deg,
-                                                rgba(46,204,113,0.4) 180deg,
-                                                transparent 360deg
-                                            );
-                                            animation: combo-rotate 3s linear infinite;
+                                        }
+                                        .particle {
+                                            position: absolute;
+                                            width: 6px;
+                                            height: 6px;
+                                            background: rgba(52, 152, 219, 0.7);
                                             border-radius: 50%;
+                                            top: 50%;
+                                            left: 50%;
+                                            filter: blur(0.5px);
+                                            animation:
+                                                particle-move 4s infinite linear,
+                                                particle-fade 4s infinite ease-out;
+                                            animation-delay: calc(var(--i) * 0.2s);
                                         }
-                                        .combo-water {
+
+                                        /* Tools */
+                                        .animated-tools {
                                             position: absolute;
                                             width: 100%;
                                             height: 100%;
-                                            background: radial-gradient(circle, rgba(46,204,113,0.3) 0%, transparent 70%);
-                                            animation: water-pulse 2s infinite;
                                         }
-                                        .combo-icon {
+                                        .broom-tool, .mop-tool {
                                             position: absolute;
                                             width: 60%;
                                             height: 60%;
                                             top: 20%;
                                             left: 20%;
-                                            fill: white;
-                                            animation: combo-spin 4s infinite linear;
                                         }
-                                        @keyframes combo-rotate {
-                                            from { transform: rotate(0deg); }
-                                            to { transform: rotate(360deg); }
+                                        .broom-tool {
+                                            color: #3498db;
+                                            filter: drop-shadow(0 0 10px rgba(52, 152, 219, 0.9));
+                                            animation:
+                                                broom-swing 2.3s infinite ease-in-out,
+                                                tool-float 5s infinite ease-in-out;
                                         }
-                                        @keyframes water-pulse {
+                                        .mop-tool {
+                                            color: #2ecc71;
+                                            filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.9));
+                                            animation:
+                                                mop-swing 3.1s infinite ease-in-out,
+                                                tool-float 7s infinite ease-in-out reverse;
+                                        }
+
+                                        /* Water effects */
+                                        .water-ripples { position: absolute; width: 100%; height: 100%; }
+                                        .ripple {
+                                            position: absolute;
+                                            border: 2px solid rgba(46, 204, 113, 0.6);
+                                            border-radius: 50%;
+                                            top: 30%;
+                                            left: 30%;
+                                            width: 40%;
+                                            height: 40%;
+                                            animation: ripple 3s infinite;
+                                        }
+                                        .r2 { animation-delay: 1.5s; }
+
+                                        /* Dust effects */
+                                        .dust-cloud {
+                                            position: absolute;
+                                            width: 40%;
+                                            height: 40%;
+                                            background: radial-gradient(circle, rgba(149, 165, 166, 0.8) 0%, transparent 70%);
+                                            filter: blur(3px);
+                                            animation: dust-dissipate 4s infinite;
+                                        }
+                                        .d1 { top: 10%; left: 10%; }
+                                        .d2 { top: 60%; left: 60%; animation-delay: 2s; }
+
+                                        /* Light effects */
+                                        .light-flare {
+                                            position: absolute;
+                                            width: 50%;
+                                            height: 50%;
+                                            top: 25%;
+                                            left: 25%;
+                                            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+                                            animation: flare-pulse 3s infinite alternate;
+                                            mix-blend-mode: overlay;
+                                        }
+
+                                        /* Keyframes */
+                                        @keyframes container-tilt {
+                                            0%, 100% { transform: rotateX(-5deg) rotateY(-5deg); }
+                                            50% { transform: rotateX(5deg) rotateY(5deg); }
+                                        }
+                                        @keyframes beam-sweep {
+                                            0% { transform: rotate(30deg) translateX(-100%); }
+                                            100% { transform: rotate(30deg) translateX(100%); }
+                                        }
+                                        @keyframes particle-move {
+                                            0% { transform: translate(-50%, -50%) rotate(calc(var(--i) * 30deg)) translateY(0) scale(1); }
+                                            100% { transform: translate(-50%, -50%) rotate(calc(var(--i) * 30deg + 360deg)) translateY(100px) scale(0.3); }
+                                        }
+                                        @keyframes particle-fade {
+                                            0%, 100% { opacity: 0; }
+                                            10%, 80% { opacity: 0.7; }
+                                        }
+                                        @keyframes broom-swing {
+                                            0%, 100% { transform: translate(-50%, -50%) rotate(-20deg); }
+                                            50% { transform: translate(-50%, -50%) rotate(20deg); }
+                                        }
+                                        @keyframes mop-swing {
+                                            0%, 100% { transform: translate(-50%, -50%) rotate(15deg) translateY(0); }
+                                            50% { transform: translate(-50%, -50%) rotate(-15deg) translateY(-10px); }
+                                        }
+                                        @keyframes tool-float {
+                                            0%, 100% { transform: translateY(0); }
+                                            50% { transform: translateY(-10px); }
+                                        }
+                                        @keyframes ripple {
+                                            0% { transform: scale(0.5); opacity: 1; }
+                                            100% { transform: scale(1.5); opacity: 0; }
+                                        }
+                                        @keyframes dust-dissipate {
+                                            0% { transform: scale(0.5); opacity: 0; }
+                                            20% { transform: scale(1); opacity: 0.7; }
+                                            100% { transform: scale(1.5); opacity: 0; }
+                                        }
+                                        @keyframes flare-pulse {
                                             0% { transform: scale(0.8); opacity: 0.5; }
-                                            50% { transform: scale(1.1); opacity: 0.8; }
-                                            100% { transform: scale(0.8); opacity: 0.5; }
-                                        }
-                                        @keyframes combo-spin {
-                                            0% { transform: rotate(0deg); }
-                                            100% { transform: rotate(360deg); }
+                                            100% { transform: scale(1.2); opacity: 0.8; }
                                         }\`;
                                     break;
 
@@ -12651,70 +12948,112 @@ class Dreamehome extends utils.Adapter {
 
                         		case 'sleep':
                                     effectsHTML = \`
-                                        <div class="status-effect sleep-effect">
-                                            <div class="moon"></div>
-                                            <div class="stars">
-                                                <div class="star star1"></div>
-                                                <div class="star star2"></div>
-                                                <div class="star star3"></div>
-                                            </div>
-                                            <div class="sleep-z"></div>
-                                        </div>\`;
+                                      <div class="status-effect sleep-effect">
+                                        <div class="moon">
+                                          <div class="crater crater1"></div>
+                                          <div class="crater crater2"></div>
+                                          <div class="crater crater3"></div>
+                                        </div>
+                                        <div class="stars">
+                                          <div class="star star1"></div>
+                                          <div class="star star2"></div>
+                                          <div class="star star3"></div>
+                                          <div class="star star4"></div>
+                                        </div>
+                                        <div class="zzz-container">
+                                          <div class="zzz">z</div>
+                                          <div class="zzz">z</div>
+                                          <div class="zzz">z</div>
+                                        </div>
+                                      </div>\`;
+
                                     effectsCSS = \`
-                                        .sleep-effect {
-                                            position: absolute;
-                                            width: 100%;
-                                            height: 100%;
-                                            top: 0;
-                                            left: 0;
-                                            background: rgba(25, 42, 86, 0.7);
-                                            border-radius: 50%;
-                                        }
-                                        .moon {
-                                            position: absolute;
-                                            width: 50%;
-                                            height: 50%;
-                                            top: 25%;
-                                            left: 25%;
-                                            background: #f5f5dc;
-                                            border-radius: 50%;
-                                            box-shadow: 0 0 15px #f5f5dc;
-                                            animation: moon-glow 4s infinite alternate;
-                                        }
-                                        .star {
-                                            position: absolute;
-                                            background: white;
-                                            border-radius: 50%;
-                                            animation: twinkle 2s infinite alternate;
-                                        }
-                                        .star1 { width: 3px; height: 3px; top: 20%; left: 30%; animation-delay: 0s; }
-                                        .star2 { width: 4px; height: 4px; top: 60%; left: 20%; animation-delay: 0.5s; }
-                                        .star3 { width: 2px; height: 2px; top: 40%; left: 70%; animation-delay: 1s; }
-                                        .sleep-z {
-                                            position: absolute;
-                                            width: 30%;
-                                            height: 10%;
-                                            top: 70%;
-                                            left: 35%;
-                                            color: white;
-                                            font-size: 12px;
-                                            text-align: center;
-                                            animation: z-fade 3s infinite;
-                                        }
-                                        @keyframes moon-glow {
-                                            0% { box-shadow: 0 0 10px #f5f5dc; opacity: 0.8; }
-                                            100% { box-shadow: 0 0 30px #f5f5dc; opacity: 1; }
-                                        }
-                                        @keyframes twinkle {
-                                            0% { opacity: 0.3; transform: scale(0.8); }
-                                            100% { opacity: 1; transform: scale(1.2); }
-                                        }
-                                        @keyframes z-fade {
-                                            0%, 100% { opacity: 0; content: 'z'; }
-                                            25% { opacity: 1; content: 'zz'; }
-                                            50% { opacity: 1; content: 'zzz'; }
-                                            75% { opacity: 0.5; content: 'zz'; }
-                                        }\`;
+                                      .sleep-effect {
+                                        position: absolute;
+                                        width: 100%;
+                                        height: 100%;
+                                        top: 0;
+                                        left: 0;
+                                        background: rgba(10, 20, 40, 0.8);
+                                        border-radius: 50%;
+                                        overflow: hidden;
+                                      }
+                                      .moon {
+                                        position: absolute;
+                                        width: 50%;
+                                        height: 50%;
+                                        top: 25%;
+                                        left: 25%;
+                                        background: #f5f5dc;
+                                        border-radius: 50%;
+                                        box-shadow: 0 0 20px #f5f5dc;
+                                        animation: moon-glow 6s infinite ease-in-out;
+                                      }
+                                      .moon::before {
+                                        content: '';
+                                        position: absolute;
+                                        width: 100%;
+                                        height: 100%;
+                                        background: rgba(10, 20, 40, 0.8);
+                                        border-radius: 50%;
+                                        right: 30%;
+                                        animation: moon-phase 30s infinite linear;
+                                      }
+                                      .crater {
+                                        position: absolute;
+                                        background: rgba(180, 180, 150, 0.6);
+                                        border-radius: 50%;
+                                      }
+                                      .crater1 { width: 15%; height: 15%; top: 20%; left: 20%; }
+                                      .crater2 { width: 10%; height: 10%; top: 60%; left: 30%; }
+                                      .crater3 { width: 8%; height: 8%; top: 40%; left: 70%; }
+                                      .star {
+                                        position: absolute;
+                                        background: white;
+                                        border-radius: 50%;
+                                        animation: twinkle 3s infinite alternate;
+                                        filter: drop-shadow(0 0 2px white);
+                                      }
+                                      .star1 { width: 2px; height: 2px; top: 15%; left: 20%; animation-delay: 0s; }
+                                      .star2 { width: 3px; height: 3px; top: 30%; left: 70%; animation-delay: 1s; }
+                                      .star3 { width: 2px; height: 2px; top: 60%; left: 40%; animation-delay: 2s; }
+                                      .star4 { width: 3px; height: 3px; top: 75%; left: 80%; animation-delay: 1.5s; }
+                                      .zzz-container {
+                                        position: absolute;
+                                        width: 60%;
+                                        height: 20%;
+                                        bottom: 15%;
+                                        left: 20%;
+                                        display: flex;
+                                        justify-content: space-around;
+                                      }
+                                      .zzz {
+                                        color: white;
+                                        font-size: 14px;
+                                        font-weight: bold;
+                                        opacity: 0;
+                                        animation: zzz-fade 2s infinite;
+                                      }
+                                      .zzz:nth-child(1) { animation-delay: 0.5s; }
+                                      .zzz:nth-child(2) { animation-delay: 1s; }
+                                      .zzz:nth-child(3) { animation-delay: 1.5s; }
+                                      @keyframes moon-glow {
+                                        0%, 100% { box-shadow: 0 0 15px #f5f5dc; }
+                                        50% { box-shadow: 0 0 30px #f5f5dc; }
+                                      }
+                                      @keyframes moon-phase {
+                                        0% { right: 30%; }
+                                        50% { right: -30%; }
+                                        100% { right: 30%; }
+                                      }
+                                      @keyframes twinkle {
+                                        0% { opacity: 0.3; transform: scale(0.8); }
+                                        100% { opacity: 1; transform: scale(1.2); }
+                                      }
+                                      @keyframes zzz-fade {
+                                        0%, 100% { opacity: 0; transform: translateY(0); }
+                                        50% { opacity: 1; transform: translateY(-5px); }
+                                      }\`;
                                     break;
 
                         		case 'paused':
@@ -12724,6 +13063,12 @@ class Dreamehome extends utils.Adapter {
                                                 <div class="bar bar1"></div>
                                                 <div class="bar bar2"></div>
                                             </div>
+									           <div class="clock-face">
+									                <div class="tick top"></div>
+									                <div class="tick right"></div>
+									                <div class="tick bottom"></div>
+									                <div class="tick left"></div>
+									            </div>
                                             <div class="clock-hand"></div>
                                         </div>\`;
                                     effectsCSS = \`
@@ -12754,15 +13099,57 @@ class Dreamehome extends utils.Adapter {
                                             position: absolute;
                                             width: 40%;
                                             height: 2px;
-                                            background: white;
+                                            background: #878787;
                                             top: 50%;
-                                            left: 30%;
+                                            left: 50%;
                                             transform-origin: left center;
                                             animation: clock-tick 4s infinite linear;
                                         }
+									        .clock-face {
+									            position: absolute;
+									            top: 50%;
+									            left: 50%;
+									            width: 100%;
+									            height: 100%;
+									            border-radius: 50%;
+									            border: 2px solid #878787;
+									            transform: translate(-50%, -50%);
+												animation: face-blink 4s infinite linear;
+									        }
+									        .tick {
+									            position: absolute;
+									            width: 4px;
+									            height: 4px;
+									            background: #878787;
+												border-radius: 50%;
+									        }
+									        .top {
+									            top: 0;
+									            left: 50%;
+									            transform: translateX(-50%);
+									        }
+									        .right {
+									            top: 50%;
+									            right: 0;
+									            transform: translateY(-50%);
+									        }
+									        .bottom {
+									            bottom: 0;
+									            left: 50%;
+									            transform: translateX(-50%);
+									        }
+									        .left {
+									            top: 50%;
+									            left: 0;
+									            transform: translateY(-50%);
+									        }
                                         @keyframes bar-blink {
                                             0%, 100% { opacity: 1; }
                                             50% { opacity: 0.3; }
+                                        }
+										@keyframes face-blink {
+                                            0%, 100% { opacity: 0.3; }
+                                            50% { opacity: 1; }
                                         }
                                         @keyframes clock-tick {
                                             0% { transform: rotate(0deg); }
@@ -14118,7 +14505,7 @@ class Dreamehome extends utils.Adapter {
 
   async DH_PropMQTTObject(InData, InPath, InLog) {
     const validTaskStatuses = [1, 2, 3, 4, 5]; // List of valid task statuses for robot
-    const validNowStatuses = [2, 4, 18, 19, 20]; // List of valid current statuses for robot
+    const validNowStatuses = [2, 4, 18, 19, 20, 25]; // List of valid current statuses for robot
 
     for (const [key, value] of Object.entries(InData)) {
       let valueCopy = value;
@@ -14173,7 +14560,7 @@ class Dreamehome extends utils.Adapter {
             }
 
             // Check the task completion status and handle history updates
-            if (DH_CompletStatus === 100) {
+            if ((DH_CompletStatus === 100) || (DH_NowStatus == 14)) {
             // If the task is complete, reset cleaning and status flags
               DH_CleanStatus = false;
               DH_SetLastStatus = false;
@@ -16507,14 +16894,186 @@ class Dreamehome extends utils.Adapter {
     return { ambiguousCommand: false };
   }
 
+  async handleManualCleanup() {
+    const MAX_RESET_ATTEMPTS = 3;
+    let resetAttempts = 0;
+
+    const safeReset = async () => {
+      while (resetAttempts < MAX_RESET_ATTEMPTS) {
+        try {
+          await this.setStateAsync('resources.memoryCleaner.triggerCleanup', {
+            val: false,
+            ack: true
+          });
+          return;
+        } catch (err) {
+          resetAttempts++;
+          if (resetAttempts >= MAX_RESET_ATTEMPTS) {
+            throw new Error(`Failed to reset trigger after ${MAX_RESET_ATTEMPTS} attempts: ${err.message}`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    };
+
+    try {
+      this.log.info('Starting manual cleanup...');
+      const memBefore = process.memoryUsage();
+      this.log.debug(`Memory before: ${JSON.stringify(memBefore)}`);
+
+      const priorityState = await this.getStateAsync('resources.memoryCleaner.priority');
+      const priority = priorityState?.val || 'medium';
+      this.log.debug(`Starting cleanup with priority: ${priority}`);
+
+      const result = await this.memoryManager.comprehensiveClean(priority);
+      if (result.restartAttempted) {
+        this.log.info('Adapter restart was initiated due to memory pressure');
+      }
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const freedMB = result.freedBytes / (1024 * 1024);
+      this.log.info(`Cleanup completed. Freed: ${freedMB.toFixed(2)}MB`);
+
+      await Promise.all([
+        this.setStateAsync('resources.memoryCleaner.lastFreedMB', {
+          val: freedMB,
+          ack: true
+        }),
+        this.setStateAsync('resources.memoryCleaner.lastCleanup', {
+          val: new Date().toISOString(),
+          ack: true
+        }),
+        safeReset()
+      ]);
+
+    } catch (err) {
+      this.log.error(`Cleanup failed: ${err.message}`);
+      try {
+        await safeReset();
+      } catch (finalErr) {
+        this.log.error('CRITICAL: Final reset failed: ' + finalErr.message);
+      }
+    }
+  }
+
+  async handleMemoryCleanerToggle(enabled) {
+    if (enabled) {
+      this.log.info('Memory cleanup process has been enabled');
+      await this.updateMemoryCleanerSettings();
+    } else {
+      this.log.info('Memory cleanup process has been disabled');
+      this.memoryManager.disableAutoCleanup();
+    }
+  }
+
+  async updateMemoryCleanerSettings() {
+    if (await this.getStateAsync('resources.memoryCleaner.enabled')?.val) {
+      this.memoryManager.disableAutoCleanup();
+      await this.memoryManager.enableAutoCleanup({
+        thresholdMB: await this.getStateAsync('resources.memoryCleaner.thresholdMB')?.val || 300,
+        intervalMinutes: (await this.getStateAsync('resources.memoryCleaner.intervalSec')?.val || 30) / 60,
+        priority: await this.getStateAsync('resources.memoryCleaner.priority')?.val || 'medium'
+      });
+    }
+  }
+
+  async syncConfigWithStates() {
+    try {
+      await Promise.all([
+        // Memory Cleaner Settings
+        this.setStateAsync('resources.memoryCleaner.enabled', {
+          val: this.config.memoryCleanerEnabled,
+          ack: true
+        }),
+        this.setStateAsync('resources.memoryCleaner.thresholdMB', {
+          val: this.config.memoryCleanerThresholdMB,
+          ack: true
+        }),
+        this.setStateAsync('resources.memoryCleaner.intervalSec', {
+          val: this.config.memoryCleanerIntervalSec,
+          ack: true
+        }),
+        this.setStateAsync('resources.memoryCleaner.priority', {
+          val: this.config.memoryCleanerPriority,
+          ack: true
+        }),
+
+        // Monitoring Settings
+        this.setStateAsync('resources.profiling.enabled', {
+          val: this.config.profilingEnabled,
+          ack: true
+        })
+      ]);
+      this.log.debug('Configuration successfully synchronized with states');
+    } catch (err) {
+      this.log.error(`State synchronization failed: ${err.message}`);
+    }
+  }
+
+  async logFullConfig() {
+    const mem = process.memoryUsage();
+    const uptime = process.uptime();
+
+    const lastRestartReasonState = await this.getStateAsync('resources.system.lastRestartReason');
+    const lastRestartErrorState = await this.getStateAsync('resources.system.restartError');
+
+    let lastRestartFormatted = 'Never';
+    let restartDetails = 'No restart attempts';
+
+    if (lastRestartReasonState && lastRestartReasonState.val) {
+      const lastAttemptTime = lastRestartReasonState.ts;
+      lastRestartFormatted = new Date(lastAttemptTime).toISOString();
+
+      restartDetails = `Last attempt: ${lastRestartFormatted} - Reason: ${lastRestartReasonState.val}`;
+
+      if (lastRestartErrorState && lastRestartErrorState.val) {
+        try {
+          const errorObj = JSON.parse(lastRestartErrorState.val);
+          restartDetails += ` - Error: ${errorObj.error}`;
+        } catch (e) {
+          restartDetails += ` - Error: ${lastRestartErrorState.val}`;
+        }
+      }
+    }
+
+    const cleanerEnabledState = await this.getStateAsync('resources.memoryCleaner.enabled');
+    const heapUsedState = await this.getStateAsync('resources.memory.heapUsedMB');
+    const heapStatusState = await this.getStateAsync('resources.memory.heapUsedStatus');
+
+    this.log.info(`
+===== SYSTEM CONFIGURATION SNAPSHOT =====
+[Admin Configuration]
+  - Cleaner Enabled: ${this.config.memoryCleanerEnabled}
+  - Threshold: ${this.config.memoryCleanerThresholdMB} MB
+  - Interval: ${this.config.memoryCleanerIntervalSec} sec
+  - Priority: ${this.config.memoryCleanerPriority}
+  - Heap Limit: ${this.config.heapLimitMB} MB
+
+[Runtime States]
+  - Cleaner Active: ${cleanerEnabledState?.val ?? false}
+  - Current Heap: ${heapUsedState?.val?.toFixed(2) || '0.00'} MB
+  - Heap Status: ${heapStatusState?.val || 'OK'}
+
+[Restart Manager]
+  - ${restartDetails}
+
+[Process Metrics]
+  - Heap Used: ${(mem.heapUsed / 1024 / 1024).toFixed(2)} MB
+  - RSS: ${(mem.rss / 1024 / 1024).toFixed(2)} MB
+  - Uptime: ${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s
+========================================`);
+  }
+
   /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      * @param {() => void} callback
      */
   onUnload(callback) {
     try {
-      this.log.info('cleaned everything up...');
-      this.DH_Clean();
+      this.log.info('Cleaning up resources...');
 
       // Cleanup monitoring
       if (this.monitor) {
@@ -16522,11 +17081,13 @@ class Dreamehome extends utils.Adapter {
         this.log.info('Resource monitoring stopped');
       }
 
-      // Cleanup memory cleaner
-      if (this.memoryCleaner) {
-        this.memoryCleaner.stopGuardian();
-        this.log.info('Memory cleaner stopped');
+      // Cleanup memory manager
+      if (this.memoryManager) {
+        this.memoryManager.disableAutoCleanup();
+        this.log.info('Memory manager stopped');
       }
+
+      this.DH_Clean();
 
       callback();
     } catch (e) {
@@ -16914,99 +17475,29 @@ class Dreamehome extends utils.Adapter {
 
         // Handle manual cleanup trigger
         if (id.endsWith('resources.memoryCleaner.triggerCleanup') && state.val === true) {
-          const MAX_RESET_ATTEMPTS = 3;
-          let resetAttempts = 0;
-
-          const safeReset = async () => {
-            while (resetAttempts < MAX_RESET_ATTEMPTS) {
-              try {
-                await this.setStateAsync(id, {
-                  val: false,
-                  ack: true
-                });
-                return;
-              } catch (err) {
-                resetAttempts++;
-                if (resetAttempts >= MAX_RESET_ATTEMPTS) {
-                  this.log.error(`Failed to reset trigger after ${MAX_RESET_ATTEMPTS} attempts: ${err.message}`);
-                  throw err;
-                }
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
-            }
-          };
-
-          try {
-            this.log.info('Starting manual cleanup...');
-            const memBefore = process.memoryUsage();
-            this.log.debug(`Memory before: ${JSON.stringify(memBefore)}`);
-
-            const result = await this.memoryManager.comprehensiveClean('medium');
-
-            if (result.error) {
-              throw new Error(result.error);
-            }
-
-            const freedMB = result.freedBytes / (1024 * 1024);
-            this.log.info(`Cleanup completed. Freed: ${freedMB.toFixed(2)}MB`);
-
-            await Promise.all([
-              this.setStateAsync('resources.memoryCleaner.lastFreedMB', {
-                val: freedMB,
-                ack: true
-              }),
-              this.setStateAsync('resources.memoryCleaner.lastCleanup', {
-                val: new Date().toISOString(),
-                ack: true
-              }),
-              safeReset()
-            ]);
-
-          } catch (err) {
-            this.log.error(`Cleanup failed: ${err.message}`);
-            try {
-              await safeReset();
-            } catch (finalErr) {
-              this.log.error('CRITICAL: Final reset failed: ' + finalErr.message);
-            }
-          }
-          await this.setStateAsync(id, { val: false, ack: true });
+          await this.handleManualCleanup();
           return;
         }
 
         // Handle profiling enable/disable
         if (id.endsWith('resources.profiling.enabled')) {
-          this.log.info('Handle profiling has been activated');
+          this.log.info(`Profiling ${state.val ? 'enabled' : 'disabled'}`);
           this.profiler.setEnabled(state.val);
           return;
         }
 
         // Handle memory cleaner enable/disable
         if (id.endsWith('resources.memoryCleaner.enabled')) {
-          if (state.val) {
-            this.log.info('Handle memory cleanup process has been turned on');
-            await this.memoryManager.enableAutoCleanup({
-              thresholdMB: await this.getStateAsync('resources.memoryCleaner.thresholdMB')?.val || 300,
-              intervalMinutes: (await this.getStateAsync('resources.memoryCleaner.intervalSec')?.val || 30) / 60
-            });
-          } else {
-            this.log.info('Handle memory cleanup process has been turned off');
-            this.memoryManager.disableAutoCleanup();
-          }
+          await this.handleMemoryCleanerToggle(state.val);
           return;
         }
 
         // Handle memory cleaner settings changes
         if (id.endsWith('resources.memoryCleaner.thresholdMB') ||
-    id.endsWith('resources.memoryCleaner.intervalSec')) {
+    id.endsWith('resources.memoryCleaner.intervalSec') ||
+    id.endsWith('resources.memoryCleaner.priority')) {
 
-          if (await this.getStateAsync('resources.memoryCleaner.enabled')?.val) {
-            this.memoryManager.disableAutoCleanup();
-            await this.memoryManager.enableAutoCleanup({
-              thresholdMB: await this.getStateAsync('resources.memoryCleaner.thresholdMB')?.val || 300,
-              intervalMinutes: (await this.getStateAsync('resources.memoryCleaner.intervalSec')?.val || 30) / 60
-            });
-          }
+          await this.updateMemoryCleanerSettings();
           return;
         }
         if (id.endsWith('.alexaSpeakMode')) {

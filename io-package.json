@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "news": {
-      "0.1.7": {
+      "0.1.8": {
         "en": "Interactive Map - New Features",
         "de": "Interactive Map - Neue Funktionen",
         "ru": "Интерактивная карта - новые возможности",
@@ -84,17 +84,21 @@
     "password": "",
     "interval": 30,
     "heapLimitMb": 100,
-    "eventLoopLagLimitMs": 100
+    "eventLoopLagLimitMs": 100,
+    "gcEnabled": true,
+    "memoryCleanerEnabled": true,
+    "memoryCleanerThresholdMB": 300,
+    "memoryCleanerPriority": "medium",
+	"restartCooldownMinutes": 60,
+	"selectedDeviceIndex": 0
   },
-  "objects": [],
   "instanceObjects": [
     {
       "_id": "info",
       "type": "channel",
       "common": {
         "name": "Information"
-      },
-      "native": {}
+      }
     },
     {
       "_id": "info.connection",
@@ -106,8 +110,14 @@
         "read": true,
         "write": false,
         "def": false
-      },
-      "native": {}
+      }
+    },
+    {
+      "_id": "resources",
+      "type": "channel",
+      "common": {
+        "name": "Resource Monitoring"
+      }
     },
     {
       "_id": "resources.log",
@@ -118,8 +128,45 @@
         "read": true,
         "write": false,
         "desc": "Last resource warnings"
-      },
-      "native": {}
+      }
+    },
+    {
+      "_id": "resources.memory",
+      "type": "channel",
+      "common": {
+        "name": "Memory Usage"
+      }
+    },
+    {
+      "_id": "resources.memory.heapUsedMB",
+      "type": "state",
+      "common": {
+        "name": "Heap Used (MB)",
+        "type": "number",
+        "role": "value.memory",
+        "unit": "MB",
+        "read": true,
+        "write": false
+      }
+    },
+    {
+      "_id": "resources.memoryCleaner",
+      "type": "channel",
+      "common": {
+        "name": "Memory Cleaner"
+      }
+    },
+    {
+      "_id": "resources.memoryCleaner.lastFreedMB",
+      "type": "state",
+      "common": {
+        "name": "Last Freed Memory (MB)",
+        "type": "number",
+        "role": "value.memory",
+        "unit": "MB",
+        "read": true,
+        "write": false
+      }
     }
   ]
 }
