@@ -1,96 +1,182 @@
 {
   "i18n": false,
   "items": {
-    "username": {
-      "type": "text",
+    "credentials": {
+      "type": "panel",
       "label": {
-        "en": "App Email",
-        "de": "App E-Mail",
-        "ru": "Приложение Email",
-        "pt": "Email do aplicativo",
-        "nl": "E-mail app",
-        "fr": "App Email",
-        "it": "App Email",
-        "es": "App Email",
-        "pl": "Aplikacja e- mail",
-        "uk": "Електронна пошта",
-        "zh-cn": "应用电子邮件"
+        "en": "Login Credentials",
+        "de": "Anmeldedaten"
       },
-      "newLine": true,
-      "sm": 12,
-      "xs": 12,
-      "md": 6,
-      "lg": 3,
-      "xl": 3
-    },
-    "password": {
-      "type": "password",
-      "newLine": true,
-      "repeat": false,
-      "visible": true,
-      "sm": 12,
-      "xs": 12,
-      "md": 6,
-      "lg": 3,
-      "xl": 3,
-      "label": {
-        "en": "App Password",
-        "de": "App-Passwort",
-        "ru": "Пароль приложения",
-        "pt": "Senha do aplicativo",
-        "nl": "App-wachtwoord",
-        "fr": "Mot de passe de l'application",
-        "it": "App password",
-        "es": "App Password",
-        "pl": "Hasło aplikacji",
-        "uk": "Ім'я користувача",
-        "zh-cn": "应用密码"
+      "items": {
+        "username": {
+          "type": "text",
+          "label": {
+            "en": "App Email",
+            "de": "App E-Mail"
+          },
+          "newLine": true,
+          "sm": 12,
+          "md": 6
+        },
+        "password": {
+          "type": "password",
+          "label": {
+            "en": "App Password",
+            "de": "App-Passwort"
+          },
+          "newLine": true,
+          "sm": 12,
+          "md": 6
+        }
       }
     },
-    "getMap": {
-      "type": "checkbox",
-      "newLine": true,
-      "sm": 12,
-      "xs": 12,
-      "md": 6,
-      "lg": 3,
-      "xl": 3,
-      "label": {
-        "en": "Get Map",
-        "de": "Auf der Karte",
-        "ru": "Получить карту",
-        "pt": "Mapa",
-        "nl": "Kaart ophalen",
-        "fr": "Obtenir la carte",
-        "it": "Ottieni la mappa",
-        "es": "Mapa",
-        "pl": "Pobierz mapę",
-        "uk": "Карта сайту",
-        "zh-cn": "获取地图"
-      }
-    },
-
-    "interval": {
+    "selectedDeviceIndex": {
       "type": "number",
-      "newLine": true,
-      "min": 1,
-      "sm": 12,
-      "xs": 12,
-      "md": 6,
-      "lg": 3,
-      "xl": 3,
       "label": {
-        "en": "Update interval (in minutes)",
-        "de": "Update-Intervall (in Minuten)",
-        "ru": "Интервал обновления (в минутах)",
-        "pt": "Intervalo de atualização (em minutos)",
-        "nl": "Bijwerken interval (in minuten)",
-        "fr": "Intervalle de mise à jour (en minutes)",
-        "it": "Intervallo di aggiornamento (in minuti)",
-        "es": "Intervalo de actualización (en minutos)",
-        "pl": "Przedział aktualizacji (w minutach)",
-        "uk": "Період оновлення (в хвилини)",
-        "zh-cn": "更新间隔( 分钟)"
+        "en": "Selected Device Index (0 for the first device, 1 for the second, etc.)",
+        "de": "Ausgewählter Geräte-Index (0 für das erste Gerät, 1 für das zweite Gerät, usw.)"
+      },
+      "default": 0,
+      "min": 0,
+      "max": 3,
+      "sm": 12
+    },
+    "polling": {
+      "type": "panel",
+      "label": {
+        "en": "Polling Settings",
+        "de": "Abfrage-Einstellungen"
+      },
+      "items": {
+        "interval": {
+          "type": "number",
+          "label": {
+            "en": "Update interval (minutes)",
+            "de": "Update-Intervall (Minuten)"
+          },
+          "min": 1,
+          "newLine": true,
+          "sm": 12,
+          "md": 6
+        }
+      }
+    },
+    "monitoring": {
+      "type": "panel",
+      "label": {
+        "en": "Resource Monitoring",
+        "de": "Ressourcen-überwachung"
+      },
+      "items": {
+        "heapLimitMb": {
+          "type": "number",
+          "label": {
+            "en": "Heap memory warning threshold (MB)",
+            "de": "Heap-Speicher Warnschwelle (MB)"
+          },
+          "default": 100,
+          "min": 10,
+          "newLine": true,
+          "sm": 12,
+          "md": 6
+        },
+        "heapLimitMB": {
+          "type": "number",
+          "label": {
+            "en": "Critical heap limit (MB)",
+            "de": "Kritische Heap-Grenze (MB)"
+          },
+          "default": 150,
+          "min": 50,
+          "sm": 12,
+          "md": 6
+        },
+        "intervalMs": {
+          "type": "number",
+          "label": {
+            "en": "Monitoring interval (sec)",
+            "de": "Überwachungsintervall (Sek.)"
+          },
+          "default": 60,
+          "min": 5,
+          "sm": 12,
+          "md": 6
+        },
+        "eventLoopLagLimitMs": {
+          "type": "number",
+          "label": {
+            "en": "Event loop lag threshold (ms)",
+            "de": "Event-Loop-Verzögerungsschwelle (ms)"
+          },
+          "default": 100,
+          "min": 10,
+          "sm": 12,
+          "md": 6
+        },
+        "gcEnabled": {
+          "type": "checkbox",
+          "label": {
+            "en": "Enable garbage collection",
+            "de": "Garbage Collection aktivieren"
+          },
+          "default": true,
+          "sm": 12
+        }
+      }
+    },
+    "memoryCleaner": {
+      "type": "panel",
+      "label": {
+        "en": "Memory Cleaner",
+        "de": "Speicherbereinigung"
+      },
+      "items": {
+        "memoryCleanerEnabled": {
+          "type": "checkbox",
+          "label": {
+            "en": "Enable automatic cleanup",
+            "de": "Automatische Bereinigung aktivieren"
+          },
+          "default": true,
+          "newLine": true,
+          "sm": 12
+        },
+        "memoryCleanerThresholdMB": {
+          "type": "number",
+          "label": {
+            "en": "Cleanup threshold (MB)",
+            "de": "Bereinigungsschwelle (MB)"
+          },
+          "default": 300,
+          "min": 50,
+          "sm": 12,
+          "md": 6
+        },
+		"memoryCleanerIntervalSec": {
+          "type": "number",
+          "label": {
+            "en": "Check interval (sec)",
+            "de": "Prüfintervall (Sek.)"
+          },
+          "default": 30,
+          "min": 5,
+          "sm": 12,
+          "md": 6
+        },
+        "memoryCleanerPriority": {
+          "type": "select",
+          "label": {
+            "en": "Cleanup priority",
+            "de": "Bereinigungspriorität"
+          },
+          "options": [
+            { "value": "low", "label": { "en": "Low", "de": "Niedrig" } },
+            { "value": "medium", "label": { "en": "Medium", "de": "Mittel" } },
+            { "value": "high", "label": { "en": "High", "de": "Hoch" } }
+          ],
+          "default": "medium",
+          "sm": 12
+        }
       }
     }
   }
