@@ -30,16 +30,40 @@
         }
       }
     },
-    "selectedDeviceIndex": {
-      "type": "number",
+    "deviceSelection": {
+      "type": "panel",
       "label": {
-        "en": "Selected Device Index (0 for the first device, 1 for the second, etc.)",
-        "de": "Ausgewählter Geräte-Index (0 für das erste Gerät, 1 für das zweite Gerät, usw.)"
+        "en": "Device Selection",
+        "de": "Geräteauswahl"
       },
-      "default": 0,
-      "min": 0,
-      "max": 3,
-      "sm": 12
+      "items": {
+        "selectedDeviceIndex": {
+          "type": "number",
+          "label": {
+            "en": "Preferred device index (0=first, 1=second etc.)",
+            "de": "Bevorzugter Geräteindex (0=erstes, 1=zweites usw.)"
+          },
+          "default": 0,
+          "min": 0,
+          "max": 9,
+          "sm": 12,
+          "md": 6,
+          "hint": {
+            "en": "Will automatically fallback to first device if selected device fails",
+            "de": "Fällt automatisch auf erstes Gerät zurück falls Auswahl fehlschlägt"
+          }
+        },
+        "deviceListautoFallback": {
+          "type": "checkbox",
+          "label": {
+            "en": "Auto fallback to first device",
+            "de": "Automatisch auf erstes Gerät zurückfallen"
+          },
+          "default": true,
+          "sm": 12,
+          "md": 6
+        }
+      }
     },
     "polling": {
       "type": "panel",
@@ -65,7 +89,7 @@
       "type": "panel",
       "label": {
         "en": "Resource Monitoring",
-        "de": "Ressourcen-überwachung"
+        "de": "Ressourcen-Überwachung"
       },
       "items": {
         "heapLimitMb": {
@@ -152,7 +176,7 @@
           "sm": 12,
           "md": 6
         },
-		"memoryCleanerIntervalSec": {
+        "memoryCleanerIntervalSec": {
           "type": "number",
           "label": {
             "en": "Check interval (sec)",
