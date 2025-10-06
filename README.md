@@ -24,6 +24,56 @@ Here, XXXXXX is the number of your robot.***
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 1.0.0 (06.10.2025)
+#### Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.
+1. Voice Command Help System: 7 categories
+    - Emptying the dustbin
+    - Washing the mop
+    - Checking component status
+    - Resetting components
+    - Room cleaning
+    - Carpet cleaning
+    - Synonym examples and voice commands
+2. Synonym Help System: 8 categories with dynamic random examples
+    - Room names
+    - Suction levels  
+    - Mopping levels
+    - Emptying commands
+    - Mop washing commands
+    - Status check commands
+    - Reset commands
+    - All categories overview
+
+3. Multi-Platform Support: Full integration for both Alexa (voice) and Telegram (text)
+   
+    **Alexa Voice Commands:**
+
+        User: "Alexa, help with robot"
+        → System: Displays main help menu with options 1-7
+
+        User: "Seven" 
+        → System: Shows synonym submenu with 8 categories
+
+        User: "One"
+        → System: "Room name synonyms: 'living room', 'guest room', 'office', 'bedroom'"
+
+        User: "Back"
+        → System: Returns to main help menu, options 1-7 remain available
+
+    **Telegram Text Commands:**
+
+        User: "help robot"
+        → System: Shows main help menu with numbered options
+
+        User: "7"
+        → System: Displays synonym submenu categories 1-8
+
+        User: "examples"
+        → System: "ROOMS: 'kitchen', 'study' | SUCTION: 'quiet', 'soft'"
+
+        User: "back"
+        → System: Navigates back to main menu
+
 ### 0.1.8 (15.07.2025)
 1. Admin Interface Updated:
    - Allows adding multiple robots to different instances at once.
