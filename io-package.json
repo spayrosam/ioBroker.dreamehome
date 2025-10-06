@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "0.1.8",
+    "version": "1.0.0",
     "news": {
+	  "1.0.0": {
+        "en": "Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.",
+        "de": "Breaking Change: Objektstruktur überarbeitet. Bitte prüfe nach dem Update deine Skripte und Visualisierungen."
+      },
       "0.1.8": {
         "en": "Interactive Map - New Features",
         "de": "Interactive Map - Neue Funktionen",
@@ -169,4 +173,5 @@
       }
     }
   ]
+
 }
