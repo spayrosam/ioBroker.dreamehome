@@ -16,7 +16,10 @@
           },
           "newLine": true,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 6,
+          "xl": 4,
+          "xs": 12
         },
         "password": {
           "type": "password",
@@ -26,7 +29,10 @@
           },
           "newLine": true,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 6,
+          "xl": 4,
+          "xs": 12
         }
       }
     },
@@ -48,6 +54,9 @@
           "max": 9,
           "sm": 12,
           "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12,
           "hint": {
             "en": "Will automatically fallback to first device if selected device fails",
             "de": "Fällt automatisch auf erstes Gerät zurück falls Auswahl fehlschlägt"
@@ -61,7 +70,10 @@
           },
           "default": true,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         }
       }
     },
@@ -79,9 +91,13 @@
             "de": "Update-Intervall (Minuten)"
           },
           "min": 1,
+          "max": 1440,
           "newLine": true,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         }
       }
     },
@@ -92,7 +108,7 @@
         "de": "Ressourcen-Überwachung"
       },
       "items": {
-        "heapLimitMb": {
+        "heapLimitMB": {
           "type": "number",
           "label": {
             "en": "Heap memory warning threshold (MB)",
@@ -100,11 +116,15 @@
           },
           "default": 100,
           "min": 10,
+          "max": 4096,
           "newLine": true,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
-        "heapLimitMB": {
+        "criticalHeapLimitMB": {
           "type": "number",
           "label": {
             "en": "Critical heap limit (MB)",
@@ -112,19 +132,27 @@
           },
           "default": 150,
           "min": 50,
+          "max": 8192,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
-        "intervalMs": {
+        "monitoringIntervalSec": {
           "type": "number",
           "label": {
-            "en": "Monitoring interval (sec)",
-            "de": "Überwachungsintervall (Sek.)"
+            "en": "Monitoring interval (seconds)",
+            "de": "Überwachungsintervall (Sekunden)"
           },
           "default": 60,
           "min": 5,
+          "max": 3600,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
         "eventLoopLagLimitMs": {
           "type": "number",
@@ -134,8 +162,12 @@
           },
           "default": 100,
           "min": 10,
+          "max": 5000,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
         "gcEnabled": {
           "type": "checkbox",
@@ -144,7 +176,11 @@
             "de": "Garbage Collection aktivieren"
           },
           "default": true,
-          "sm": 12
+          "sm": 12,
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         }
       }
     },
@@ -163,7 +199,11 @@
           },
           "default": true,
           "newLine": true,
-          "sm": 12
+          "sm": 12,
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
         "memoryCleanerThresholdMB": {
           "type": "number",
@@ -173,19 +213,27 @@
           },
           "default": 300,
           "min": 50,
+          "max": 16384,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
         "memoryCleanerIntervalSec": {
           "type": "number",
           "label": {
-            "en": "Check interval (sec)",
-            "de": "Prüfintervall (Sek.)"
+            "en": "Check interval (seconds)",
+            "de": "Prüfintervall (Sekunden)"
           },
           "default": 30,
           "min": 5,
+          "max": 3600,
           "sm": 12,
-          "md": 6
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         },
         "memoryCleanerPriority": {
           "type": "select",
@@ -194,12 +242,49 @@
             "de": "Bereinigungspriorität"
           },
           "options": [
-            { "value": "low", "label": { "en": "Low", "de": "Niedrig" } },
-            { "value": "medium", "label": { "en": "Medium", "de": "Mittel" } },
-            { "value": "high", "label": { "en": "High", "de": "Hoch" } }
+            {
+              "value": "low",
+              "label": {
+                "en": "Low",
+                "de": "Niedrig"
+              }
+            },
+            {
+              "value": "medium",
+              "label": {
+                "en": "Medium",
+                "de": "Mittel"
+              }
+            },
+            {
+              "value": "high",
+              "label": {
+                "en": "High",
+                "de": "Hoch"
+              }
+            }
           ],
           "default": "medium",
-          "sm": 12
+          "sm": 12,
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
+        },
+        "restartCooldownMinutes": {
+          "type": "number",
+          "label": {
+            "en": "Restart cooldown (minutes)",
+            "de": "Neustart-Abkühlzeit (Minuten)"
+          },
+          "default": 60,
+          "min": 1,
+          "max": 1440,
+          "sm": 12,
+          "md": 6,
+          "lg": 4,
+          "xl": 3,
+          "xs": 12
         }
       }
     }
