@@ -24,6 +24,30 @@ Here, XXXXXX is the number of your robot.***
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 1.1.0 (07.12.2025)
+ 
+1. **System Requirement Update:** Minimum Node.js version is now 20.x
+2.  **Dreame Matrix10 Ultra:** Carpet commands are now fully supported.
+3.  **Polygon Carpet Detection:** Can now detect and handle polygon-shaped carpets.
+4. **Bug Fixes:** Fixed issue where robot did not respond to commands sent via the HTML/Vis interface.
+5. **Help Menu Update:** The voice/chat help menu (Alexa/Telegram) has been extended with "Dining Table" cleaning options.
+6.  **New Dining Table Function:** Automatic detection and cleaning on command.
+    For dining table cleaning, use these patterns:
+    
+    🇬🇧 English commands:
+    *   `"Alexa, clean the dining table in the {ROOM}"`
+    *   `"Alexa, vacuum under the kitchen table"` (sweeping only)
+    *   `"Alexa, mop around the dining table"` (mopping only)
+    *   `"Alexa, clean dining table thoroughly"` (sweeping & mopping)
+    
+    🇩🇪 Deutsche Befehle:
+    *   `"Alexa, reinige den Esstisch im {ROOM}"`
+    *   `"Alexa, sauge unter dem KÃ¼chentisch"` (nur Saugen)
+    *   `"Alexa, wische rund um den Esstisch"` (nur Wischen)
+    *   `"Alexa, reinige den Esstisch grÃ¼ndlich"` (Saugen & Wischen)
+
+
+---
 ### 1.0.0 (06.10.2025)
 #### Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.
 1. Voice Command Help System: 7 categories
@@ -596,24 +620,24 @@ Control Adjusted:
 
 ## License
 
-MIT License
+MIT License  
 
-Copyright (c) 2020-2025 Spayrosam
+Copyright (c) 2020-2025 Spayrosam  
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy  
+of this software and associated documentation files (the "Software"), to deal  
+in the Software without restriction, including without limitation the rights  
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
+copies of the Software, and to permit persons to whom the Software is  
+furnished to do so, subject to the following conditions:  
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all  
+copies or substantial portions of the Software.  
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
 SOFTWARE.
