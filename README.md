@@ -42,9 +42,9 @@ Here, XXXXXX is the number of your robot.***
     
     🇩🇪 Deutsche Befehle:
     *   `"Alexa, reinige den Esstisch im {ROOM}"`
-    *   `"Alexa, sauge unter dem KÃ¼chentisch"` (nur Saugen)
+    *   `"Alexa, sauge unter dem Küchentisch"` (nur Saugen)
     *   `"Alexa, wische rund um den Esstisch"` (nur Wischen)
-    *   `"Alexa, reinige den Esstisch grÃ¼ndlich"` (Saugen & Wischen)
+    *   `"Alexa, reinige den Esstisch gründlich"` (Saugen & Wischen)
 
 
 ---
