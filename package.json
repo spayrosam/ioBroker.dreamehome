@@ -1,6 +1,6 @@
 {
   "name": "iobroker.dreamehome",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Adapter for dreame home devices",
   "author": "Spayrosam <spayrosam@gmail.com>",
   "homepage": "https://github.com/spayrosam/ioBroker.dreamehome",
@@ -78,4 +78,5 @@
     "test": "test"
   }
 }
+
 
