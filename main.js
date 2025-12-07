@@ -355,73 +355,104 @@ const DreameVacuumErrorCode = {
 const DreameVacuumState = {
   'EN': {
     '-1': 'Unknown',
-    1: 'Sweeping',
-    2: 'Idle',
+    1: 'Cleaning',
+    2: 'Standby',
     3: 'Paused',
-    4: 'Error',
-    5: 'Returning',
+    4: 'Paused',
+    5: 'Returning to charge',
     6: 'Charging',
     7: 'Mopping',
-    8: 'Drying',
-    9: 'Washing',
+    8: 'Mop Drying',
+    9: 'Mop Washing',
     10: 'Returning to wash',
-    11: 'Building',
-    12: 'Sweeping and mopping',
-    13: 'Charging completed',
+    11: 'Mapping',
+    12: 'Cleaning',
+    13: 'Charging Completed',
     14: 'Upgrading',
-    15: 'Clean summon',
-    16: 'Station reset',
-    17: 'Returning install mop',
-    18: 'Returning remove mop',
-    19: 'Water check',
-    20: 'Add clean water',
-    21: 'Washing paused',
-    22: 'Auto emptying',
-    23: 'Remote control',
-    24: 'Smart charging',
-    25: 'Second cleaning',
-    26: 'Human following',
+    15: 'Summon to clean',
+    16: 'Self-Repairing',
+    17: 'Returning to install the mop pad',
+    18: 'Returning to remove the mop pad',
+    19: 'Automatic water supply and drainage self testing',
+    20: 'Cleaning Mop Pad and Adding Water',
+    21: 'Cleaning paused',
+    22: 'Auto-Emptying',
+    23: 'Remote Controlled Cleaning',
+    24: 'The robot is charging intelligently.',
+    25: 'The second cleaning underway',
+    26: 'Following',
     27: 'Spot cleaning',
-    28: 'Returning auto empty',
-    97: 'Shortcut',
-    98: 'Monitoring',
-    99: 'Monitoring paused'
+    28: 'Returning for dust collection',
+    29: 'Waiting for tasks',
+    30: 'Cleaning the washboard base',
+    33: 'Automatic Water Supply and Drainage Emptying now',
+    35: 'Dust Box & Bag Drying in Process',
+    36: 'Dust Box & Bag Drying Paused',
+    37: 'Heading to the extra cleaning area',
+    38: 'Extra Cleaning in Progress',
+    97: 'Shortcut running',
+    98: 'Camera Monitoring',
+    99: 'Camera monitoring paused',
+    101: 'Initial Deep Cleaning in Process',
+    102: 'Initial Deep Cleaning Paused',
+    103: 'Sanitizing',
+    104: 'Sanitizing',
+    105: 'Switching mop.',
+    106: 'Mop Switching Paused',
+    107: 'Care in progress',
+    108: 'Paused'
   },
   'DE': {
     '-1': 'Unbekannt',
-    1: 'Staubsaugen',
-    2: 'Leerlauf',
+    1: 'Reinigung',
+    2: 'Standby',
     3: 'Pausiert',
-    4: 'Fehler',
-    5: 'Zurückkehrend',
-    6: 'Aufladen',
+    4: 'Pausiert',
+    5: 'Zurück zum Aufladen',
+    6: 'Laden',
     7: 'Wischen',
-    8: 'Trocknen',
-    9: 'Waschen',
-    10: 'Zurückkehren zum Waschen',
-    11: 'Bauen',
-    12: 'Staubsaugen und Wischen',
-    13: 'Aufladen abgeschlossen',
-    14: 'Aufrüsten',
-    15: 'Saubere Aufforderung',
-    16: 'Station zurücksetzen',
-    17: 'Rückgabe Mopp installieren',
-    18: 'Rückgabe Mopp entfernen',
-    19: 'Wasser prüfen',
-    20: 'Sauberes Wasser hinzufügen',
-    21: 'Waschen pausiert',
+    8: 'Mopp-Trocknung',
+    9: 'Mopp-Reinigung',
+    10: 'Rückkehr zum Reinigen',
+    11: 'Eine Karte wird erstellt.',
+    12: 'Beim Reinigen',
+    13: 'Laden beendet',
+    14: 'Aktualisieren',
+    15: 'Reinigung rufen',
+    16: 'Bei der automatischen Reparatur der Basisstation',
+    17: 'Zurückkehren zum Installieren des Wischmopps',
+    18: 'Zurückkehren, um das Wischpad zu entfernen',
+    19: 'Selbsttest der automatischen Wasserzufuhr und -abfluss läuft',
+    20: 'Wischmopp reinigen und Wasser nachfüllen',
+    21: 'Reinigung pausiert',
     22: 'Automatische Entleerung',
-    23: 'Fernsteuerung',
-    24: 'Intelligentes Laden',
-    25: 'Zweite Reinigung',
-    26: 'Menschliches Folgen',
-    27: 'Punktuelle Reinigung',
-    28: 'Automatisch leer zurückkehren',
-    97: 'Abkürzung',
-    98: 'Überwachung',
-    99: 'Überwachung pausiert'
+    23: 'Ferngesteuerte Reinigung',
+    24: 'Der Roboter lädt intelligent auf.',
+    25: 'Die zweite Reinigung wird durchgeführt',
+    26: 'Folgend',
+    27: 'Partielle Reinigung',
+    28: 'Rückfahrt zur Staubsammlung',
+    29: 'Auf Aufgaben warten',
+    30: 'Reinigung der Waschplattenbasis',
+    33: 'Automatische Wasserzufuhr und -ableitung Jetzt entleeren',
+    35: 'Trocknung von Staubbehälter und -beutel',
+    36: 'Trocknen von Staubbehälter und -beutel angehalten',
+    37: 'Weiter zum zusätzlichen Reinigungsbereich',
+    38: 'Zusätzliche Reinigung läuft',
+    97: 'Shortcut läuft gerade',
+    98: 'Die Kameraüberwachung läuft.',
+    99: 'Kameraüberwachung pausiert',
+    101: 'Anfängliche Tiefenreinigung wird ausgeführt',
+    102: 'Anfängliche Tiefenreinigung pausiert',
+    103: 'Desinfizieren',
+    104: 'Desinfizieren',
+    105: 'Wischmopp wird gewechselt',
+    106: 'Umschalten des Wischmopps pausiert',
+    107: 'Pflege im Gange',
+    108: 'Pausiert'
   }
 };
+
 const DreameTaskStatus = {
   'EN': {
     '-1': 'Unknown',
@@ -695,6 +726,35 @@ const DreameAutoEmptyStatus = {
     2: 'Nicht ausgeführt'
   }
 };
+
+const DreameDustBagStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Not installed',
+    2: 'Check'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Nicht installiert',
+    2: 'Prüfen'
+  }
+};
+
+const DreameStationDrainageStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Draining'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Entleeren'
+  }
+};
+
 const DreameSelfWashBaseStatus = {
   'EN': {
     '-1': 'Unknown',
@@ -717,20 +777,69 @@ const DreameSelfWashBaseStatus = {
     6: 'Wasser zugeben'
   }
 };
+
+const DreameDetergentStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Disabled',
+    2: 'Low detergent'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Deaktiviert',
+    2: 'Reinigungsmittel niedrig'
+  }
+};
+
 const DreameMopWashLevel = {
   'EN': {
     '-1': 'Unknown',
     0: 'Light',
     1: 'Standard',
-    2: 'Deep'
+    2: 'Deep',
+    3: 'Ultra washing'
   },
   'DE': {
     '-1': 'Unbekannt',
     0: 'Leicht',
     1: 'Standard',
-    2: 'Tief'
+    2: 'Tief',
+    3: 'Ultra Reinigung'
   }
 };
+
+const DreameHotWaterStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Disabled',
+    1: 'Enabled'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Deaktiviert',
+    1: 'Aktiviert'
+  }
+};
+
+const DreameWaterTemperature = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Normal',
+    1: 'Mild',
+    2: 'Warm',
+    3: 'Hot'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Normal',
+    1: 'Mild',
+    2: 'Warm',
+    3: 'Heiß'
+  }
+};
+
 const DreameCarpetAvoidance = {
   'EN': {
     '-1': 'Unknown',
@@ -811,27 +920,29 @@ const DreameDirtyWaterTank = {
   'EN': {
     '-1': 'Unknown',
     0: 'Installed',
-    1: 'Not installed',
+    1: 'Not installed or full',
   },
   'DE': {
     '-1': 'Unbekannt',
     0: 'Installiert',
-    1: 'Nicht installiert',
+    1: 'Nicht installiert oder voll',
   }
 };
 
 const DreamePureWaterTank = {
   'EN': {
     '-1': 'Unknown',
-    0: 'Tank not installed',
-    2: 'No water left',
-    3: 'No warning',
+    0: 'Installed',        // INSTALLED
+    1: 'Not installed',    // NOT_INSTALLED
+    2: 'Low water',        // LOW_WATER
+    3: 'Active',           // ACTIVE
   },
   'DE': {
     '-1': 'Unbekannt',
-    0: 'Tank nicht installiert',
-    2: 'Kein Wasser mehr',
-    3: 'Keine Warnung',
+    0: 'Installiert',
+    1: 'Nicht installiert',
+    2: 'Wasser niedrig',
+    3: 'Aktiv',
   }
 };
 
@@ -973,6 +1084,9 @@ const DreameStateProperties = {
   'S20P2': 'Detergent time left',
   'S27P1': 'Pure water tank',
   'S27P2': 'Dirty water tank',
+  'S27P3': 'Dust Bag Staus',
+  'S27P4': 'Detergent Status',
+  'S27P5': 'Station Drainage Status',
   'S28P2': 'Clean carpet first',
   'S99P98': 'Cleaning towards the floor',
   'S10001P1': 'Stream status',
@@ -1052,6 +1166,8 @@ const DreameActionProperties = {
   'S18A1': 'Reset mop pad',
   'S19A1': 'Reset silver ion',
   'S20A1': 'Reset detergent',
+  //'S27P17': 'Dust Box Bag Drying',
+  'S27P18E1': 'Start Mopp Drying',
   //"S10001A1": "Stream video",
   //"S10001A2": "Stream audio",
   //"S10001A3": "Stream property",
@@ -1118,6 +1234,8 @@ const DreameActionParams = {
   'S18A1C1': [{'piid': 1,'value': 19},{'piid': 21,'value': '-525,475,1225,3025'}], //Start zone cleaning \"areas\": [[-525,475,1225,3025,3,0,2]]
   'S19A1': 'false', // Reset silver ion
   'S20A1': 'false', // Reset detergent
+  //'S27P17E1': [{'siid':27,'piid':17,'value': 0}], // drying duration of 3 hours (10800 seconds) when activated
+  'S27P18E1': [{'siid':27,'piid':18,'value': 0}], // Start Mopp Drying  1: "on" 0: "off',
   //"S10001A1": "false", // Stream video
   //"S10001A2": "false", // Stream audio
   //"S10001A3": "false", // Stream property
@@ -1150,6 +1268,7 @@ const DreameActionExteParams = {
   'S4P50E13': {'EN': {0: 'The camera is blinking', 1: 'Voice prompts'}, 'DE': {0: 'Die Kameraanzeige blinkt', 1: 'Sprachansagen'}}, //Live Video Prompts 0: Weak 1: Strong
   'S4P50E14': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Suction Max Plus 0: off 1: on
   'S7P1E1': {'EN': {0: 'Min', 100: 'Max'}, 'DE': {0: 'Min', 100: 'Max'}}, //Volume 1 to 100
+  'S27P18E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Start Mopp Drying  1: "on" 0: "off'  //'S27P17E1': drying duration of 3 hours (10800 seconds) when activated
 };
 
 const DreameDropdownCommands = {
@@ -1193,6 +1312,9 @@ const {
   carpetKeywords,
   carpetCleanActions,
   intensityParams,
+  diningTableKeywords,
+  diningTableActions,
+  diningTableIntensityParams,
   AlexacleanModes,
   AlexacancelKeywords,
   AlexamissingMessages,
@@ -1800,6 +1922,7 @@ class Dreamehome extends utils.Adapter {
                 DH_NowStatus = isNaN(+RetPointValue) ? 0 : +RetPointValue; // Change State
 				  this.log.info(`=======> DH_NowStatus (${SPkey}) Set to : ${RetPointValue}`);
               }
+
               RetPointValue = await this.DH_SetPropSPID(SPkey, RetPointValue);
               await this.DH_getType(RetPointValue, path, SPkey);
               await this.DH_setState(path, RetPointValue, true);
@@ -3024,41 +3147,54 @@ class Dreamehome extends utils.Adapter {
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningMode`, DreameCleaningMode[UserLang], `${SortiRoom.Name} Cleaning Mode`);
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningRoute`, DreameSetRoute[UserLang], `${SortiRoom.Name} Cleaning Route`);
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.Cleaning`, DreameSetCleanRoom[UserLang], `${SortiRoom.Name} Cleaning`);
-	  await this.DH_setRoomIDPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.RoomID`, SortiRoom.Id, `${SortiRoom.Name} ID`);
+      await this.DH_setRoomIDPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.RoomID`, SortiRoom.Id, `${SortiRoom.Name} ID`);
 
       // Add room to Alexa rooms list
       Alexarooms.push({ 'RN': SortiRoom.Id, 'RM': SortiRoom.Name });
     }
 
-    // Check if customMapData and carpet_info are available
-    if (!customMapData || !customMapData.carpet_info) {
-      this.log.warn('customMapData or customMapData.carpet_info is not available.');
+    // Check if customMapData is available
+    if (!customMapData) {
+      this.log.warn('customMapData is not available.');
       return;
     }
 
     if (LogData) { this.log.warn('Test customMapData: ' + JSON.stringify(customMapData)); }
 
-    // Access the carpet data
-    const carpetInfo = customMapData.carpet_info;
-    if (typeof carpetInfo === 'object') {  // Ensure it is an object
-      for (const carpetKey in carpetInfo) {  // Iterate through carpets
-        const carpetData = carpetInfo[carpetKey];
+    // Process both carpet structures
+    await this.processCarpetData(customMapData, 'carpet_info');
+    await this.processCarpetData(customMapData, 'carpet_polygon');
+    await this.processFurnitureZones(customMapData);
+  }
 
-        // Check if carpet data has the expected structure
-        if (Array.isArray(carpetData) && carpetData.length >= 4) {
-          const [beg_x, beg_y, end_x, end_y, roomIds, extraInfo] = carpetData;
+  // Process both carpet structures
+  async processCarpetData(customMapData, carpetType) {
+    const carpetInfo = customMapData[carpetType];
+    if (!carpetInfo || typeof carpetInfo !== 'object') {
+      if (LogData) { this.log.warn(`customMapData.${carpetType} is not available.`); }
+      return;
+    }
 
-          // Example: Use the room identifiers (roomIds) and process the carpet accordingly
+    for (const carpetKey in carpetInfo) {
+      const carpetData = carpetInfo[carpetKey];
+
+      // Old structure: [beg_x, beg_y, end_x, end_y, roomIds, extraInfo]
+      if (carpetType === 'carpet_info' && Array.isArray(carpetData) && carpetData.length >= 4) {
+        const [beg_x, beg_y, end_x, end_y, roomIds, extraInfo] = carpetData;
+
+        if (Array.isArray(roomIds)) {
           for (const roomId of roomIds) {
-            // Process carpet data based on room ID
             for (const room of CheckArrayRooms) {
-								      // If carpet_info is not defined, set it to false
               if (room.carpet_info === undefined) {
-                room.carpet_info = false;  // Default value if not provided
+                room.carpet_info = false;
               }
               if (room.Id === roomId) {
-                room.carpet_info = true;  // Set carpet_info to true if the room has a carpet
-                const CarpetCord = { Cord: [beg_x, beg_y, end_x, end_y] };
+                room.carpet_info = true;
+                const CarpetCord = {
+                  Cord: [beg_x, beg_y, end_x, end_y],
+                  type: 'rectangle',
+                  sourceType: 'carpet_info'
+                };
                 await this.DH_setCarpetPath(
                   DH_Did + `.map.${DH_CurMap}.${room.Name}.CleanCarpet${carpetKey}`,
                   `${room.Name} Carpet${carpetKey}`,
@@ -3079,15 +3215,428 @@ class Dreamehome extends utils.Adapter {
               }
             }
           }
+        }
+
+      // New structure: [polygonPoints, material, flags]
+      } else if (carpetType === 'carpet_polygon' && Array.isArray(carpetData) && carpetData.length === 3 && Array.isArray(carpetData[0])) {
+        const [polygonPoints, material, flags] = carpetData;
+
+        // Calculate bounding box and center point
+        const boundingBox = await this.calculatePolygonBoundingBox(polygonPoints);
+        const [minX, minY, maxX, maxY] = boundingBox;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // Find room that contains the center point
+        const targetRoom = await this.findRoomForPoint(centerX, centerY);
+
+        if (targetRoom) {
+          if (targetRoom.carpet_info === undefined) { // If carpet_info is not defined, set it to false
+            targetRoom.carpet_info = false; // Default value if not provided
+          }
+          targetRoom.carpet_info = true; // Set carpet_info to true if the room has a carpet
+          const CarpetCord = {
+            Cord: boundingBox,
+            polygonPoints: polygonPoints,
+            type: 'polygon',
+            material: material,
+            flags: flags,
+            sourceType: 'carpet_polygon'
+          };
+          await this.DH_setCarpetPath(
+            DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.CleanCarpet${carpetKey}`,
+            `${targetRoom.Name} Carpet${carpetKey}`,
+            CarpetCord
+          );
+          await this.DH_setRoomPath(
+            DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.CarpetRepetition${carpetKey}`,
+            DreameSetRepeat[UserLang],
+            `${targetRoom.Name} Carpet Repeat`
+          );
+          await this.DH_setRoomPath(
+            DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.CarpetSuctionLevel${carpetKey}`,
+            DreameSuctionLevel[UserLang],
+            `${targetRoom.Name} Carpet Suction Level`
+          );
+          this.log.info(`Found Polygon Carpet ${carpetKey} in room ${targetRoom.Name}`);
         } else {
-          this.log.warn(`Invalid carpet data for carpet ${carpetKey}: ${JSON.stringify(carpetData)}`);
+          this.log.warn(`Polygon Carpet ${carpetKey} could not be assigned to any room`);
+        }
+      } else {
+        this.log.warn(`Invalid ${carpetType} data for carpet ${carpetKey}: ${JSON.stringify(carpetData)}`);
+      }
+    }
+  }
+
+  // Helper function to calculate bounding box
+  async calculatePolygonBoundingBox(polygonPoints) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (let i = 0; i < polygonPoints.length; i += 2) {
+      const x = polygonPoints[i];
+      const y = polygonPoints[i + 1];
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+
+    return [minX, minY, maxX, maxY];
+  }
+
+  // Helper function to find room for a point
+  async findRoomForPoint(x, y) {
+    for (const room of CheckArrayRooms) {
+      if (await this.isPointInRoomBoundingBox(x, y, room)) {
+        return room;
+      }
+    }
+    return null;
+  }
+
+  // Simple bounding box check for room
+  async isPointInRoomBoundingBox(x, y, room) {
+    if (!room.X.length || !room.Y.length) return false;
+
+    const minX = Math.min(...room.X);
+    const maxX = Math.max(...room.X);
+    const minY = Math.min(...room.Y);
+    const maxY = Math.max(...room.Y);
+
+    return x >= minX && x <= maxX && y >= minY && y <= maxY;
+  }
+
+
+  // Function to process furniture zones based on the given custom map data
+  async processFurnitureZones(customMapData) {
+    const furnitureInfo = customMapData.funiture_info; // Accessing the furniture information from customMapData
+    if (!Array.isArray(furnitureInfo)) {
+      if (LogData) { this.log.warn('No furniture info available'); }
+      return;
+    }
+
+    // Possible table types based on size and type
+    const possibleTables = [];
+
+    for (const furniture of furnitureInfo) {
+      if (Array.isArray(furniture) && furniture.length >= 9) {
+        const [furnitureId, type, subtype, width, height, rotation, posX, posY, angle] = furniture;
+
+        // Criteria for tables:
+        // - Type 6
+        // - Minimum size of 600mm (to exclude chairs)
+        // - Not too large (under 2200mm)
+        // - Height between 600mm and 1000mm
+        if ([6].includes(type) && width >= 600 && width <= 2200 && height >= 600 && height <= 1000) {
+          possibleTables.push({
+            id: furnitureId,
+            type: type,
+            subtype: subtype,
+            width: width,
+            height: height,
+            posX: posX,
+            posY: posY,
+            angle: angle
+          });
+
+          await this.createTableZone(furnitureId, type, width, height, posX, posY, angle);
         }
       }
-    } else {
-      this.log.warn('customMapData.carpet_info is not defined as an object.');
     }
-    //this.log.warn(JSON.stringify(CheckArrayRooms));
+
+    if (LogData) {
+      this.log.warn(`Found ${possibleTables.length} possible tables: ${JSON.stringify(possibleTables)}`); // Log the number of possible tables found
+    }
   }
+
+  // Async function to create a dining table zone around a table for cleaning purposes
+  async createTableZone(furnitureId, type, width, height, posX, posY, angle) {
+    // Define padding around the table for the cleaning zone (10 cm buffer)
+    const zonePadding = 100; // 10cm buffer around the table
+    const zoneWidth = width + zonePadding * 2; // Total width of the cleaning zone (table width + padding)
+    const zoneHeight = height + zonePadding * 2; // Total height of the cleaning zone (table height + padding)
+
+    // Calculate the coordinates of the rotated zone based on position, size, and rotation angle
+    const zoneCoordinates = await this.calculateRotatedZone(posX, posY, zoneWidth, zoneHeight, angle);
+
+    // Find the room that contains the table based on its position
+    const targetRoom = await this.findRoomForPoint(posX, posY);
+
+    // If a valid room is found, create the zone configuration
+    if (targetRoom) {
+      const zoneConfig = {
+        type: 'dining_table_zone', // Zone type is a dining table
+        furnitureType: type, // Type of furniture (table type)
+        furnitureId: furnitureId, // Unique furniture ID
+        coordinates: zoneCoordinates, // Coordinates of the rotated zone
+        center: [posX, posY], // The center position of the table
+        dimensions: [zoneWidth, zoneHeight], // The width and height of the zone
+        originalSize: [width, height], // Original size of the table
+        rotation: angle, // Rotation angle of the table
+        padding: zonePadding // Padding around the table for cleaning
+      };
+
+      // Save the created zone using the DH_setCarpetPath method
+      await this.DH_setCarpetPath(
+        DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.DiningTableZone`, // Constructing the zone path
+        `${targetRoom.Name} Dining Table Zone`,
+        zoneConfig // The zone configuration object containing all necessary data
+      );
+
+		 await this.DH_setRoomPath(
+        DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.DiningTableSuctionLevel`,
+        DreameSuctionLevel[UserLang],
+        `${targetRoom.Name} Dining Table Suction Level`
+      );
+
+      await this.DH_setRoomPath(
+        DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.DiningTableWaterVolume`,
+        DreameSetWaterVolume[UserLang],
+        `${targetRoom.Name} Dining Table Water Volume`
+      );
+
+      await this.DH_setRoomPath(
+        DH_Did + `.map.${DH_CurMap}.${targetRoom.Name}.DiningTableRepeat`,
+        DreameSetRepeat[UserLang],
+        `${targetRoom.Name} Dining Table Repeat`
+      );
+
+      // Log the creation of the dining table zone in the specified room
+      this.log.info(`Created dining table zone in room ${targetRoom.Name} at (${posX}, ${posY})`);
+    }
+  }
+
+  // Function to calculate the coordinates of a rotated zone (rectangle) based on the given center, size, and rotation angle
+  async calculateRotatedZone(centerX, centerY, width, height, angle) {
+    // Convert the angle from degrees to radians for use in trigonometric functions
+    const angleRad = angle * Math.PI / 180;
+
+    // Calculate half the width and half the height to define the corners relative to the center
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Define the 4 corners of the zone (rectangle) relative to the center before rotation
+    const corners = [
+      { x: -halfWidth, y: -halfHeight }, // Top-left corner
+      { x: halfWidth, y: -halfHeight },  // Top-right corner
+      { x: halfWidth, y: halfHeight },   // Bottom-right corner
+      { x: -halfWidth, y: halfHeight }   // Bottom-left corner
+    ];
+
+    // Rotate each corner around the center by the given angle
+    const rotatedCorners = corners.map(corner => {
+      // Rotate the corner point using the rotation matrix
+      const rotatedX = corner.x * Math.cos(angleRad) - corner.y * Math.sin(angleRad); // X coordinate after rotation
+      const rotatedY = corner.x * Math.sin(angleRad) + corner.y * Math.cos(angleRad); // Y coordinate after rotation
+      // Translate the rotated corner back to the original center position
+      return [centerX + rotatedX, centerY + rotatedY];
+    });
+
+    // Return the flattened array of rotated corner coordinates
+    return rotatedCorners.flat();
+  }
+
+  // Automatically find the room with a dining table
+  async findRoomWithDiningTable() {
+    try {
+      const zonePattern = `${DH_Did}.map.${DH_CurMap}.*.DiningTableZone`;
+      this.log.info(`[DiningTable] Searching for: ${zonePattern}`);
+
+      // Simply search for states and parse the path
+      const zoneStates = await this.getStatesAsync(zonePattern);
+      this.log.info(`[DiningTable] Found ${Object.keys(zoneStates).length} matching states`);
+
+      for (const [path, state] of Object.entries(zoneStates)) {
+        this.log.info(`[DiningTable] Checking path: ${path}`);
+
+        if (state) {
+          const pathParts = path.split('.');
+          const roomName = pathParts[pathParts.length - 2]; // Example: kitchen
+          this.log.info(`[DiningTable] SUCCESS: Found dining table in room: "${roomName}"`);
+          return roomName;
+        }
+      }
+
+      this.log.warn('[DiningTable] No dining table zones found');
+      return null;
+    } catch (error) {
+      this.log.error(`[DiningTable] Error: ${error.message}`);
+      return null;
+    }
+  }
+
+  //Debug function to check all available states for DiningTableZone
+  async debugDiningTableStates() {
+    try {
+      // Check all possible patterns
+      const patterns = [
+        `${DH_Did}.map.${DH_CurMap}.*.DiningTableZone`,
+        `${DH_Did}.map.${DH_CurMap}.*.*`
+      ];
+
+      for (const pattern of patterns) {
+        this.log.info(`[Debug] Checking pattern: ${pattern}`);
+        const states = await this.getStatesAsync(pattern);
+        this.log.info(`[Debug] Found ${Object.keys(states).length} states for pattern: ${pattern}`);
+
+        for (const [path, state] of Object.entries(states)) {
+          if (path.includes('DiningTable') || path.includes('Esstisch')) {
+            this.log.info(`[Debug] Relevant path: ${path} - state: ${JSON.stringify(state)}`);
+          }
+        }
+      }
+    } catch (error) {
+      this.log.error(`[Debug] Error debugging states: ${error.message}`);
+    }
+  }
+
+  async cleanDiningTableZone(roomName) {
+    try {
+      // Load the dining table zone OBJECT based on the room name and current map configuration
+      const zonePath = `${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableZone`;
+      const zoneObject = await this.getObjectAsync(zonePath);
+
+      if (!zoneObject || !zoneObject.native) {
+        this.log.warn(`No dining table zone object found for room: ${roomName}`);
+        return false;
+      }
+
+      // Load the cleaning parameters
+      const suctionLevelState = await this.getStateAsync(`${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableSuctionLevel`);
+      const waterVolumeState = await this.getStateAsync(`${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableWaterVolume`);
+      const repeatState = await this.getStateAsync(`${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableRepeat`);
+
+      // Default values in case they are not set
+      const suctionLevel = suctionLevelState?.val !== undefined ? suctionLevelState.val : 1;
+      const waterVolume = waterVolumeState?.val !== undefined ? waterVolumeState.val : 1;
+      const repeat = repeatState?.val !== undefined ? repeatState.val : 1;
+
+      // Determine dynamic cleaning mode based on settings
+      let cleaningMode;
+      if (waterVolume === -1) {
+        // Only sweeping if water volume is -1
+        cleaningMode = 5122; // Sweeping
+        this.log.info(`[DiningTable] Water volume is 0 - using Sweeping mode only`);
+      } else if (suctionLevel === -1) {
+        // Only mopping if suction level is -1
+        cleaningMode = 5121; // Mopping
+        this.log.info(`[DiningTable] Suction level is 0 - using Mopping mode only`);
+      } else {
+        // Both sweeping and mopping if suction level > 0 AND water volume > 0
+        cleaningMode = 5120; // Sweeping and mopping
+        this.log.info(`[DiningTable] Using Sweeping and Mopping mode`);
+      }
+
+
+      const zoneConfig = zoneObject.native;
+
+      // Calculate the bounding box of the polygon representing the dining table area
+      const boundingBox = await this.calculatePolygonBoundingBox(zoneConfig.coordinates);
+
+      // Start cleaning the zone by sending a cleaning command
+      const cleanCommand = await this.DH_CleanZonePoint(
+        1, // cleaning areas (not individual points)
+        [boundingBox], // The array containing the bounding box of the zone to be cleaned
+        1, // repeat count (hardcoded for now)
+        0, // suction level (hardcoded for now - will be dynamic later)
+        0  // water volume (hardcoded for now - will be dynamic later)
+      );
+
+      if (cleanCommand) {
+        // Set the vacuum cleaning mode with dynamic mode selection
+        let modeSetSuccessfully = false;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            // Use dynamically determined cleaning mode
+            await this.setStateAsync(`${DH_Did}.control.CleaningMode`, cleaningMode);
+            await this.wait(300);
+
+            // Verify if the cleaning mode was set correctly
+            const currentMode = await this.getStateAsync(`${DH_Did}.state.CleaningMode`);
+            if (currentMode?.val === AlexacleanModes[UserLang][cleaningMode]) {
+              modeSetSuccessfully = true;
+              break;
+            }
+          } catch (err) {
+            this.log.error(`[DiningTable] Mode setting attempt ${attempt} failed: ${err.message}`);
+          }
+          await this.wait(500 * attempt);
+        }
+
+        // If mode setting failed after 3 attempts, log an error and return false
+        if (!modeSetSuccessfully) {
+          this.log.info(`[DiningTable] ${AlexaInfo[UserLang][46]}`);
+          return false;
+        }
+
+        const requestId = Math.floor(Math.random() * 9000) + 1000;
+        const AiidAction = [{
+          'piid': 1,
+          'value': 19
+        }, {
+          'piid': 10,
+          'value': cleanCommand  // Pass the cleanCommand to be executed
+        }];
+
+        const SETURLData = {
+          did: DH_Did,
+          id: requestId,
+          data: {
+            did: DH_Did,
+            id: requestId,
+            method: 'action',
+            params: {
+              did: DH_Did,
+              siid: 4,
+              aiid: 1,
+              in: AiidAction
+            },
+          },
+        };
+
+        try {
+          // Send the request to the device URL to start the cleaning process
+          await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
+          this.log.info(`Started dining table zone cleaning in ${roomName} with mode ${cleaningMode}: ${JSON.stringify(boundingBox)}`);
+          return true;
+        } catch (err) {
+          this.log.warn('Dining table zone cleaning failed: ' + err);
+          return false;
+        }
+      }
+
+      // If no clean command was issued, return false
+      return false;
+
+    } catch (error) {
+      this.log.error(`Error cleaning dining table zone: ${error.message}`);
+      return false;
+    }
+  }
+
+  // Function to set the dining table cleaning parameters
+  async setDiningTableCleaningParams(roomName, params) {
+    const { suctionLevel, waterVolume, repetitions } = params;
+
+    // Set the parameters for the dining table cleaning
+    await this.setStateAsync(
+      `${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableSuctionLevel`,
+      suctionLevel
+    );
+    await this.setStateAsync(
+      `${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableWaterVolume`,
+      waterVolume
+    );
+    await this.setStateAsync(
+      `${DH_Did}.map.${DH_CurMap}.${roomName}.DiningTableRepeat`,
+      repetitions
+    );
+
+    this.log.info(`[DiningTable] Parameters set for ${roomName}: suction=${suctionLevel}, water=${waterVolume}, repetitions=${repetitions}`);
+  }
+
+
 
   async DH_setPath(SegSPath, SegSState, SegSName, typeValue = 'number', role = 'level', defValue = -1, writeValue = true, nativeProps = {}) {
     await this.extendObject(SegSPath, {
@@ -3140,62 +3689,77 @@ class Dreamehome extends utils.Adapter {
             await this.DH_getType(RetPointValue, path, SPkey, DreameActionParams[SPkey][0]['value']);
 
             if ((SPkey.indexOf('P') !== -1) && (SPkey.indexOf('E') !== -1)) {
-              const Readpath = DH_Did + '.state.' + (DreameStateProperties[SPkey.split('E')[0]]).replace(/\w\S*/g, function(SPName) {
-                return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-              }).replace(/\s/g, '');
-
-              try {
-                const ReadRetPointValue = await this.getStateAsync(Readpath);
-                if (SPkey == 'S4P23E1') {
-                  for (const CLMK in DreameCleaningMode[UserLang]) {
-                    if (DreameCleaningMode[UserLang][CLMK] == ReadRetPointValue.val) {
-                      RetPointValue = CLMK;
-                    }
+              if (SPkey === 'S27P18E1') {
+                try {
+                  const S2P1Readpath = DH_Did + '.state.' + DreameStateProperties['S2P1'];
+                  const S2P1State = await this.getStateAsync(S2P1Readpath);
+                  RetPointValue = (S2P1State && S2P1State.val === DreameVacuumState[UserLang][35]) ? 1 : 0;
+                  if (LogData) {
+                    this.log.info(`Drying status for ${SPkey} set to ${RetPointValue} based on S2P1 = ${S2P1State.val}`);
                   }
+                } catch (err) {
+                  RetPointValue = 0; // fallback
+                  if (LogData) this.log.warn(`Failed reading S2P1 for drying: ${err}`);
+                }
+              } else {
+                const Readpath = DH_Did + '.state.' + (DreameStateProperties[SPkey.split('E')[0]]).replace(/\w\S*/g, function(SPName) {
+                  return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                }).replace(/\s/g, '');
+
+
+                try {
+                  const ReadRetPointValue = await this.getStateAsync(Readpath);
+                  if (SPkey == 'S4P23E1') {
+                    for (const CLMK in DreameCleaningMode[UserLang]) {
+                      if (DreameCleaningMode[UserLang][CLMK] == ReadRetPointValue.val) {
+                        RetPointValue = CLMK;
+                      }
+                    }
 						   const VariableSIIDReadpath = DH_Did + '.state.' + (DreameStateProperties['S4P26']).replace(/\w\S*/g, function(SPName) {
-                    return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                  }).replace(/\s/g, '');
-                  try {
-                    const ReadRVariableSIID = await this.getStateAsync(VariableSIIDReadpath);
+                      return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+                    }).replace(/\s/g, '');
+                    try {
+                      const ReadRVariableSIID = await this.getStateAsync(VariableSIIDReadpath);
 							   if (ReadRVariableSIID.val == 1) {
-                      RetPointValue = ReadRVariableSIID.val;
+                        RetPointValue = ReadRVariableSIID.val;
 							   }
-                  } catch (error1) {
+                    } catch (error1) {
 						       if (LogData) {
 						           this.log.warn('Failed to split Cleaning Mode | State failed: ' + error1);
 						       }
-                  }
-                } else if ((SPkey == 'S4P4E1') || (SPkey == 'S4P5E1')) {
-                  for (const key in DreameActionExteParams[SPkey][UserLang]) {
-                    if(DreameActionExteParams[SPkey][UserLang][key] == ReadRetPointValue.val){
-                      RetPointValue =  key;
                     }
-                  }
-                } else {
-                  RetPointValue = Object.keys(DreameActionExteParams[SPkey][UserLang])[ReadRetPointValue.val];
-                  const ExtendToSearch = JSON.stringify(JSON.parse(DreameActionParams[SPkey][0]['value'])['k']);
+                  } else if ((SPkey == 'S4P4E1') || (SPkey == 'S4P5E1')) {
+                    for (const key in DreameActionExteParams[SPkey][UserLang]) {
+                      if(DreameActionExteParams[SPkey][UserLang][key] == ReadRetPointValue.val){
+                        RetPointValue =  key;
+                      }
+                    }
+                  } else {
+                    RetPointValue = Object.keys(DreameActionExteParams[SPkey][UserLang])[ReadRetPointValue.val];
+                    const ExtendToSearch = JSON.stringify(JSON.parse(DreameActionParams[SPkey][0]['value'])['k']);
 						   if (ExtendToSearch !== 'undefined') {
 							   const jsonExtendData = JSON.parse(ReadRetPointValue.val);
 							   for (const Ex in jsonExtendData) {
-                      if (JSON.stringify(jsonExtendData[Ex]['k']) == ExtendToSearch) {
+                        if (JSON.stringify(jsonExtendData[Ex]['k']) == ExtendToSearch) {
 									   RetPointValue = jsonExtendData[Ex]['v'];
 									   break;
 								   }
-                    }
+                      }
 						   }
-                }
-                if (SPkey == 'S7P1E1'){
-                  RetPointValue = ReadRetPointValue.val;
-                }
-                RetPointValue = parseInt(RetPointValue);
-                if ((RetPointValue < 0) && (RetPointValue > -3)) {RetPointValue = 0;} // Fix negative Value
+                  }
+                  if (SPkey == 'S7P1E1'){
+                    RetPointValue = ReadRetPointValue.val;
+                  }
+                  RetPointValue = parseInt(RetPointValue);
+                  if ((RetPointValue < 0) && (RetPointValue > -3)) {RetPointValue = 0;} // Fix negative Value
 
-              } catch (error) {
-                RetPointValue = parseInt(Object.keys(DreameActionExteParams[SPkey][UserLang])[0]);
-                if (LogData) {
+                } catch (error) {
+                  RetPointValue = parseInt(Object.keys(DreameActionExteParams[SPkey][UserLang])[0]);
+                  if (LogData) {
 						   this.log.warn('Failed to split "' + SPvalue + '" State failed: ' + error);
+                  }
                 }
-              }
+		  }
             }
             if (LogData) {
 			   this.log.info('Set and update ' + SPvalue + ' value to: ' + JSON.stringify(RetPointValue));
@@ -3729,6 +4293,9 @@ class Dreamehome extends utils.Adapter {
     // On receiving a message
     this.mqttClient.on('message', async (topic, message) => {
     // Message is received as a Buffer, convert it to a string
+
+      //this.log.info(`=======> from mqttClient.on: Topic = ${topic.toString()} | Message = ${message.toString()}`);
+
       if (LogData) {
         this.log.info(topic.toString());
         this.log.info(message.toString());
@@ -3823,110 +4390,9 @@ class Dreamehome extends utils.Adapter {
   }
 
 
-  async DH_connectMqttOld() {
-    if (this.mqttClient) {
-      this.mqttClient.end();
-    }
-    this.mqttClient = mqtt.connect('mqtts://' + DH_BDomain, {
-      clientId: 'p_' + crypto.randomBytes(8).toString('hex'),
-      username: DH_Uid,
-      password: DH_Auth,
-      rejectUnauthorized: false,
-      reconnectPeriod: 10000,
-    });
-    this.mqttClient.on('connect', () => {
-      this.log.info('Connection to MQTT successfully established');
-      this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
-      this.DH_CheckTaskStatus();
-    });
-    this.mqttClient.on('message', async (topic, message) => {
-      // message is Buffer
-      if (LogData) {
-        this.log.info(topic.toString());
-        this.log.info(message.toString());
-      }
-      try {
-        message = JSON.parse(message.toString());
-        if (LogData) {
-          this.log.info('Get Message from the device:' + JSON.stringify(message));
-        }
-      } catch (error) {
-        this.log.error(error);
-        return;
-      }
-      if (message.data && message.data.method === 'properties_changed') {
-
-        //Check Dreame Task Status
-        this.DH_CheckTaskStatus();
-
-        for (const element of message.data.params) {
-          if ((JSON.stringify(element.siid) === '6' && JSON.stringify(element.piid) === '1') && DH_UpdateTheMap == true) {
-            if (LogData) {
-              this.log.info('Map data:' + JSON.stringify(element.value));
-            }
-            let encode = JSON.stringify(element.value);
-            const mappath = DH_Did + '.mqtt.';
-            this.DH_uncompress(encode, mappath);
-            encode = null;
-            DH_UpdateTheMap = false;
-          }
-          const ObjectPoint = await this.DH_SearchIID('S' + element.siid + 'P' + element.piid);
-          if (ObjectPoint) {
-            const path = DH_Did + '.state.' + ObjectPoint.replace(/\w\S*/g, function(SPName) {
-              return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-            }).replace(/\s/g, '');
-            if (path) {
-              let Setvalue = element.value;
-              //this.log.info('===> path: ' + path + "value: " + JSON.stringify(Setvalue) + " element: " + JSON.stringify(element));
-              if (Object.prototype.toString.call(Setvalue).match(/\s([\w]+)/)[1].toLowerCase() == 'array') {
-                Setvalue = JSON.stringify(Setvalue);
-              }
-              if ('S' + element.siid + 'P' + element.piid == 'S2P1') {
-                await this.DH_getType(Setvalue, path.replace('.state.', '.vis.'), 'S' + element.siid + 'P' + element.piid);
-                await this.DH_setState(path.replace('.state.', '.vis.'), Setvalue, true);
-              }
-
-              Setvalue = await this.DH_SetPropSPID('S' + element.siid + 'P' + element.piid, Setvalue);
-              await this.DH_getType(Setvalue, path, 'S' + element.siid + 'P' + element.piid);
-              await this.DH_setState(path, Setvalue, true);
-
-              if (('S' + element.siid + 'P' + element.piid == 'S4P26') && (Setvalue == 1)) {
-                this.log.info('Set and update Cleaning Mode value to: ' + JSON.stringify(Setvalue));
-                const ReadpathCM = DH_Did + '.control.' + (DreameStateProperties['S4P23']).replace(/\w\S*/g, function(SPName) {
-                  return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-                }).replace(/\s/g, '');
-			       await this.setState(ReadpathCM, Setvalue, true);
-              }
-
-              let AppChanged = false;
-              for (const ex in DreameActionExteParams) {
-                if (ex.indexOf('S' + element.siid + 'P' + element.piid) !== -1) {
-					   AppChanged = true;
-					   break;
-                }
-              }
-              if (AppChanged) {
-                await this.DH_RequestControlState();
-		       }
-            }
-          }
-        }
-      }
-    });
-    this.mqttClient.on('error', async (error) => {
-      this.log.error(error);
-      if (error.message && error.message.includes('Not authorized')) {
-        this.log.error('Not authorized to connect to MQTT');
-        this.setState('info.connection', false, true);
-        await this.DH_refreshToken();
-      }
-    });
-    this.mqttClient.on('close', () => {
-      this.log.info('MQTT Connection closed');
-    });
-  }
-
   async DH_SetPropSPID(InSetPropSPID, InSetvalue) {
+
+	  //if ((InSetPropSPID !== 'S6P3' /*"Status"*/ ) && (InSetPropSPID !== 'S6P1' /*"Status"*/ )) { this.log.info(`=======> from DH_SetPropSPID: (${InSetPropSPID}) Set to : ${InSetvalue}`);}
     if (InSetPropSPID == 'S2P1' /*"State"*/ ) {
       InSetvalue = DreameVacuumState[UserLang][parseInt(InSetvalue)];
     }
@@ -3953,8 +4419,14 @@ class Dreamehome extends utils.Adapter {
         data: null,  // Clear cache
         lastUpdate: 0 // Reset timestamp
       };
-      InSetvalue = DreameWaterVolume[UserLang][parseInt(InSetvalue)];
-	  waterTrackingCache.waterLevel = InSetvalue;
+
+	  const fixedValue  = parseInt(InSetvalue);
+	  // Log only if the value was changed from -1
+      if (fixedValue === -1) {
+        this.log.warn(`Water volume value was -1 and has been changed to the highest level (3)`);
+      }
+      InSetvalue = DreameWaterVolume[UserLang][fixedValue === -1 ? 3 : fixedValue];
+      waterTrackingCache.waterLevel = InSetvalue;
     }
 
     if (InSetPropSPID == 'S4P6' /*"Water tank"*/ ) {
@@ -4015,6 +4487,7 @@ class Dreamehome extends utils.Adapter {
     if (InSetPropSPID == 'S15P5' /*"Auto empty status"*/ ) {
       InSetvalue = DreameAutoEmptyStatus[UserLang][parseInt(InSetvalue)];
     }
+
     if (InSetPropSPID == 'S27P2' /*"Dirty water tank"*/ ) {
       if (InSetvalue == 1) {/*"Reset the Warn status Object"*/
         const DWpath = DH_Did + '.state.' + DreameStateProperties['S4P35'].replace(/\w\S*/g, function(SPName) {
@@ -4024,11 +4497,11 @@ class Dreamehome extends utils.Adapter {
       }
       InSetvalue = DreameDirtyWaterTank[UserLang][parseInt(InSetvalue)];
     }
-    if (InSetPropSPID == 'S27P1' /*"Pure water tank"*/ ) {
+    if (InSetPropSPID == 'OLDS27P1' /*"Pure water tank"*/ ) {
       let DWpath = DH_Did + '.state.' + DreameStateProperties['S4P41'].replace(/\w\S*/g, function(SPName) { /*"Change Low water warning Object"*/
         return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
       }).replace(/\s/g, '');
-      if (InSetvalue == 0) {
+      if (InSetvalue == 1) {
         await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][6], true);
       } else if (InSetvalue == 2) {
         await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][2], true);
@@ -4038,7 +4511,7 @@ class Dreamehome extends utils.Adapter {
       DWpath = DH_Did + '.state.' + DreameStateProperties['S4P6'].replace(/\w\S*/g, function(SPName) { /*"Change Water tank Object"*/
         return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
       }).replace(/\s/g, '');
-      if (InSetvalue == 0) {
+      if (InSetvalue == 1) {
         await this.DH_setState(DWpath, DreameWaterTank[UserLang][0], true);
       } else if (InSetvalue == 2) {
         await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
@@ -4046,11 +4519,84 @@ class Dreamehome extends utils.Adapter {
         await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
       }
 
-      //this.log.warn(`Water tank removed. InSetvalue: ${InSetvalue} and firstStartWaterTrack: ${firstStartWaterTrack}`);
+      this.log.warn(`Water tank removed. InSetvalue: ${InSetvalue} and firstStartWaterTrack: ${firstStartWaterTrack}`);
       // Handle tank status changes
       await this.handleTankStatusChange(InSetvalue);
 
       InSetvalue = DreamePureWaterTank[UserLang][parseInt(InSetvalue)];
+    }
+
+    if (InSetPropSPID == 'S27P1' /* "Pure water tank" */) {
+      const statusCode = parseInt(InSetvalue);
+
+      // 1. Low Water Warning Status
+      // Build the state path for the low water warning property.
+      let DWpath = DH_Did + '.state.' + DreameStateProperties['S4P41']
+        .replace(/\w\S*/g, function(SPName) {
+          return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+        })
+        .replace(/\s/g, ''); // Remove all spaces
+
+      // Expected meanings of statusCode:
+      // 0 = Tank installed
+      // 1 = Tank not installed
+      // 2 = Low water
+      // 3 = Active (working state)
+
+      let lowWarningValue;
+      if (statusCode === 0) { // INSTALLED
+        // No warning when the tank is properly installed
+        lowWarningValue = DreameLowWaterWarning[UserLang][0];
+      } else if (statusCode === 1) { // NOT_INSTALLED
+        // Warning: The tank is missing
+        lowWarningValue = DreameLowWaterWarning[UserLang][6];
+      } else if (statusCode === 2) { // LOW_WATER
+        // Warning: Water is empty
+        lowWarningValue = DreameLowWaterWarning[UserLang][2];
+      } else if (statusCode === 3) { // ACTIVE
+        // No warning while tank is active and functioning
+        lowWarningValue = DreameLowWaterWarning[UserLang][0];
+      } else {
+        // Unexpected statusCode ? Unknown state
+        lowWarningValue = DreameLowWaterWarning[UserLang]['-1'];
+      }
+
+      // Write the low-water warning state
+      await this.DH_setState(DWpath, lowWarningValue, true);
+
+      // 2. Water Tank Status
+      // Build the state path for the general water tank status.
+      DWpath = DH_Did + '.state.' + DreameStateProperties['S4P6']
+        .replace(/\w\S*/g, function(SPName) {
+          return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+        })
+        .replace(/\s/g, '');
+
+      // Get textual status from DreamePureWaterTank mapping.
+      const waterTankValue = DreamePureWaterTank[UserLang][statusCode.toString()] ||
+                        DreamePureWaterTank[UserLang]['-1'];  // Fallback to "-1" ("Unknown") if the status code does not exist.
+
+      // Write the water tank state
+      await this.DH_setState(DWpath, waterTankValue, true);
+
+      // Log tank status for debugging
+      this.log.info(`Water tank status: ${statusCode} = ${waterTankValue}, firstStartWaterTrack: ${firstStartWaterTrack}`);
+
+      // Handle tank status changes
+      await this.handleTankStatusChange(statusCode);
+
+      // Do not overwrite InSetvalue � only log the interpreted value
+      this.log.info(`Pure water tank: ${DreamePureWaterTank[UserLang][statusCode.toString()]}`);
+    }
+
+	    if (InSetPropSPID == 'S27P3' /*Dust Bag Staus"*/ ) {
+      InSetvalue = DreameDustBagStatus[UserLang][parseInt(InSetvalue)];
+    }
+		    if (InSetPropSPID == 'S27P4' /*"Detergent Status"*/ ) {
+      InSetvalue = DreameDetergentStatus[UserLang][parseInt(InSetvalue)];
+    }
+		    if (InSetPropSPID == 'S27P5' /*"Station Drainage Status"*/ ) {
+      InSetvalue = DreameStationDrainageStatus[UserLang][parseInt(InSetvalue)];
     }
 
 
@@ -4579,7 +5125,7 @@ class Dreamehome extends utils.Adapter {
   }
   //=================> Tank management
   async handleTankStatusChange(InSetvalue) {
-    if (InSetvalue == 0 && firstStartWaterTrack) { // Tank removed
+    if (InSetvalue == 1 && firstStartWaterTrack) { // Tank removed
       await this.setStateAsync(`${DH_Did}.state.water.beforeRemoval`, {
         val: waterTracking.currentMl,
         ack: true
@@ -4590,7 +5136,7 @@ class Dreamehome extends utils.Adapter {
       });
       this.log.info(`Water tank removed. Saved level: ${waterTracking.currentMl}ml`);
     }
-    else if ((InSetvalue == 2 || InSetvalue == 3) && firstStartWaterTrack) { // Tank inserted
+    else if ((InSetvalue == 0 || InSetvalue == 2 || InSetvalue == 3) && firstStartWaterTrack) { // Tank inserted
       const beforeRemoval = await this.getStateValue(`${DH_Did}.state.water.beforeRemoval`) || 0;
       const lastRemovalTime = await this.getStateValue(`${DH_Did}.state.water.lastRemovalTime`) || 0;
 
@@ -7135,7 +7681,9 @@ class Dreamehome extends utils.Adapter {
           AlexaInfo[UserLang][64], // Option 4: Resetting
           AlexaInfo[UserLang][65], // Option 5: Room cleaning
           AlexaInfo[UserLang][66], // Option 6: Carpet cleaning
-          AlexaInfo[UserLang][67], // Option 7: Synonyms
+          AlexaInfo[UserLang][135], // Option 7: Dining table cleaning
+          AlexaInfo[UserLang][67], // Option 8: Synonyms
+
           //await this.generateSynonymExamples(), // Dynamic synonym examples
           AlexaInfo[UserLang][68] // Instructions
         ].join('\n');
@@ -7170,6 +7718,7 @@ class Dreamehome extends utils.Adapter {
             AlexaInfo[UserLang][64],
             AlexaInfo[UserLang][65],
             AlexaInfo[UserLang][66],
+			  AlexaInfo[UserLang][135],
             AlexaInfo[UserLang][67],
             //await this.generateSynonymExamples(),
             AlexaInfo[UserLang][68]
@@ -7198,8 +7747,8 @@ class Dreamehome extends utils.Adapter {
         // MAIN MENU OPTIONS PROCESSING
         if (this.helpState.currentStep === 'main') {
 
-          // OPTION 7 - SWITCH TO SYNONYM SUBMENU
-          if (normalizedCommand.includes('7') || normalizedCommand.includes('synonym')) {
+          // OPTION 8 - SWITCH TO SYNONYM SUBMENU
+          if (normalizedCommand.includes('8') || normalizedCommand.includes('synonym')) {
             this.helpState.currentStep = 'synonym_submenu'; // Activate submenu
             await this.sendSynonymSubmenu(AlexaID, source);
             return true;
@@ -7277,6 +7826,22 @@ class Dreamehome extends utils.Adapter {
               AlexaInfo[UserLang][86], // Shampoo example
               AlexaInfo[UserLang][87], // Alternative example
               AlexaInfo[UserLang][90]  // Carpet intensities
+            ].join('\n');
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            return true;
+          }
+
+          // OPTION 7 - DINING TABLE CLEANING
+          if (normalizedCommand.includes('7') || normalizedCommand.includes('dining') ||
+    normalizedCommand.includes('esstisch') || normalizedCommand.includes('tisch') ||
+    normalizedCommand.includes('table')) {
+            const response = [
+              AlexaInfo[UserLang][136], // Dining table introduction
+              AlexaInfo[UserLang][137], // Dining table example 1
+              AlexaInfo[UserLang][138], // Dining table example 2 (sweeping only)
+              AlexaInfo[UserLang][139], // Dining table example 3 (mopping only)
+              AlexaInfo[UserLang][140], // Dining table example 4 (both)
+              AlexaInfo[UserLang][141]  // Dining table modes
             ].join('\n');
             await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
             return true;
@@ -7579,6 +8144,7 @@ class Dreamehome extends utils.Adapter {
               }
 
               let PiidAction = '[1]';
+
               if (DreameActionParams[SPkey] !== 'false') {
                 PiidAction = state.val;
                 if (Object.prototype.toString.call(PiidAction).match(/\s([\w]+)/)[1].toLowerCase() !== 'boolean') {
@@ -7592,6 +8158,42 @@ class Dreamehome extends utils.Adapter {
                 if (SPkey.indexOf('E') !== -1) {
                   PropertiesMethod = true;
                   const stateObj = await this.getObjectAsync(id);
+
+                  if (SPkey == 'S27P18E1') {
+                    const value = state.val ? '3,1' : '3,0';
+                    const paramsIn = [{ piid: 10, value: value }];
+
+                    // drying duration of 3 hours (10800 seconds) when activated
+                    if (state.val) {
+                      //paramsIn.push({ siid: 27, piid: 17, value: 10800 }); // 3 hours
+                    }
+
+                    const CMSETURLData = {
+                      did: DH_Did,
+                      id: requestId,
+                      data: {
+                        did: DH_Did,
+                        id: requestId,
+                        method: 'action',
+                        params: {
+                          did: DH_Did,
+                          siid: 4,
+                          aiid: 4,
+                          'in': paramsIn
+                        }
+                      }
+                    };
+
+                    //this.log.info(`Set Mopp Drying to ${state.val ? 'ON (3h)' : 'OFF'}`);
+                    this.log.info('Send Extended Command (Mopp Drying): ' + JSON.stringify(CMSETURLData));
+
+                    try {
+                      await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, CMSETURLData);
+                    } catch (err) {
+                      this.log.warn('Setting "' + SPvalue + '" State failed: ' + err);
+                    }
+                    return;
+                  }
                   if (stateObj && stateObj.native.value) {
                     let PiidActionValue = state.val;
                     try {
@@ -7603,6 +8205,7 @@ class Dreamehome extends utils.Adapter {
                     }
                     let TSSIID = parseInt(stateObj.native.siid);
                     let TSPIID = parseInt(stateObj.native.piid);
+
                     if ((SPkey == 'S4P23E1') && (PiidActionValue == 1)) {
                       TSSIID = 4; TSPIID = 26;
                     } else if ((SPkey == 'S4P23E1') && (PiidActionValue !== 1)) { // Change Costum Mode to 0
@@ -7735,7 +8338,7 @@ class Dreamehome extends utils.Adapter {
           await this.updateSpeakMode(state?.val);
         }
 
-        if (id.toString().endsWith('.control.command')) {
+        if (id.toString().endsWith('.control.Command')) {
           const command = state.val; // "Start", "Stop", ..
           const targetObj = DH_Did + '.control.' + command;
 
@@ -7749,6 +8352,17 @@ class Dreamehome extends utils.Adapter {
         }
 
       }
+
+
+      if (id.toString().endsWith('.DiningTableZone')) {
+        if (state.val) {
+          this.setStateAsync(id, false, true);
+		  const roomName = id.toString().split('.').slice(-2, -1)[0];
+          if (roomName) await this.cleanDiningTableZone(roomName);
+        }
+
+	  }
+
 
       if ((id.toString().endsWith('.summary') && AlexaIsPresent) || id.toString().endsWith('.communicate.request') || id.toString().endsWith('.control.NaturalLanguageCommand')) {
         let command = state.val;
@@ -8084,7 +8698,7 @@ class Dreamehome extends utils.Adapter {
                   ...carpetObject.native.Cord, // Coordinates [X1,Y1,X2,Y2]
                   repetitions,                 // Number of cleaning passes
                   suctionLevel,                // Power level
-                  0                           // Reserved
+                  0                           // Reserved =>  Water Volume
                 ]);
 
                 // Store cleaning details for reporting
@@ -8164,6 +8778,7 @@ class Dreamehome extends utils.Adapter {
               }
 
             }
+
           } catch (err) {
             this.log.error(`[Carpet] General processing error: ${err.message}`);
             if (hasCarpetKeyword) {
@@ -8176,6 +8791,75 @@ class Dreamehome extends utils.Adapter {
             }
           }
         }
+
+        // Check for dining table cleaning
+        const hasDiningTableKeyword = diningTableKeywords[UserLang]?.some(word => commandLower.includes(word));
+        const hasDiningTableAction = diningTableActions[UserLang]?.some(word => commandLower.includes(word));
+
+        if (hasDiningTableKeyword && hasDiningTableAction) {
+          this.log.info('[DiningTable] Voice command for dining table cleaning detected');
+
+          // Debug function to check all available states for DiningTableZone
+          //await this.debugDiningTableStates();
+          try {
+            // Find room with dining table (automatically or from the command)
+            let targetRoom = null;
+
+            // Check if a specific room was mentioned in the command
+            for (const Alexaroom of Alexarooms) {
+              if (commandLower.includes(Alexaroom.RM.toLowerCase())) {
+                targetRoom = Alexaroom.RM;
+                this.log.info(`[DiningTable] Specific room found in the command: ${targetRoom}`);
+                break;
+              }
+            }
+
+            // If no room is specified, automatically find the room with a dining table
+            if (!targetRoom) {
+              targetRoom = await this.findRoomWithDiningTable();
+              if (targetRoom) {
+                this.log.info(`[DiningTable] Automatically found room: ${targetRoom}`);
+              } else {
+                this.log.warn('[DiningTable] No room with dining table found (automatically find the room with a dining table)');
+              }
+            }
+
+            if (targetRoom) {
+            // Detect intensity from the command
+              let intensity = 'standard'; // Default
+              for (const [intensityKey, params] of Object.entries(diningTableIntensityParams)) {
+                if (params.keywords[UserLang].some(word => commandLower.includes(word))) {
+                  intensity = intensityKey;
+                  break;
+                }
+              }
+
+              this.log.info(`[DiningTable] Cleaning intensity: ${intensity}`);
+
+              // Set parameters and start cleaning
+              await this.setDiningTableCleaningParams(targetRoom, diningTableIntensityParams[intensity]);
+              const success = await this.cleanDiningTableZone(targetRoom);
+
+              if (success) {
+                await this.speakToAlexa(AlexaInfo[UserLang][130](targetRoom), LastAlexaID, 1);
+                this.log.info(`[DiningTable] Cleaning successfully started in ${targetRoom}`);
+              } else {
+                await this.speakToAlexa(AlexaInfo[UserLang][133], LastAlexaID, 1);
+                this.log.error('[DiningTable] Cleaning could not be started');
+              }
+            } else {
+              await this.speakToAlexa(AlexaInfo[UserLang][131], LastAlexaID, 1);
+              this.log.warn('[DiningTable] No room with dining table found (Detect intensity from the command)');
+            }
+          } catch (error) {
+            this.log.error(`[DiningTable] Error in dining table cleaning: ${error.message}`);
+            await this.speakToAlexa(AlexaInfo[UserLang][133], LastAlexaID, 1);
+          }
+
+          await this.setForeignStateAsync(id, '');
+          return; // Important: return early!
+        }
+
         // If no room was found or carpet cleaning detected, exit early
         if ((!roomFound) || (!isCleaningCommand) || (hasCarpetKeyword)) {
           this.log.info('No rooms detected, no cleaning process started.');
