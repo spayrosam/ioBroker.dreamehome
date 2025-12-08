@@ -28,6 +28,25 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - uses: actions/checkout@v4
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"  # Use Node.js 20 for better canvas compatibility
+                  
+            - name: Install system dependencies for canvas (Linux)
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    libcairo2-dev \
+                    libpango1.0-dev \
+                    libjpeg-dev \
+                    libgif-dev \
+                    librsvg2-dev \
+                    libpixman-1-dev  # Required for canvas compilation
+                  
             - uses: ioBroker/testing-action-check@v1
               with:
                   node-version: "20.x"
@@ -40,14 +59,55 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                node-version: [20.x, 22.x, 24.x]
+                # Use Node.js 20 and 22 only - canvas has issues with Node.js 24
+                node-version: [20.x, 22.x]
                 os: [ubuntu-latest, windows-latest, macos-latest]
 
         steps:
+            - uses: actions/checkout@v4
+            
+            - name: Setup Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  
+            - name: Install system dependencies for canvas (Linux)
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    libcairo2-dev \
+                    libpango1.0-dev \
+                    libjpeg-dev \
+                    libgif-dev \
+                    librsvg2-dev \
+                    libpixman-1-dev
+                    
+            - name: Install system dependencies for canvas (macOS)
+              if: runner.os == 'macOS'
+              run: |
+                  brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
+                  
+            - name: Prepare Windows environment for canvas
+              if: runner.os == 'Windows'
+              run: |
+                  # Note: Windows build tools might be needed but can't be installed in CI
+                  # canvas should use pre-built binaries on Windows
+                  echo "Windows environment prepared for canvas"
+                  
+            - name: Cache npm dependencies
+              uses: actions/cache@v3
+              with:
+                  path: ~/.npm
+                  key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-${{ matrix.node-version }}-
+                      
             - uses: ioBroker/testing-action-adapter@v1
               with:
                   node-version: ${{ matrix.node-version }}
                   os: ${{ matrix.os }}
+
     deploy:
         permissions:
             contents: write
@@ -59,7 +119,26 @@ jobs:
             github.event_name == 'push' &&
             startsWith(github.ref, 'refs/tags/v')
         runs-on: ubuntu-latest
+        
         steps:
+            - uses: actions/checkout@v4
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  
+            - name: Install system dependencies for canvas
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    libcairo2-dev \
+                    libpango1.0-dev \
+                    libjpeg-dev \
+                    libgif-dev \
+                    librsvg2-dev \
+                    libpixman-1-dev
+                    
             - uses: ioBroker/testing-action-deploy@v1
               with:
                   node-version: "20.x"
