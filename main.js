@@ -29,6 +29,19 @@ const {
 
 const DH_GenerateMap = require('./lib/generateMap.js');
 
+// Import Water Tracking Constants
+const WaterTrackingModule = require('./lib/waterTracking');
+
+// Get constants from module
+const WATER_TRACKING = WaterTrackingModule.WATER_TRACKING || {
+  MOPPING_MODES: [5120, 5121, 5123, 3840],
+  MIN_AREA_DELTA: 0.5,
+  MAX_ML: 4500,
+  DEFAULT_ML_PER_SQM: 26
+};
+
+const DreameHistory = require('./lib/history.js');
+
 /**============> Check if canvas is installed using the following command:
 cd /opt/iobroker/
 npm list canvas
@@ -61,37 +74,21 @@ const DH_ScaleValue = 20; // Min 14 | Default 14.5
 //<=================End Map Settings
 //=================>Start Global
 let DH_OldTaskStatus = -1, DH_NewTaskStatus = -1, DH_NowTaskStatus = -1, DH_NowStatus = -1, DH_CleanStatus = false, DH_SetLastStatus = false, DH_CompletStatus = 0;
+let DH_NowCleaningMode = 0;
+let DH_FirstOperator = '';
 
-let visitedPointsPerSegment = {}; // Memory structure: { segmentId: Set("x,y", ...) }
+// =========== GLOBAL VARIABLES FOR TR HISTORY ===========
+let DH_TrHistory = [];      // All raw tr strings
+let DH_AllPathPoints = [];  // All parsed points
+let DH_LastTrString = '';   // Last processed string (duplicate protection)
+let lastPosHistoryPointIndex = -1;      // Last processed point
+let posHistoryCache = null;             // Cache for PosHistory
+let posHistoryLoaded = false;           // Flag indicating whether it has already been loaded
+let lastTrTimestamp = 0;
+let lastCleaningOperator = null;        // Stores the last cleaning operator across strings
+
 let lastPosition = null; // Vacuum last known position
 let roomData = {}; // Stores data per room name
-
-const WATER_TRACKING = {
-  MAX_ML: 4500,                // Maximum tank capacity in milliliters
-  DEFAULT_ML_PER_SQM: 26,     // Default water consumption in milliliters per square meter
-  LEARNING_SAMPLES: 20,         // Number of stored consumption values for learning
-  MOPPING_MODES: [5120, 5121, 5123, 3840], // Mopping modes: 5120 = Vacuum + Mop, 5121 = Mop only, 5123 = Mop after Vacuum, 3840 = Customize room cleaning
-  MIN_AREA_DELTA: 0.5, // Minimum area progress (m�)
-  ROOM_COOLDOWN: 30000 // 30 seconds (no updates in the same room)
-};
-
-const waterTrackingCache = {
-  mode: null,
-  waterLevel: null
-};
-
-// Cache for consumptionData
-let consumptionDataCache = {
-  data: null,
-  lastUpdate: 0,
-  cacheTTL: 60000 // 1 minute cache validity
-};
-
-let waterTracking = null;
-let isCleaningActive = false;
-let autoSaveInterval; // Autosave Controller
-let firstWaterTrackingActive = false;
-let firstStartWaterTrack = false;
 
 let UserLang = 'EN';
 //<=================End Global
@@ -158,7 +155,861 @@ const DreameInformation = {
   }
 };
 
-const DreameVacuumErrorCode = {
+// Configuration object for specific map data properties
+const mapDataProperties = {
+  'mra': 'rotation',
+  'ris': 'saved map status',
+  'rpur': 'restored map',
+  'fsm': 'frame map',
+  'suw': 'temporary map',
+  'risp': 'new map',
+  'oc': 'docked',
+  'iscleanlog': 'clean log',
+  'l2r': 'line to robot',
+  'cf': 'completed',
+  'us': 'recovery map',
+  'cs': 'cleaned area',
+  'ct': 'cleaning time',
+  'clean_finish_remain_electricity': 'remaining battery',
+  'wm': 'work status',
+  'ds': 'dust collection count',
+  'wt': 'mop wash count',
+  'multime': 'multiple cleaning time',
+  'dos': 'dos',
+  'mooClean': 'mopping mode',
+  'customeclean': 'customized cleaning',
+  'smd': 'startup method',
+  'ctyi': 'task end type',
+  'cmc': 'cleanup method',
+  'vw.rect': 'no go areas',
+  'vw.mop': 'no mopping areas',
+  'vw.line': 'virtual walls',
+  'vws.vwsl': 'virtual thresholds',
+  'vws.npthrsd': 'impassable thresholds',
+  'vws.ramp': 'ramps',
+  'vws.cliff': 'cliffs',
+  'ct.line': 'curtains',
+  //'tr': 'path',
+  'sa': 'active segments',
+  'da2': 'active areas',
+  'sp': 'active points',
+  'CleanArea': 'cleaned segments',
+  'rism.map_header.map_id': 'saved map id',
+  'whmp': 'router position',
+  'pointinfo.tpoint': 'active cruise points',
+  'pointinfo.spoint': 'predefined points',
+  'tpointinfo': 'task cruise points',
+  'ai_obstacle': 'obstacles',
+  'ai_furniture': 'furnitures',
+  'furniture_info': 'saved furnitures',
+  'vw.addcpt': 'carpets',
+  'vw.nocpt': 'deleted carpets',
+  'carpet_info': 'detected carpets',
+  'sneak_areas': 'low lying areas',
+  'sneak_areas_end': 'low lying areas',
+  'delsr': 'hidden segments',
+  'rec_vw.type': 'recommended area type',
+  'rec_vws.type': 'recommended threshold type',
+  'rec_vw.addcpt': 'recommended carpets',
+  'rec_vws.ramp': 'recommended ramps',
+  'rec_vws.cliff': 'recommended cliffs',
+  'rec_vws.vwsl': 'recommended virtual thresholds',
+  'rec_vws.npthrsd': 'recommended impassible thresholds',
+  'rec_vw.line': 'recommended virtual walls',
+  'rec_vw.rect': 'recommended no go areas',
+  'rec_vw.mop': 'recommended no mopping areas',
+  'whm': 'wifi map data',
+  'decmap': 'cleaning map data'
+};
+
+// Cache for already processed values � only for specific map data properties
+const mapValueCache = {};
+
+// ============================================
+// MAP DATA ENUMS & PROPERTIES
+// ============================================
+
+// Map Frame Type
+const DreameMapFrameType = {
+  'EN': {
+    73: 'I Frame',
+    80: 'P Frame',
+    87: 'W Frame'
+  },
+  'DE': {
+    73: 'I Frame',
+    80: 'P Frame',
+    87: 'W Frame'
+  }
+};
+
+// Map Pixel Type
+const DreameMapPixelType = {
+  'EN': {
+    0: 'Outside',
+    2: 'Wifi wall',
+    10: 'Wifi unreached',
+    11: 'Wifi poor',
+    12: 'Wifi low',
+    13: 'Wifi high',
+    14: 'Wifi excellent',
+    255: 'Wall',
+    254: 'Floor',
+    253: 'New segment',
+    252: 'Unknown',
+    251: 'Obstacle wall',
+    250: 'Dirty area',
+    249: 'Clean area'
+  },
+  'DE': {
+    0: 'Außerhalb',
+    2: 'Wifi-Wand',
+    10: 'Wifi nicht erreicht',
+    11: 'Wifi schlecht',
+    12: 'Wifi niedrig',
+    13: 'Wifi hoch',
+    14: 'Wifi ausgezeichnet',
+    255: 'Wand',
+    254: 'Boden',
+    253: 'Neuer Raum',
+    252: 'Unbekannt',
+    251: 'Hinderniswand',
+    250: 'Verschmutzter Bereich',
+    249: 'Gereinigter Bereich'
+  }
+};
+
+// Work Status (wm)
+const DreameWorkStatus = {
+  'EN': {
+    0: 'Idle',
+    1: 'Auto cleaning',
+    2: 'Zone cleaning',
+    3: 'Spot cleaning',
+    4: 'Fast mapping',
+    5: 'Charging',
+    6: 'Mopping',
+    7: 'Sweeping and mopping',
+    8: 'Charging completed',
+    9: 'Sleeping',
+    10: 'Paused',
+    11: 'Going to charge',
+    12: 'Remote control',
+    13: 'Cleaning border',
+    14: 'Cleaning carpet',
+    15: 'Mopping carpet',
+    16: 'Fixed point cleaning',
+    17: 'Cleaning single room',
+    18: 'Cleaning single zone',
+    19: 'Cleaning single spot',
+    20: 'Cleaning area',
+    21: 'Auto emptying',
+    22: 'Cleaning map',
+    23: 'Resuming cleaning',
+    24: 'Rotating',
+    25: 'Cleaning carpet paused',
+    26: 'Mopping carpet paused',
+    27: 'Auto cleaning paused',
+    28: 'Zone cleaning paused',
+    29: 'Spot cleaning paused',
+    30: 'Mopping paused',
+    31: 'Sweeping and mopping paused',
+    32: 'Charging paused',
+    33: 'Remote control paused',
+    34: 'Cleaning border paused',
+    35: 'Fixed point cleaning paused',
+    36: 'Cleaning single room paused',
+    37: 'Cleaning single zone paused',
+    38: 'Cleaning single spot paused',
+    39: 'Cleaning area paused',
+    40: 'Auto emptying paused',
+    41: 'Cleaning map paused',
+    42: 'Resuming cleaning paused'
+  },
+  'DE': {
+    0: 'Bereit',
+    1: 'Automatische Reinigung',
+    2: 'Zonenreinigung',
+    3: 'Punktreinigung',
+    4: 'Schnelle Kartierung',
+    5: 'Laden',
+    6: 'Moppen',
+    7: 'Saugen und moppen',
+    8: 'Laden abgeschlossen',
+    9: 'Schlafend',
+    10: 'Pausiert',
+    11: 'Gehe zum Laden',
+    12: 'Fernsteuerung',
+    13: 'Ränder reinigen',
+    14: 'Teppich reinigen',
+    15: 'Teppich moppen',
+    16: 'Feste Punktreinigung',
+    17: 'Einzelraum reinigen',
+    18: 'Einzelzone reinigen',
+    19: 'Einzelpunkt reinigen',
+    20: 'Bereich reinigen',
+    21: 'Automatisches Leeren',
+    22: 'Karte reinigen',
+    23: 'Reinigung fortsetzen',
+    24: 'Drehen',
+    25: 'Teppichreinigung pausiert',
+    26: 'Teppichmoppen pausiert',
+    27: 'Automatische Reinigung pausiert',
+    28: 'Zonenreinigung pausiert',
+    29: 'Punktreinigung pausiert',
+    30: 'Moppen pausiert',
+    31: 'Saugen und moppen pausiert',
+    32: 'Laden pausiert',
+    33: 'Fernsteuerung pausiert',
+    34: 'Ränder reinigen pausiert',
+    35: 'Feste Punktreinigung pausiert',
+    36: 'Einzelraum reinigen pausiert',
+    37: 'Einzelzone reinigen pausiert',
+    38: 'Einzelpunkt reinigen pausiert',
+    39: 'Bereich reinigen pausiert',
+    40: 'Automatisches Leeren pausiert',
+    41: 'Karte reinigen pausiert',
+    42: 'Reinigung fortsetzen pausiert'
+  }
+};
+
+// Multiple Cleaning Time Type (multime)
+const DreameMultipleCleaningTimeType = {
+  'EN': {
+    0: 'Once',
+    1: 'Twice',
+    2: 'Three times'
+  },
+  'DE': {
+    0: 'Einmal',
+    1: 'Zweimal',
+    2: 'Dreimal'
+  }
+};
+
+// Mopping Mode (mooClean)
+const DreameMoppingMode = {
+  'EN': {
+    0: 'Standard',
+    1: 'Deep',
+    2: 'Accurate'
+  },
+  'DE': {
+    0: 'Standard',
+    1: 'Tief',
+    2: 'Präzise'
+  }
+};
+
+// Customized Cleaning Type (customeclean)
+const DreameCustomizedCleaningType = {
+  'EN': {
+    0: 'Standard cleaning',
+    1: 'Customized cleaning'
+  },
+  'DE': {
+    0: 'Standardreinigung',
+    1: 'Benutzerdefinierte Reinigung'
+  }
+};
+
+// Clean Area Type
+const DreameCleanAreaType = {
+  'EN': {
+    0: 'Normal cleaning',
+    1: 'Second cleaning',
+    2: 'Mopping'
+  },
+  'DE': {
+    0: 'Normale Reinigung',
+    1: 'Zweite Reinigung',
+    2: 'Moppen'
+  }
+};
+
+// Recommended Area Type
+const DreameRecommendedAreaType = {
+  'EN': {
+    0: 'No go area',
+    1: 'No mop area',
+    2: 'Virtual wall',
+    3: 'Carpet',
+    4: 'Threshold',
+    5: 'Ramp',
+    6: 'Cliff',
+    7: 'Curtain'
+  },
+  'DE': {
+    0: 'No-Go-Bereich',
+    1: 'No-Mopp-Bereich',
+    2: 'Virtuelle Wand',
+    3: 'Teppich',
+    4: 'Schwelle',
+    5: 'Rampe',
+    6: 'Kante',
+    7: 'Vorhang'
+  }
+};
+
+// Recommended Threshold Type
+const DreameRecommendedThresholdType = {
+  'EN': {
+    0: 'Virtual threshold',
+    1: 'Passable threshold',
+    2: 'Impassable threshold'
+  },
+  'DE': {
+    0: 'Virtuelle Schwelle',
+    1: 'Passierbare Schwelle',
+    2: 'Unpassierbare Schwelle'
+  }
+};
+
+// Mop After Sweep Status (clt)
+const DreameMopAfterSweepStatus = {
+  'EN': {
+    0: 'Not mop after sweep',
+    1: 'Mop after sweep'
+  },
+  'DE': {
+    0: 'Nicht moppen nach saugen',
+    1: 'Moppen nach saugen'
+  }
+};
+
+// Clean Again Status (cleanagain)
+const DreameCleanAgainStatus = {
+  'EN': {
+    0: 'Not clean again',
+    1: 'Clean again'
+  },
+  'DE': {
+    0: 'Nicht erneut reinigen',
+    1: 'Erneut reinigen'
+  }
+};
+
+// Second Mopping Status (ctyo)
+const DreameSecondMoppingStatus = {
+  'EN': {
+    0: 'Not second mopping',
+    1: 'Second mopping'
+  },
+  'DE': {
+    0: 'Kein zweites Moppen',
+    1: 'Zweites Moppen'
+  }
+};
+
+// Second Cleaning Status (ismultiple)
+const DreameSecondCleaningStatus = {
+  'EN': {
+    0: 'Not second cleaning',
+    1: 'Second cleaning'
+  },
+  'DE': {
+    0: 'Keine zweite Reinigung',
+    1: 'Zweite Reinigung'
+  }
+};
+
+// DOS Status (dos)
+const DreameDosStatus = {
+  'EN': {
+    0: 'Normal',
+    1: 'Obstacle detected',
+    2: 'Cliff detected',
+    3: 'Stuck'
+  },
+  'DE': {
+    0: 'Normal',
+    1: 'Hindernis erkannt',
+    2: 'Kante erkannt',
+    3: 'Stecken geblieben'
+  }
+};
+
+// Saved Map Status (ris)
+const DreameSavedMapStatus = {
+  'EN': {
+    0: 'Not saved',
+    1: 'Saving',
+    2: 'Saved',
+    3: 'Deleting'
+  },
+  'DE': {
+    0: 'Nicht gespeichert',
+    1: 'Wird gespeichert',
+    2: 'Gespeichert',
+    3: 'Wird gelöscht'
+  }
+};
+
+// Temporary Map Type (suw)
+const DreameTemporaryMapType = {
+  'EN': {
+    0: 'Normal map',
+    1: 'Temporary map',
+    2: 'Recovery map'
+  },
+  'DE': {
+    0: 'Normale Karte',
+    1: 'Temporäre Karte',
+    2: 'Wiederherstellungskarte'
+  }
+};
+
+// Frame Map Status (fsm)
+const DreameFrameMapStatus = {
+  'EN': {
+    0: 'Normal map',
+    1: 'Frame map'
+  },
+  'DE': {
+    0: 'Normale Karte',
+    1: 'Frame-Karte'
+  }
+};
+
+// New Map Status (risp)
+const DreameNewMapStatus = {
+  'EN': {
+    0: 'Existing map',
+    1: 'New map'
+  },
+  'DE': {
+    0: 'Existierende Karte',
+    1: 'Neue Karte'
+  }
+};
+
+// Restored Map Status (rpur)
+const DreameRestoredMapStatus = {
+  'EN': {
+    0: 'Not restored',
+    1: 'Restored'
+  },
+  'DE': {
+    0: 'Nicht wiederhergestellt',
+    1: 'Wiederhergestellt'
+  }
+};
+
+// Line to Robot Status (l2r)
+const DreameLineToRobotStatus = {
+  'EN': {
+    0: 'Disabled',
+    1: 'Enabled'
+  },
+  'DE': {
+    0: 'Deaktiviert',
+    1: 'Aktiviert'
+  }
+};
+
+// Clean Log Status (iscleanlog)
+const DreameCleanLogStatus = {
+  'EN': {
+    0: 'Not cleaning log',
+    1: 'Cleaning log'
+  },
+  'DE': {
+    0: 'Kein Reinigungsprotokoll',
+    1: 'Reinigungsprotokoll'
+  }
+};
+
+// Docked Status (oc)
+const DreameDockedStatus = {
+  'EN': {
+    0: 'Not docked',
+    1: 'Docked'
+  },
+  'DE': {
+    0: 'Nicht angedockt',
+    1: 'Angedockt'
+  }
+};
+
+// Completed Status (cf)
+const DreameCompletedStatus = {
+  'EN': {
+    0: 'Not completed',
+    1: 'Completed'
+  },
+  'DE': {
+    0: 'Nicht abgeschlossen',
+    1: 'Abgeschlossen'
+  }
+};
+
+// Recovery Map Data Status (us)
+const DreameRecoveryMapDataStatus = {
+  'EN': {
+    0: 'Normal map',
+    1: 'Recovery map data'
+  },
+  'DE': {
+    0: 'Normale Kartendaten',
+    1: 'Wiederherstellungskartendaten'
+  }
+};
+
+// Segment Type Codes
+const DreameSegmentTypeCode = {
+  'EN': {
+    0: 'Room',
+    1: 'Living Room',
+    2: 'Primary Bedroom',
+    3: 'Study',
+    4: 'Kitchen',
+    5: 'Dining Hall',
+    6: 'Bathroom',
+    7: 'Balcony',
+    8: 'Corridor',
+    9: 'Utility Room',
+    10: 'Closet',
+    11: 'Meeting Room',
+    12: 'Office',
+    13: 'Fitness Area',
+    14: 'Recreation Area',
+    15: 'Secondary Bedroom'
+  },
+  'DE': {
+    0: 'Raum',
+    1: 'Wohnzimmer',
+    2: 'Hauptschlafzimmer',
+    3: 'Arbeitszimmer',
+    4: 'Küche',
+    5: 'Esszimmer',
+    6: 'Badezimmer',
+    7: 'Balkon',
+    8: 'Flur',
+    9: 'Abstellraum',
+    10: 'Kleiderschrank',
+    11: 'Besprechungsraum',
+    12: 'Büro',
+    13: 'Fitnessbereich',
+    14: 'Freizeitbereich',
+    15: 'Gästeschlafzimmer'
+  }
+};
+
+// Path Type (tr type in map data)
+const DreamePathType = {
+  'EN': {
+    'L': 'Line',
+    'S': 'Sweep',
+    'W': 'Sweep and mop',
+    'M': 'Mop'
+  },
+  'DE': {
+    'L': 'Linie',
+    'S': 'Saugen',
+    'W': 'Saugen und moppen',
+    'M': 'Moppen'
+  }
+};
+
+// Recovery Map Type
+const DreameRecoveryMapType = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Edited',
+    1: 'Original',
+    2: 'Backup'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Bearbeitet',
+    1: 'Original',
+    2: 'Backup'
+  }
+};
+
+// Obstacle Picture Status
+const DreameObstaclePictureStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Disabled',
+    1: 'Uploading',
+    2: 'Uploaded',
+    3: 'Upload failed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Deaktiviert',
+    1: 'Wird hochgeladen',
+    2: 'Hochgeladen',
+    3: 'Upload fehlgeschlagen'
+  }
+};
+
+// Obstacle Ignore Status
+const DreameObstacleIgnoreStatus = {
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Not ignored',
+    1: 'Manually ignored',
+    2: 'Automatically ignored'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Nicht ignoriert',
+    1: 'Manuell ignoriert',
+    2: 'Automatisch ignoriert'
+  }
+};
+
+// Startup Method (smd)
+const DreameStartupMethod = {
+  'EN': {
+    '-1': 'Other',
+    0: 'By button',
+    1: 'Through app',
+    2: 'Scheduled activation',
+    3: 'Through voice'
+  },
+  'DE': {
+    '-1': 'Andere',
+    0: 'Durch Taste',
+    1: 'Durch App',
+    2: 'Zeitgesteuerte Aktivierung',
+    3: 'Durch Sprache'
+  }
+};
+
+// Cleanup Method (cmc)
+const DreameCleanupMethod = {
+  'EN': {
+    '-1': 'Other',
+    0: 'Default mode',
+    1: 'Customized cleaning',
+    2: 'Cleangenius',
+    3: 'Water stain cleaning'
+  },
+  'DE': {
+    '-1': 'Andere',
+    0: 'Standardmodus',
+    1: 'Benutzerdefinierte Reinigung',
+    2: 'Cleangenius',
+    3: 'Wasserfleckenreinigung'
+  }
+};
+
+// Task End Type (ctyi)
+const DreameTaskEndType = {
+  'EN': {
+    0: 'Other',
+    1: 'Manual docking',
+    2: 'Normal recharging',
+    3: 'Abnormal docking',
+    4: 'Stop'
+  },
+  'DE': {
+    0: 'Andere',
+    1: 'Manuelles Andocken',
+    2: 'Normales Aufladen',
+    3: 'Abnormales Andocken',
+    4: 'Stopp'
+  }
+};
+
+// Furniture Types
+const DreameFurnitureType = {
+  'EN': {
+    1: 'Single bed',
+    2: 'Double bed',
+    3: 'Arm chair',
+    4: 'Two seat sofa',
+    5: 'Three seat sofa',
+    6: 'Dining table',
+    7: 'Nightstand',
+    8: 'Coffee table',
+    9: 'Toilet',
+    10: 'Litter box',
+    11: 'Pet bed',
+    12: 'Food bowl',
+    13: 'Pet toilet',
+    14: 'Refrigerator',
+    15: 'Washing machine',
+    16: 'Enclosed litter box',
+    17: 'Air conditioner',
+    18: 'TV cabinet',
+    19: 'Bookshelf',
+    20: 'Shoe cabinet',
+    21: 'Wardrobe',
+    22: 'Greenery',
+    23: 'Floor mirror',
+    24: 'L-shaped sofa',
+    25: 'Round coffee table',
+    26: 'Table',
+    29: 'Arm chair narrow',
+    30: 'Three seat sofa narrow',
+    31: 'L-shaped sofa right'
+  },
+  'DE': {
+    1: 'Einzelbett',
+    2: 'Doppelbett',
+    3: 'Sessel',
+    4: 'Zweisitzersofa',
+    5: 'Dreisitzersofa',
+    6: 'Esstisch',
+    7: 'Nachttisch',
+    8: 'Couchtisch',
+    9: 'Toilette',
+    10: 'Katzenklo',
+    11: 'Haustierbett',
+    12: 'Futternapf',
+    13: 'Haustiertoilette',
+    14: 'Kühlschrank',
+    15: 'Waschmaschine',
+    16: 'Geschlossenes Katzenklo',
+    17: 'Klimaanlage',
+    18: 'TV-Schrank',
+    19: 'Bücherregal',
+    20: 'Schuhschrank',
+    21: 'Kleiderschrank',
+    22: 'Grünpflanze',
+    23: 'Boden-Spiegel',
+    24: 'L-förmiges Sofa',
+    25: 'Runder Couchtisch',
+    26: 'Tisch',
+    29: 'Schmaler Sessel',
+    30: 'Schmales Dreisitzersofa',
+    31: 'L-förmiges Sofa rechts'
+  }
+};
+
+// Cleanset Type
+const DreameCleansetType = {
+  'EN': {
+    0: 'None',
+    1: 'Default',
+    2: 'Cleaning mode',
+    3: 'Custom mopping route',
+    4: 'Cleaning route',
+    5: 'Wetness level',
+    6: 'Wetness level max 15'
+  },
+  'DE': {
+    0: 'Keine',
+    1: 'Standard',
+    2: 'Reinigungsmodus',
+    3: 'Benutzerdefinierte Mopp-Route',
+    4: 'Reinigungsroute',
+    5: 'Feuchtigkeitsstufe',
+    6: 'Feuchtigkeitsstufe max 15'
+  }
+};
+
+
+const DreameVacuumState = {  /*S2P1: State*/
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Cleaning',
+    2: 'Standby',
+    3: 'Paused',
+    4: 'Paused',
+    5: 'Returning to charge',
+    6: 'Charging',
+    7: 'Mopping',
+    8: 'Mop Drying',
+    9: 'Mop Washing',
+    10: 'Returning to wash',
+    11: 'Mapping',
+    12: 'Cleaning',
+    13: 'Charging Completed',
+    14: 'Upgrading',
+    15: 'Summon to clean',
+    16: 'Self-Repairing',
+    17: 'Returning to install the mop pad',
+    18: 'Returning to remove the mop pad',
+    19: 'Automatic water supply and drainage self testing',
+    20: 'Cleaning Mop Pad and Adding Water',
+    21: 'Cleaning paused',
+    22: 'Auto-Emptying',
+    23: 'Remote Controlled Cleaning',
+    24: 'The robot is charging intelligently.',
+    25: 'The second cleaning underway',
+    26: 'Following',
+    27: 'Spot cleaning',
+    28: 'Returning for dust collection',
+    29: 'Waiting for tasks',
+    30: 'Cleaning the washboard base',
+    33: 'Automatic Water Supply and Drainage Emptying now',
+    35: 'Dust Box & Bag Drying in Process',
+    36: 'Dust Box & Bag Drying Paused',
+    37: 'Heading to the extra cleaning area',
+    38: 'Extra Cleaning in Progress',
+    95: 'Finding pet paused',
+    96: 'Finding pet',
+    97: 'Shortcut running',
+    98: 'Camera Monitoring',
+    99: 'Camera monitoring paused',
+    101: 'Initial Deep Cleaning in Process',
+    102: 'Initial Deep Cleaning Paused',
+    103: 'Sanitizing',
+    104: 'Sanitizing with dry',
+    105: 'Switching mop.',
+    106: 'Mop Switching Paused',
+    107: 'Care in progress',
+    108: 'Paused'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Reinigung',
+    2: 'Standby',
+    3: 'Pausiert',
+    4: 'Pausiert',
+    5: 'Zurück zum Aufladen',
+    6: 'Laden',
+    7: 'Wischen',
+    8: 'Mopp-Trocknung',
+    9: 'Mopp-Reinigung',
+    10: 'Rückkehr zum Reinigen',
+    11: 'Eine Karte wird erstellt.',
+    12: 'Beim Reinigen',
+    13: 'Laden beendet',
+    14: 'Aktualisieren',
+    15: 'Reinigung rufen',
+    16: 'Bei der automatischen Reparatur der Basisstation',
+    17: 'Zurückkehren zum Installieren des Wischmopps',
+    18: 'Zurückkehren, um das Wischpad zu entfernen',
+    19: 'Selbsttest der automatischen Wasserzufuhr und -abfluss läuft',
+    20: 'Wischmopp reinigen und Wasser nachfüllen',
+    21: 'Reinigung pausiert',
+    22: 'Automatische Entleerung',
+    23: 'Ferngesteuerte Reinigung',
+    24: 'Der Roboter lädt intelligent auf.',
+    25: 'Die zweite Reinigung wird durchgeführt',
+    26: 'Folgend',
+    27: 'Partielle Reinigung',
+    28: 'Rückfahrt zur Staubsammlung',
+    29: 'Auf Aufgaben warten',
+    30: 'Reinigung der Waschplattenbasis',
+    33: 'Automatische Wasserzufuhr und -ableitung Jetzt entleeren',
+    35: 'Trocknung von Staubbehälter und -beutel',
+    36: 'Trocknen von Staubbehälter und -beutel angehalten',
+    37: 'Weiter zum zusätzlichen Reinigungsbereich',
+    38: 'Zusätzliche Reinigung läuft',
+    95: 'Haustiersuche pausiert',
+    96: 'Haustiersuche',
+    97: 'Shortcut läuft gerade',
+    98: 'Die Kameraüberwachung läuft.',
+    99: 'Kameraüberwachung pausiert',
+    101: 'Anfängliche Tiefenreinigung wird ausgeführt',
+    102: 'Anfängliche Tiefenreinigung pausiert',
+    103: 'Desinfizieren',
+    104: 'Desinfizieren mit Trocknen',
+    105: 'Wischmopp wird gewechselt',
+    106: 'Umschalten des Wischmopps pausiert',
+    107: 'Pflege im Gange',
+    108: 'Pausiert'
+  }
+};
+
+const DreameVacuumErrorCode = { /*S2P2: Error*/
   'EN': {
     '-1': 'Unknown',
     0: 'No error',
@@ -231,7 +1082,10 @@ const DreameVacuumErrorCode = {
     70: 'Mop removed 2',
     71: 'Mop pad stop rotate',
     72: 'Mop pad stop rotate 2',
-    75: 'Unknown warning',
+    74: 'Mop install failed',
+    75: 'Low battery turn off',
+    76: 'Dirty tank not installed',
+    78: 'Robot in hidden room',
     101: 'Bin full',
     102: 'Bin open',
     103: 'Bin open 2',
@@ -252,6 +1106,7 @@ const DreameVacuumErrorCode = {
     120: 'No mop in station',
     121: 'Dust bag full',
     122: 'Unknown warning 2',
+    123: 'Self test failed',
     124: 'Washboard not working',
     1000: 'Return to charge failed'
   },
@@ -327,7 +1182,10 @@ const DreameVacuumErrorCode = {
     70: 'Wischmopp entfernt 2',
     71: 'Mop-Pad stoppt Drehung',
     72: 'Mop-Pad stoppt Drehung 2',
-    75: 'Unbekannte Warnung',
+    74: 'Mopp Installation fehlgeschlagen',
+    75: 'Niedrige Batterie ausschalten',
+    76: 'Schmutzwassertank nicht installiert',
+    78: 'Roboter in verstecktem Raum',
     101: 'Behälter voll',
     102: 'Behälter offen',
     103: 'Behälter offen 2',
@@ -348,172 +1206,30 @@ const DreameVacuumErrorCode = {
     120: 'Kein Mopp in Station',
     121: 'Staubsaugerbeutel voll',
     122: 'Unbekannte Warnung 2',
+    123: 'Selbsttest fehlgeschlagen',
     124: 'Waschtisch funktioniert nicht',
     1000: 'Rückkehr zur Ladung fehlgeschlagen'
   }
 };
-const DreameVacuumState = {
+
+const DreameChargingStatus = { /*S3P2: Charging status*/
   'EN': {
     '-1': 'Unknown',
-    1: 'Cleaning',
-    2: 'Standby',
-    3: 'Paused',
-    4: 'Paused',
-    5: 'Returning to charge',
-    6: 'Charging',
-    7: 'Mopping',
-    8: 'Mop Drying',
-    9: 'Mop Washing',
-    10: 'Returning to wash',
-    11: 'Mapping',
-    12: 'Cleaning',
-    13: 'Charging Completed',
-    14: 'Upgrading',
-    15: 'Summon to clean',
-    16: 'Self-Repairing',
-    17: 'Returning to install the mop pad',
-    18: 'Returning to remove the mop pad',
-    19: 'Automatic water supply and drainage self testing',
-    20: 'Cleaning Mop Pad and Adding Water',
-    21: 'Cleaning paused',
-    22: 'Auto-Emptying',
-    23: 'Remote Controlled Cleaning',
-    24: 'The robot is charging intelligently.',
-    25: 'The second cleaning underway',
-    26: 'Following',
-    27: 'Spot cleaning',
-    28: 'Returning for dust collection',
-    29: 'Waiting for tasks',
-    30: 'Cleaning the washboard base',
-    33: 'Automatic Water Supply and Drainage Emptying now',
-    35: 'Dust Box & Bag Drying in Process',
-    36: 'Dust Box & Bag Drying Paused',
-    37: 'Heading to the extra cleaning area',
-    38: 'Extra Cleaning in Progress',
-    97: 'Shortcut running',
-    98: 'Camera Monitoring',
-    99: 'Camera monitoring paused',
-    101: 'Initial Deep Cleaning in Process',
-    102: 'Initial Deep Cleaning Paused',
-    103: 'Sanitizing',
-    104: 'Sanitizing',
-    105: 'Switching mop.',
-    106: 'Mop Switching Paused',
-    107: 'Care in progress',
-    108: 'Paused'
+    1: 'Charging',
+    2: 'Not charging',
+    3: 'Charging completed',
+    5: 'Return to charge'
   },
   'DE': {
     '-1': 'Unbekannt',
-    1: 'Reinigung',
-    2: 'Standby',
-    3: 'Pausiert',
-    4: 'Pausiert',
-    5: 'Zurück zum Aufladen',
-    6: 'Laden',
-    7: 'Wischen',
-    8: 'Mopp-Trocknung',
-    9: 'Mopp-Reinigung',
-    10: 'Rückkehr zum Reinigen',
-    11: 'Eine Karte wird erstellt.',
-    12: 'Beim Reinigen',
-    13: 'Laden beendet',
-    14: 'Aktualisieren',
-    15: 'Reinigung rufen',
-    16: 'Bei der automatischen Reparatur der Basisstation',
-    17: 'Zurückkehren zum Installieren des Wischmopps',
-    18: 'Zurückkehren, um das Wischpad zu entfernen',
-    19: 'Selbsttest der automatischen Wasserzufuhr und -abfluss läuft',
-    20: 'Wischmopp reinigen und Wasser nachfüllen',
-    21: 'Reinigung pausiert',
-    22: 'Automatische Entleerung',
-    23: 'Ferngesteuerte Reinigung',
-    24: 'Der Roboter lädt intelligent auf.',
-    25: 'Die zweite Reinigung wird durchgeführt',
-    26: 'Folgend',
-    27: 'Partielle Reinigung',
-    28: 'Rückfahrt zur Staubsammlung',
-    29: 'Auf Aufgaben warten',
-    30: 'Reinigung der Waschplattenbasis',
-    33: 'Automatische Wasserzufuhr und -ableitung Jetzt entleeren',
-    35: 'Trocknung von Staubbehälter und -beutel',
-    36: 'Trocknen von Staubbehälter und -beutel angehalten',
-    37: 'Weiter zum zusätzlichen Reinigungsbereich',
-    38: 'Zusätzliche Reinigung läuft',
-    97: 'Shortcut läuft gerade',
-    98: 'Die Kameraüberwachung läuft.',
-    99: 'Kameraüberwachung pausiert',
-    101: 'Anfängliche Tiefenreinigung wird ausgeführt',
-    102: 'Anfängliche Tiefenreinigung pausiert',
-    103: 'Desinfizieren',
-    104: 'Desinfizieren',
-    105: 'Wischmopp wird gewechselt',
-    106: 'Umschalten des Wischmopps pausiert',
-    107: 'Pflege im Gange',
-    108: 'Pausiert'
+    1: 'Aufladen',
+    2: 'Nicht geladen',
+    3: 'Aufladung abgeschlossen',
+    5: 'Rückkehr zum Laden'
   }
 };
 
-const DreameTaskStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Completed',
-    1: 'Auto cleaning',
-    2: 'Zone cleaning',
-    3: 'Segment cleaning',
-    4: 'Spot cleaning',
-    5: 'Fast mapping',
-    6: 'Auto cleaning paused',
-    7: 'Zone cleaning paused',
-    8: 'Segment cleaning paused',
-    9: 'Spot cleaning paused',
-    10: 'Map cleaning paused',
-    11: 'Docking paused',
-    12: 'Mopping paused',
-    13: 'Segment mopping paused',
-    14: 'Zone mopping paused',
-    15: 'Auto mopping paused',
-    16: 'Auto docking paused',
-    17: 'Segment docking paused',
-    18: 'Zone docking paused',
-    20: 'Cruising path',
-    21: 'Cruising path paused',
-    22: 'Cruising point',
-    23: 'Cruising point paused',
-    24: 'Summon clean paused',
-    25: 'Returning install mop',
-    26: 'Returning remove mop'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Abgeschlossen',
-    1: 'Automatische Reinigung',
-    2: 'Zonenreinigung',
-    3: 'Segment-Reinigung',
-    4: 'Punktuelle Reinigung',
-    5: 'Schnelles Mapping',
-    6: 'Automatische Reinigung pausiert',
-    7: 'Zonenreinigung unterbrochen',
-    8: 'Segmentreinigung unterbrochen',
-    9: 'Punktuelle Reinigung unterbrochen',
-    10: 'Kartenreinigung pausiert',
-    11: 'Andocken unterbrochen',
-    12: 'Wischen pausiert',
-    13: 'Segmentwischen pausiert',
-    14: 'Zonenwischen pausiert',
-    15: 'Automatisches Wischen pausiert',
-    16: 'Automatisches Andocken pausiert',
-    17: 'Segment Andocken pausiert',
-    18: 'Zonendocking pausiert',
-    20: 'Kreuzfahrtstrecke',
-    21: 'Fahrtroute pausiert',
-    22: 'Kreuzungspunkt',
-    23: 'Kreuzungspunkt pausiert',
-    24: 'Saubere Beschwörung pausiert',
-    25: 'Rückgabe Mopp installieren',
-    26: 'Rückgabe Mopp entfernen'
-  }
-};
-const DreameStatus = {
+const DreameStatus = { /*S4P1: Status*/
   'EN': {
     '-1': 'Unknown',
     0: 'Idle',
@@ -577,7 +1293,8 @@ const DreameStatus = {
     1501: 'Wasserprüfung'
   }
 };
-const DreameSuctionLevel = {
+
+const DreameSuctionLevel = { /*S4P4: Suction level*/
   'EN': {
     '-1': 'Unknown',
     0: 'Quiet',
@@ -591,6 +1308,1141 @@ const DreameSuctionLevel = {
     1: 'Standard',
     2: 'Stark',
     3: 'Turbo'
+  }
+};
+
+const DreameWaterVolume = { /*S4P5: Water volume*/
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Low',
+    2: 'Medium',
+    3: 'High'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Niedrig',
+    2: 'Mittel',
+    3: 'Hoch'
+  }
+};
+
+const DreameWaterTank = { /*S4P6: Water tank*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Not installed',
+    1: 'Installed',
+    10: 'Mop installed',
+    99: 'Mop in station'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Nicht installiert',
+    1: 'Installiert',
+    10: 'Mopp installiert',
+    99: 'Mopp in Station'
+  }
+};
+
+const DreameTaskStatus = { /*S4P7: Task status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Completed',
+    1: 'Auto cleaning',
+    2: 'Zone cleaning',
+    3: 'Segment cleaning',
+    4: 'Spot cleaning',
+    5: 'Fast mapping',
+    6: 'Auto cleaning paused',
+    7: 'Zone cleaning paused',
+    8: 'Segment cleaning paused',
+    9: 'Spot cleaning paused',
+    10: 'Map cleaning paused',
+    11: 'Docking paused',
+    12: 'Mopping paused',
+    13: 'Segment mopping paused',
+    14: 'Zone mopping paused',
+    15: 'Auto mopping paused',
+    16: 'Auto docking paused',
+    17: 'Segment docking paused',
+    18: 'Zone docking paused',
+    20: 'Cruising path',
+    21: 'Cruising path paused',
+    22: 'Cruising point',
+    23: 'Cruising point paused',
+    24: 'Summon clean paused',
+    25: 'Returning install mop',
+    26: 'Returning remove mop',
+    27: 'Station cleaning',
+    30: 'Pet finding',
+    31: 'Auto cleaning washing paused',
+    32: 'Area cleaning washing paused',
+    33: 'Custom cleaning washing paused'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Abgeschlossen',
+    1: 'Automatische Reinigung',
+    2: 'Zonenreinigung',
+    3: 'Segment-Reinigung',
+    4: 'Punktuelle Reinigung',
+    5: 'Schnelles Mapping',
+    6: 'Automatische Reinigung pausiert',
+    7: 'Zonenreinigung unterbrochen',
+    8: 'Segmentreinigung unterbrochen',
+    9: 'Punktuelle Reinigung unterbrochen',
+    10: 'Kartenreinigung pausiert',
+    11: 'Andocken unterbrochen',
+    12: 'Wischen pausiert',
+    13: 'Segmentwischen pausiert',
+    14: 'Zonenwischen pausiert',
+    15: 'Automatisches Wischen pausiert',
+    16: 'Automatisches Andocken pausiert',
+    17: 'Segment Andocken pausiert',
+    18: 'Zonendocking pausiert',
+    20: 'Kreuzfahrtstrecke',
+    21: 'Fahrtroute pausiert',
+    22: 'Kreuzungspunkt',
+    23: 'Kreuzungspunkt pausiert',
+    24: 'Saubere Beschwörung pausiert',
+    25: 'Rückgabe Mopp installieren',
+    26: 'Rückgabe Mopp entfernen',
+    27: 'Station reinigen',
+    30: 'Haustiersuche',
+    31: 'Automatische Reinigung waschen pausiert',
+    32: 'Bereichsreinigung waschen pausiert',
+    33: 'Benutzerdefinierte Reinigung waschen pausiert'
+  }
+};
+
+const DreameCleaningStatus = { /*S4P13: Clean log status*/
+  'EN': {
+    0: 'Interrupted',
+    1: 'Completed',
+    2: 'Manually ended',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Unterbrochen',
+    1: 'Abgeschlossen',
+    2: 'Manuell beendet',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameRelocationStatus = { /*S4P20: Relocation status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Located',
+    1: 'Locating',
+    10: 'Failed',
+    11: 'Success'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Ort gefunden',
+    1: 'Orten',
+    10: 'Fehlgeschlagen',
+    11: 'Erfolg'
+  }
+};
+
+const DreameAIProperty = { /*S4P22: AI detection (bitwise)*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'No AI features active',
+    1: 'AI furniture detection',
+    2: 'AI obstacle detection',
+    4: 'AI obstacle picture',
+    8: 'AI fluid detection',
+    16: 'AI pet detection',
+    32: 'AI obstacle image upload',
+    64: 'AI image',
+    128: 'AI pet avoidance',
+    256: 'Fuzzy obstacle detection',
+    512: 'Pet picture',
+    1024: 'Pet focused detection',
+    2048: 'Large particles boost'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Keine KI-Funktionen aktiv',
+    1: 'KI Möbelerkennung',
+    2: 'KI Hinderniserkennung',
+    4: 'KI Hindernisbild',
+    8: 'KI Flüssigkeitserkennung',
+    16: 'KI Haustiererkennung',
+    32: 'KI Hindernisbild-Upload',
+    64: 'KI Bild',
+    128: 'KI Haustiervermeidung',
+    256: 'Unscharfe Hinderniserkennung',
+    512: 'Haustierbild',
+    1024: 'Haustierfokussierte Erkennung',
+    2048: 'Große Partikel-Boost'
+  }
+};
+
+const DreameCleaningMode = { /*S4P23: Cleaning mode*/
+  'EN': {
+    '-1': 'Unknown',
+    5122: 'Sweeping',
+    5121: 'Mopping',
+    5120: 'Sweeping and mopping',
+    5123: 'Mopping after sweeping',
+    3840: 'Customize room cleaning'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    5122: 'Staubsaugen',
+    5121: 'Wischen',
+    5120: 'Saugen und Wischen',
+    5123: 'Wischen nach dem Saugen',
+    3840: 'Raumreinigung anpassen'
+  }
+};
+// Map the values as per the user's defined cleaning modes
+const modeMapping = {
+  0: 5122, // Sweeping
+  1: 5121, // Mopping
+  2: 5120, // Sweeping and mopping
+  3: 5123  // Mopping after sweeping
+};
+
+const DreameSelfWashBaseStatus = { /*S4P25: Self wash base status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Washing',
+    2: 'Drying',
+    3: 'Returning',
+    4: 'Paused',
+    5: 'Add clean water',
+    6: 'Adding Water',
+    7: 'Returning for dry mop'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Waschen',
+    2: 'Trocknen',
+    3: 'Rücklauf',
+    4: 'Pausiert',
+    5: 'Sauberes Wasser hinzufügen',
+    6: 'Wasser zugeben',
+    7: 'Zurück für trockenen Mopp'
+  }
+};
+
+const DreameCarpetSensitivity = { /*S4P28: Carpet sensitivity*/
+  'EN': {
+    '-1': 'Unknown',
+    1: 'Low',
+    2: 'Medium',
+    3: 'High'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    1: 'Niedrig',
+    2: 'Mittel',
+    3: 'Hoch'
+  }
+};
+
+const DreameCarpetAvoidance = { /*S4P36: Carpet cleaning*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Not set',
+    1: 'Avoid',
+    2: 'Lifting the mop',
+    3: 'Remove mop',
+    4: 'Adaptation without route',
+    5: 'Vacuum and Mop',
+    6: 'Ignore',
+    7: 'Cross'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Nicht gesetzt',
+    1: 'Vermeiden',
+    2: 'Mopp anheben',
+    3: 'Mopp entfernen',
+    4: 'Anpassung ohne Route',
+    5: 'Saugen und wischen',
+    6: 'Ignorieren',
+    7: 'Überqueren'
+  }
+};
+
+const DreameLowWaterWarning = { /*S4P41: Low water warning*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'No warning',
+    1: 'No water left dismiss',
+    2: 'No water left',
+    3: 'No water left after clean',
+    4: 'No water for clean',
+    5: 'Low water',
+    6: 'Tank not installed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Keine Warnung',
+    1: 'Kein Wasser übrig, verwerfen',
+    2: 'Kein Wasser mehr',
+    3: 'Nach der Reinigung ist kein Wasser mehr übrig',
+    4: 'Kein Wasser zum Reinigen',
+    5: 'Niedrigwasser',
+    6: 'Tank nicht installiert'
+  }
+};
+
+const DreameMopWashLevel = { /*S4P46: Mop wash level*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Light',
+    1: 'Standard',
+    2: 'Deep',
+    3: 'Ultra washing'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leicht',
+    1: 'Standard',
+    2: 'Tief',
+    3: 'Ultra Reinigung'
+  }
+};
+
+const DreameTaskType = { /*S4P58: Task type*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Standard',
+    2: 'Standard paused',
+    3: 'Custom',
+    4: 'Custom paused',
+    5: 'Shortcut',
+    6: 'Shortcut paused',
+    7: 'Scheduled',
+    8: 'Scheduled paused',
+    9: 'Smart',
+    10: 'Smart paused',
+    11: 'Partial',
+    12: 'Partial paused',
+    13: 'Summon',
+    14: 'Summon paused',
+    15: 'Water stain',
+    16: 'Water stain paused',
+    17: 'Boosted edge cleaning',
+    18: 'Hair compressing',
+    19: 'Large particle cleaning',
+    20: 'Intensive stain cleaning',
+    21: 'Stain cleaning',
+    22: 'Initial deep cleaning',
+    23: 'Initial deep cleaning paused',
+    24: 'Mop pad heating',
+    25: 'Cleaning after mapping',
+    26: 'Small particle cleaning'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Standard',
+    2: 'Standard pausiert',
+    3: 'Benutzerdefiniert',
+    4: 'Benutzerdefiniert pausiert',
+    5: 'Schnellbefehl',
+    6: 'Schnellbefehl pausiert',
+    7: 'Geplant',
+    8: 'Geplant pausiert',
+    9: 'Intelligent',
+    10: 'Intelligent pausiert',
+    11: 'Teilweise',
+    12: 'Teilweise pausiert',
+    13: 'Herbeirufen',
+    14: 'Herbeirufen pausiert',
+    15: 'Wasserflecken',
+    16: 'Wasserflecken pausiert',
+    17: 'Verstärkte Kantenreinigung',
+    18: 'Haarkompression',
+    19: 'Große Partikelreinigung',
+    20: 'Intensive Fleckenreinigung',
+    21: 'Fleckenreinigung',
+    22: 'Erstes Tiefenreinigen',
+    23: 'Erstes Tiefenreinigen pausiert',
+    24: 'Mopp-Pad-Erwärmung',
+    25: 'Reinigung nach Kartierung',
+    26: 'Kleine Partikelreinigung'
+  }
+};
+
+const DreameDrainageStatus = { /*S4P60: Drainage status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Draining',
+    2: 'Draining success',
+    3: 'Draining failed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Entleerung',
+    2: 'Entleerung erfolgreich',
+    3: 'Entleerung fehlgeschlagen'
+  }
+};
+
+const DreameDeviceCapability = { /*S4P83: Device capability*/
+  'EN': {
+    1: 'Mop pad unmounting',
+    2: 'Drainage',
+    3: 'Mopping after sweeping',
+    4: 'Max suction power',
+    5: 'Obstacle image crop',
+    6: 'UV sterilization',
+    7: 'Mop pad swing',
+    8: 'Hot washing',
+    9: 'Auto empty mode',
+    10: 'Floor direction cleaning',
+    11: 'Large particles boost',
+    12: 'Segment visibility',
+    13: 'Mop pad swing plus',
+    14: 'Auto rewashing',
+    15: 'Mop pad lifting plus',
+    16: 'Pet furniture',
+    17: 'Cleaning route',
+    18: 'Mopping settings',
+    19: 'Segment slow clean route',
+    20: 'Small self clean area',
+    21: 'Task type',
+    22: 'Ultra clean mode',
+    23: 'Extended furnitures',
+    24: 'Self clean frequency',
+    25: 'Cleangenius',
+    26: 'Cleangenius auto',
+    27: 'Fluid detection',
+    28: 'Intensive carpet cleaning',
+    29: 'Clean carpets first',
+    30: 'Wetness level',
+    31: 'Auto rename segment',
+    32: 'Disable sensor cleaning',
+    33: 'Floor material',
+    34: 'Gen5',
+    35: 'New furnitures',
+    36: 'Saved furnitures',
+    37: 'Obstacles',
+    38: 'Water check',
+    39: 'Auto carpet cleaning',
+    40: 'Segment mopping settings',
+    41: 'Segment mopping type',
+    42: 'Mopping type',
+    43: 'Max suction power extended',
+    44: 'Auto recleaning',
+    45: 'New state',
+    46: 'Camera streaming',
+    47: 'Detergent',
+    48: 'Cleangenius mode',
+    49: 'Side reach',
+    50: 'Water temperature',
+    51: 'Washing mode',
+    52: 'Smart mop washing',
+    53: 'Dnd functions',
+    54: 'Ramps',
+    55: 'Virtual tracks',
+    56: 'Deodorizer',
+    57: 'Wheel',
+    58: 'Scale inhibitor',
+    59: 'Silent drying',
+    60: 'Hair compression',
+    61: 'Side brush carpet rotate',
+    62: 'Auto lds lifting',
+    63: 'Area rotation',
+    64: 'Mop pad lifting',
+    65: 'Mopping with detergent',
+    66: 'Carpet crossing',
+    67: 'Dynamic obstacle clean',
+    68: 'Obstacle crossing',
+    69: 'Double detergent',
+    70: 'Mop temperature',
+    71: 'Dust bag drying',
+    72: 'Lds lifting frequency',
+    73: 'Pressurized cleaning',
+    74: 'Scraper frequency',
+    75: 'Carpet material',
+    76: 'Carpet type',
+    77: 'Carpet cleanset v2',
+    78: 'Carpet cleanset v3',
+    79: 'Low lying areas',
+    80: 'Low lying area delete',
+    81: 'Carpet shape',
+    82: 'Carpet id',
+    83: 'Auto emptying',
+    84: 'Washless base',
+    85: 'Water tank draining',
+    86: 'Auto add detergent',
+    87: 'Fill light',
+    88: 'Local storage',
+    89: 'Laser obstacle'
+  },
+  'DE': {
+    1: 'Mopp-Pad-Abmontage',
+    2: 'Entwässerung',
+    3: 'Moppen nach Saugen',
+    4: 'Maximale Saugkraft',
+    5: 'Hindernisbild-Zuschneiden',
+    6: 'UV-Sterilisation',
+    7: 'Mopp-Pad-Schwingen',
+    8: 'Heißwaschen',
+    9: 'Automatischer Leermodus',
+    10: 'Bodenrichtungsreinigung',
+    11: 'Große Partikel-Boost',
+    12: 'Raumsichtbarkeit',
+    13: 'Mopp-Pad-Schwingen Plus',
+    14: 'Automatisches Nachwaschen',
+    15: 'Mopp-Pad-Anheben Plus',
+    16: 'Haustiermöbel',
+    17: 'Reinigungsroute',
+    18: 'Mopp-Einstellungen',
+    19: 'Raum langsame Reinigungsroute',
+    20: 'Kleine Selbstreinigungsfläche',
+    21: 'Aufgabentyp',
+    22: 'Ultra-Reinigung',
+    23: 'Erweiterte Möbel',
+    24: 'Selbstreinigungsfrequenz',
+    25: 'Cleangenius',
+    26: 'Cleangenius Auto',
+    27: 'Flüssigkeitserkennung',
+    28: 'Intensive Teppichreinigung',
+    29: 'Teppiche zuerst reinigen',
+    30: 'Feuchtigkeitsstufe',
+    31: 'Automatische Raumumbenennung',
+    32: 'Sensorreinigung deaktivieren',
+    33: 'Bodenmaterial',
+    34: 'Gen5',
+    35: 'Neue Möbel',
+    36: 'Gespeicherte Möbel',
+    37: 'Hindernisse',
+    38: 'Wasserprüfung',
+    39: 'Automatische Teppichreinigung',
+    40: 'Raum-Mopp-Einstellungen',
+    41: 'Raum-Mopp-Typ',
+    42: 'Mopp-Typ',
+    43: 'Maximale Saugkraft erweitert',
+    44: 'Automatisches Nachreinigen',
+    45: 'Neuer Zustand',
+    46: 'Kamera-Streaming',
+    47: 'Reinigungsmittel',
+    48: 'Cleangenius-Modus',
+    49: 'Seitliche Reichweite',
+    50: 'Wassertemperatur',
+    51: 'Waschmodus',
+    52: 'Intelligentes Mopp-Waschen',
+    53: 'DnD-Funktionen',
+    54: 'Rampen',
+    55: 'Virtuelle Spuren',
+    56: 'Deodorierer',
+    57: 'Rad',
+    58: 'Kalkinhibitor',
+    59: 'Leises Trocknen',
+    60: 'Haarkompression',
+    61: 'Seitenbürste Teppichrotation',
+    62: 'Automatisches LDS-Anheben',
+    63: 'Bereichsrotation',
+    64: 'Mopp-Pad-Anheben',
+    65: 'Moppen mit Reinigungsmittel',
+    66: 'Teppichüberquerung',
+    67: 'Dynamische Hindernisreinigung',
+    68: 'Hindernisüberquerung',
+    69: 'Doppeltes Reinigungsmittel',
+    70: 'Mopp-Temperatur',
+    71: 'Staubbeuteltrocknung',
+    72: 'LDS-Hebefrequenz',
+    73: 'Druckreinigung',
+    74: 'Schaberfrequenz',
+    75: 'Teppichmaterial',
+    76: 'Teppichtyp',
+    77: 'Teppich-Cleanset v2',
+    78: 'Teppich-Cleanset v3',
+    79: 'Niedrig liegende Bereiche',
+    80: 'Niedrig liegenden Bereich löschen',
+    81: 'Teppichform',
+    82: 'Teppich-ID',
+    83: 'Automatisches Leeren',
+    84: 'Waschlose Basis',
+    85: 'Wassertank-Entleerung',
+    86: 'Automatisches Reinigungsmittel zufügen',
+    87: 'Fülllicht',
+    88: 'Lokale Speicherung',
+    89: 'Laserhindernis'
+  }
+};
+
+const DreameDND = { /*S5P1: DND*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameMapRecoveryStatus = { /*S6P11: Map recovery status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    2: 'Running',
+    3: 'Success',
+    4: 'Fail',
+    5: 'Fail'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    2: 'Läuft',
+    3: 'Erfolg',
+    4: 'Fehler',
+    5: 'Fehler'
+  }
+};
+
+const DreameMapBackupStatus = { /*S6P14: Backup map status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    2: 'Running',
+    3: 'Success',
+    4: 'Fail'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    2: 'Läuft',
+    3: 'Erfolg',
+    4: 'Fehler'
+  }
+};
+
+const DreameVoiceAssistantLanguage = { /*S7P10: Voice assistant language*/
+  'EN': {
+    '': 'Default',
+    'EN': 'English',
+    'DE': 'German',
+    'ZH': 'Chinese'
+  },
+  'DE': {
+    '': 'Standard',
+    'EN': 'Englisch',
+    'DE': 'Deutsch',
+    'ZH': 'Chinesisch'
+  }
+};
+
+const DreameAutoDustCollecting = { /*S15P1: Auto dust collecting*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Inactive',
+    1: 'Standard',
+    2: 'High frequency',
+    3: 'Low frequency'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Standard',
+    2: 'Hohe Frequenz',
+    3: 'Niedrige Frequenz'
+  }
+};
+
+const DreameAutoEmptyMode = { /*S15P2: Auto empty frequency*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Off',
+    1: 'Standard',
+    2: 'High frequency',
+    3: 'Low frequency'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Aus',
+    1: 'Standard',
+    2: 'Hohe Frequenz',
+    3: 'Niedrige Frequenz'
+  }
+};
+
+const DreameDustCollection = { /*S15P3: Dust collection*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Not available',
+    1: 'Available',
+    2: 'Over use',
+    3: 'Never'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Nicht verfügbar',
+    1: 'Verfügbar',
+    2: 'Übernutzung',
+    3: 'Nie'
+  }
+};
+
+const DreameAutoEmptyStatus = { /*S15P5: Auto empty status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Active',
+    2: 'Not Performed'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Leerlauf',
+    1: 'Aktiv',
+    2: 'Nicht durchgeführt'
+  }
+};
+
+const DreamePureWaterTank = { /*S27P1: Clean water tank status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',        // INSTALLED
+    1: 'Not installed',    // NOT INSTALLED
+    2: 'Low water',        // LOW WATER
+    3: 'Water level too low',  // ACTIVE or WATER LEVEL TO LOW
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Nicht installiert',
+    2: 'Wasser niedrig',
+    3: 'Wasserstand zu niedrig',
+  }
+};
+
+const DreameDirtyWaterTank = { /*S27P2: Dirty water tank status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Not installed or full',
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Nicht installiert oder voll',
+  }
+};
+
+const DreameDustBagStatus = { /*S27P3: Dust Bag Staus*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Not installed',
+    2: 'Check'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Nicht installiert',
+    2: 'Überprüfen'
+  }
+};
+
+const DreameDetergentStatus = { /*S27P4: Detergent status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Installed',
+    1: 'Disabled',
+    2: 'Low detergent'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Installiert',
+    1: 'Deaktiviert',
+    2: 'Reinigungsmittel niedrig'
+  }
+};
+
+const DreameStationDrainageStatus = { /*S27P5: Station drainage status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Draining'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Entleeren'
+  }
+};
+
+const DreameSecondCleaning = { /*S27P8: Second cleaning status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Off',
+    1: 'In deep mode',
+    2: 'In all modes'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Aus',
+    1: 'Im Tiefenmodus',
+    2: 'In allen Modi'
+  }
+};
+
+const DreameHotWaterStatus = { /*S27P15: Hot water status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Disabled',
+    1: 'Enabled'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Deaktiviert',
+    1: 'Aktiviert'
+  }
+};
+
+const DreameAutoLdsLifting = { /*S28P3: Auto LDS lifting*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameLdsState = { /*S28P4: LDS state*/
+  'EN': {
+    0: 'Retracted',
+    1: 'Extended'
+  },
+  'DE': {
+    0: 'Eingefahren',
+    1: 'Ausgefahren'
+  }
+};
+
+const DreameCleanGeniusMode = { /*S28P5: Cleangenius mode*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Off',
+    1: 'Routine cleaning',
+    2: 'Deep cleaning',
+    //2: 'Vacuum and mop',
+    3: 'Mop after vacuum'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Aus',
+    1: 'Routinereinigung',
+    2: 'Tiefenreinigung',
+    //2: 'Saugen und moppen',
+    3: 'Moppen nach saugen'
+  }
+};
+
+const DreameQuickWashMode = { /*S28P6: Quick wash mode*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameWaterTemperature = { /*S28P8: Water temperature*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Normal',
+    1: 'Mild',
+    2: 'Warm',
+    3: 'Hot'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Normal',
+    1: 'Mild',
+    2: 'Warm',
+    3: 'Heiß'
+  }
+};
+
+const DreameCleanEfficiency = { /*S28P9: Clean efficiency*/
+  'EN': {
+    1: 'Low',
+    2: 'Medium',
+    3: 'High'
+  },
+  'DE': {
+    1: 'Niedrig',
+    2: 'Mittel',
+    3: 'Hoch'
+  }
+};
+
+const DreameDynamicObstacleClean = { /*S28P18: Dynamic obstacle clean*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameSmartMopWashing = { /*S28P22: Smart mop washing*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameMopAfterVacuum = { /*S28P24: Mop after vacuum*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameSilentDrying = { /*S28P27: Silent drying*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameHairCompression = { /*S28P28: Hair compression*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameSideBrushCarpetRotate = { /*S28P29: Side brush carpet rotate*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameErpLowPower = { /*S28P30: ERP low power*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameObstacleCrossing = { /*S28P38: Obstacle crossing*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameVisualResume = { /*S28P39: Visual resume*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+
+const DreameMoppingWithDetergent = { /*S28P52: Mopping with detergent*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreamePressurizedCleaning = { /*S28P53: Pressurized cleaning*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameRealtimeParticleDetect = { /*S28P58: Realtime particle detect*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameIgnoreStairs = { /*S28P59: Ignore stairs*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameRingLightAlwaysOn = { /*S28P61: Ring light always on*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameStoreMode = { /*S28P79: Store mode*/
+  'EN': {
+    0: 'Off',
+    1: 'On'
+  },
+  'DE': {
+    0: 'Aus',
+    1: 'An'
+  }
+};
+
+const DreameFactoryTestStatus = { /*S99P1: Factory test status*/
+  'EN': {
+    0: 'Idle',
+    1: 'Running',
+    2: 'Completed',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Inaktiv',
+    1: 'L�uft',
+    2: 'Abgeschlossen',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameSelfTestStatus = { /*S99P8: Self test status*/
+  'EN': {
+    0: 'Idle',
+    1: 'Running',
+    2: 'Completed',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Inaktiv',
+    1: 'Läuft',
+    2: 'Abgeschlossen',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameCalibrationStatus = { /*S99P15: Calibration status*/
+  'EN': {
+    0: 'Idle',
+    1: 'Running',
+    2: 'Completed',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Inaktiv',
+    1: 'Läuft',
+    2: 'Abgeschlossen',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameAiTestStatus = { /*S99P25: AI test status*/
+  'EN': {
+    0: 'Idle',
+    1: 'Running',
+    2: 'Completed',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Inaktiv',
+    1: 'Läuft',
+    2: 'Abgeschlossen',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameMopTestStatus = { /*S99P35: Mop test status*/
+  'EN': {
+    0: 'Idle',
+    1: 'Running',
+    2: 'Completed',
+    3: 'Failed'
+  },
+  'DE': {
+    0: 'Inaktiv',
+    1: 'Läuft',
+    2: 'Abgeschlossen',
+    3: 'Fehlgeschlagen'
+  }
+};
+
+const DreameStreamStatus = { /*S10001P1: Stream status*/
+  'EN': {
+    '-1': 'Unknown',
+    0: 'Idle',
+    1: 'Video',
+    2: 'Audio',
+    3: 'Recording'
+  },
+  'DE': {
+    '-1': 'Unbekannt',
+    0: 'Inaktiv',
+    1: 'Video',
+    2: 'Audio',
+    3: 'Aufnahme'
   }
 };
 
@@ -618,9 +2470,10 @@ for (let i = 1; i < 33; i++) {
   }
 }
 
-const DreameSetRoute = {
+const DreameCleaningRoute = {
   'EN': {
     '-1': 'Unknown',
+    0: 'Not set',
     1: 'Standard',
     2: 'Intensive',
     3: 'Deep',
@@ -631,6 +2484,7 @@ const DreameSetRoute = {
   },
   'DE': {
     '-1': 'Unbekannt',
+    0: 'Nicht gesetzt',
     1: 'Standard',
     2: 'Intensiv',
     3: 'Tief',
@@ -668,311 +2522,13 @@ const DreameSetRepeat = {
     3: '3'
   }
 };
-const DreameWaterVolume = {
-  'EN': {
-    '-1': 'Unknown',
-    1: 'Low',
-    2: 'Medium',
-    3: 'High'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    1: 'Niedrig',
-    2: 'Mittel',
-    3: 'Hoch'
-  }
-};
-const DreameCarpetSensitivity = {
-  'EN': {
-    '-1': 'Unknown',
-    1: 'Low',
-    2: 'Medium',
-    3: 'High'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    1: 'Niedrig',
-    2: 'Mittel',
-    3: 'Hoch'
-  }
-};
-const DreameAutoDustCollecting = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Inactive',
-    1: 'Standard',
-    2: 'High frequency',
-    3: 'Low frequency'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Inaktiv',
-    1: 'Standard',
-    2: 'Hohe Frequenz',
-    3: 'Niedrige Frequenz'
-  }
-};
-const DreameAutoEmptyStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Idle',
-    1: 'Active',
-    2: 'Not Performed'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Leerlauf',
-    1: 'Aktiv',
-    2: 'Nicht ausgeführt'
-  }
-};
 
-const DreameDustBagStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Installed',
-    1: 'Not installed',
-    2: 'Check'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Installiert',
-    1: 'Nicht installiert',
-    2: 'Prüfen'
-  }
-};
-
-const DreameStationDrainageStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Idle',
-    1: 'Draining'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Leerlauf',
-    1: 'Entleeren'
-  }
-};
-
-const DreameSelfWashBaseStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Idle',
-    1: 'Washing',
-    2: 'Drying',
-    3: 'Returning',
-    4: 'Paused',
-    5: 'Add clean water',
-    6: 'Adding Water'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Leerlauf',
-    1: 'Waschen',
-    2: 'Trocknen',
-    3: 'Rücklauf',
-    4: 'Pausiert',
-    5: 'Sauberes Wasser hinzufügen',
-    6: 'Wasser zugeben'
-  }
-};
-
-const DreameDetergentStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Installed',
-    1: 'Disabled',
-    2: 'Low detergent'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Installiert',
-    1: 'Deaktiviert',
-    2: 'Reinigungsmittel niedrig'
-  }
-};
-
-const DreameMopWashLevel = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Light',
-    1: 'Standard',
-    2: 'Deep',
-    3: 'Ultra washing'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Leicht',
-    1: 'Standard',
-    2: 'Tief',
-    3: 'Ultra Reinigung'
-  }
-};
-
-const DreameHotWaterStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Disabled',
-    1: 'Enabled'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Deaktiviert',
-    1: 'Aktiviert'
-  }
-};
-
-const DreameWaterTemperature = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Normal',
-    1: 'Mild',
-    2: 'Warm',
-    3: 'Hot'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Normal',
-    1: 'Mild',
-    2: 'Warm',
-    3: 'Heiß'
-  }
-};
-
-const DreameCarpetAvoidance = {
-  'EN': {
-    '-1': 'Unknown',
-    1: 'Avoid',
-    2: 'Lifting the mop',
-    3: 'Remove mop',
-    5: 'Vacuum and Mop',
-    6: 'Ignore'
-  },
-  'DE': {
-    1: 'Vermeiden',
-    2: 'Mopp anheben',
-    3: 'Mopp entfernen',
-    5: 'Saugen und wischen',
-    6: 'Ignorieren'
-  }
-};
-const DreameCleaningMode = {
-  'EN': {
-    '-1': 'Unknown',
-    5122: 'Sweeping',
-    5121: 'Mopping',
-    5120: 'Sweeping and mopping',
-    5123: 'Mopping after sweeping',
-    3840: 'Customize room cleaning'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    5122: 'Staubsaugen',
-    5121: 'Wischen',
-    5120: 'Saugen und Wischen',
-    5123: 'Wischen nach dem Saugen',
-    3840: 'Raumreinigung anpassen'
-  }
-};
-// Map the values as per the user's defined cleaning modes
-const modeMapping = {
-  0: 5122, // Sweeping
-  1: 5121, // Mopping
-  2: 5120, // Sweeping and mopping
-  3: 5123  // Mopping after sweeping
-};
-
-const DreameChargingStatus = {
-  'EN': {
-    '-1': 'Unknown',
-    1: 'Charging',
-    2: 'Not charging',
-    3: 'Charging completed',
-    5: 'Return to charge'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    1: 'Aufladen',
-    2: 'Nicht geladen',
-    3: 'Aufladung abgeschlossen',
-    5: 'Rückkehr zum Laden'
-  }
-};
-const DreameWaterTank = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Not installed',
-    1: 'Installed',
-    10: 'Mop installed',
-    99: 'Mop in station'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Nicht installiert',
-    1: 'Installiert',
-    10: 'Mopp installiert',
-    99: 'Mopp in Station'
-  }
-};
-
-const DreameDirtyWaterTank = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Installed',
-    1: 'Not installed or full',
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Installiert',
-    1: 'Nicht installiert oder voll',
-  }
-};
-
-const DreamePureWaterTank = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'Installed',        // INSTALLED
-    1: 'Not installed',    // NOT_INSTALLED
-    2: 'Low water',        // LOW_WATER
-    3: 'Active',           // ACTIVE
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Installiert',
-    1: 'Nicht installiert',
-    2: 'Wasser niedrig',
-    3: 'Aktiv',
-  }
-};
-
-const DreameLowWaterWarning = {
-  'EN': {
-    '-1': 'Unknown',
-    0: 'No warning',
-    1: 'No water left dismiss',
-    2: 'No water left',
-    3: 'No water left after clean',
-    4: 'No water for clean',
-    5: 'Low water',
-    6: 'Tank not installed'
-  },
-  'DE': {
-    '-1': 'Unbekannt',
-    0: 'Keine Warnung',
-    1: 'Kein Wasser übrig, verwerfen',
-    2: 'Kein Wasser mehr',
-    3: 'Nach der Reinigung ist kein Wasser mehr übrig',
-    4: 'Kein Wasser zum Reinigen',
-    5: 'Niedrigwasser',
-    6: 'Tank nicht installiert'
-  }
-};
 const DreameStateCustomProperties = {
   'Unknown': 'Current room cleaning name',
   '-1': 'Current room cleaning number',
   '0': 'Current room coverage percent'
 };
+
 const DreameStateProperties = {
   'S2P1': 'State',
   'S2P2': 'Error',
@@ -1019,6 +2575,9 @@ const DreameStateProperties = {
   'S4P39': 'Save water tips',
   'S4P40': 'Drying time',
   'S4P41': 'Low water warning',
+  'S4P42': 'Map index',
+  'S4P43': 'Map name',
+  'S4P44': 'Cruise type',
   'S4P45': 'Auto mount mop',
   'S4P46': 'Mop wash level',
   'S4P47': 'Scheduled clean',
@@ -1028,8 +2587,18 @@ const DreameStateProperties = {
   'S4P51': 'Auto water refilling',
   'S4P52': 'Mop in station',
   'S4P53': 'Mop pad installed',
+  'S4P54': 'Water check',
+  'S4P55': 'Dry stop remainder',
+  'S4P56': 'Numeric message prompt',
+  'S4P57': 'Message prompt',
+  'S4P58': 'Task type',
+  'S4P59': 'Pet detective',
+  'S4P60': 'Drainage status',
+  'S4P61': 'Dock cleaning status',
+  'S4P62': 'Back clean mode',
   'S4P63': 'Cleaning completed',
   'S4P64': 'Current charging',
+  'S4P83': 'Device capability',
   'S4P99': 'Combined data',
   'S5P1': 'Dnd',
   'S5P2': 'Dnd start',
@@ -1050,10 +2619,21 @@ const DreameStateProperties = {
   'S6P13': 'Old map data',
   'S6P14': 'Backup map status',
   'S6P15': 'Wifi map',
+  'S6P16': 'Restore map by area',
   'S7P1': 'Volume',
   'S7P2': 'Voice packet id',
   'S7P3': 'Voice change status',
   'S7P4': 'Voice change',
+  'S7P5': 'Voice assistant',
+  'S7P6': 'Empty stamp',
+  'S7P7': 'Current city',
+  'S7P9': 'Voice test',
+  'S7P10': 'Voice assistant language',
+  'S7P11': 'Baidu log',
+  'S7P12': 'Response word',
+  'S7P14': 'Dreame gpt',
+  'S7P15': 'Listen language',
+  'S7P16': 'Listen language status',
   'S8P1': 'Timezone',
   'S8P2': 'Schedule',
   'S8P3': 'Schedule id',
@@ -1069,25 +2649,105 @@ const DreameStateProperties = {
   'S12P2': 'Total cleaning time',
   'S12P3': 'Cleaning count',
   'S12P4': 'Total cleaned area',
+  'S12P5': 'Total runtime',
+  'S12P6': 'Total cruise time',
   'S13P1': 'Map saving',
+  'S14P1': 'Robot config',
   'S15P1': 'Auto dust collecting',
   'S15P2': 'Auto empty frequency',
   'S15P3': 'Dust collection',
   'S15P5': 'Auto empty status',
   'S16P1': 'Sensor left',
   'S16P2': 'Sensor time left',
+  'S17P1': 'Tank filter left',
+  'S17P2': 'Tank filter time left',
   'S18P1': 'Mop pad left',
   'S18P2': 'Mop pad time left',
   'S19P1': 'Silver ion time left',
   'S19P2': 'Silver ion left',
+  'S19P3': 'Silver ion add',
   'S20P1': 'Detergent left',
   'S20P2': 'Detergent time left',
+  'S24P1': 'Squeegee left',
+  'S24P2': 'Squeegee time left',
+  'S25P1': 'Onboard dirty water tank left',
+  'S25P2': 'Onboard dirty water tank time left',
+  'S26P1': 'Dirty water tank left',
+  'S26P2': 'Dirty water tank time left',
   'S27P1': 'Pure water tank',
   'S27P2': 'Dirty water tank',
   'S27P3': 'Dust Bag Staus',
   'S27P4': 'Detergent Status',
   'S27P5': 'Station Drainage Status',
+  'S27P7': 'Ai map optimization status',
+  'S27P8': 'Second cleaning status',
+  'S27P9': 'Water tank status',
+  'S27P10': 'Add cleaning area status',
+  'S27P11': 'Add cleaning area result',
+  'S27P12': 'First connect wifi',
+  'S27P13': 'Hand dust status',
+  'S27P14': 'Hand dust connect status',
+  'S27P15': 'Hot water status',
+  'S28P1': 'Wetness level',
   'S28P2': 'Clean carpet first',
+  'S28P3': 'Auto lds lifting',
+  'S28P4': 'Lds state',
+  'S28P5': 'Cleangenius mode',
+  'S28P6': 'Quick wash mode',
+  'S28P8': 'Water temperature',
+  'S28P9': 'Clean efficiency',
+  'S28P12': 'Impact injection pump',
+  'S28P13': 'Obstacle videos',
+  'S28P14': 'Dnd disable resume cleaning',
+  'S28P15': 'Dnd disable auto empty',
+  'S28P16': 'Dnd reduce volume',
+  'S28P17': 'Hand vacuum auto dusting',
+  'S28P18': 'Dynamic obstacle clean',
+  'S28P19': 'Human noise reduction',
+  'S28P20': 'Pet care',
+  'S28P21': 'Lower hatch control',
+  'S28P22': 'Smart mop washing',
+  'S28P24': 'Mop after vacuum',
+  'S28P25': 'Small area fast clean',
+  'S28P27': 'Silent drying',
+  'S28P28': 'Hair compression',
+  'S28P29': 'Side brush carpet rotate',
+  'S28P30': 'ERP low power',
+  'S28P37': 'Carpet ai segment',
+  'S28P38': 'Obstacle crossing',
+  'S28P39': 'Visual resume',
+  'S28P40': 'Fan abnormal noise',
+  'S28P43': 'Voltage',
+  'S28P46': 'Mop temperature',
+  'S28P47': 'Battery charge level',
+  'S28P52': 'Mopping with detergent',
+  'S28P53': 'Pressurized cleaning',
+  'S28P58': 'Realtime particle detect',
+  'S28P59': 'Ignore stairs',
+  'S28P61': 'Ring light always on',
+  'S28P63': 'Power saving',
+  'S28P79': 'Store mode',
+  'S29P1': 'Deodorizer time left',
+  'S29P2': 'Deodorizer left',
+  'S30P1': 'Wheel dirty time left',
+  'S30P2': 'Wheel dirty left',
+  'S31P1': 'Scale inhibitor time left',
+  'S31P2': 'Scale inhibitor left',
+  'S99P1': 'Factory test status',
+  'S99P3': 'Factory test result',
+  'S99P8': 'Self test status',
+  'S99P9': 'Lsd test status',
+  'S99P11': 'Debug switch',
+  'S99P14': 'Serial',
+  'S99P15': 'Calibration status',
+  'S99P17': 'Version',
+  'S99P24': 'Performance switch',
+  'S99P25': 'Ai test status',
+  'S99P27': 'Public key',
+  'S99P28': 'Auto pair',
+  'S99P31': 'Mcu version',
+  'S99P35': 'Mop test status',
+  'S99P95': 'Platform network',
   'S99P98': 'Cleaning towards the floor',
   'S10001P1': 'Stream status',
   'S10001P2': 'Stream audio',
@@ -1097,8 +2757,12 @@ const DreameStateProperties = {
   'S10001P7': 'Stream fault',
   'S10001P9': 'Camera brightness',
   'S10001P10': 'Camera light',
-  'S10001P101': 'Stream cruise point',
+  'S10001P11': 'Stream vendor',
   'S10001P99': 'Stream property',
+  'S10001P101': 'Stream cruise point',
+  'S10001P110': 'Steam human follow',
+  'S10001P111': 'Obstacle video status',
+  'S10001P112': 'Obstacle video data',
   'S10001P103': 'Stream task',
   'S10001P1003': 'Stream upload',
   'S10001P1100': 'Stream code',
@@ -1108,6 +2772,7 @@ const DreameStateProperties = {
   'S10001P2003': 'Stream space'
 };
 const DreameActionProperties = {
+  'S0P0': 'Experimental Test',
   'S2A1': 'Start',
   'S2A2': 'Pause',
   'S3A1': 'Charge',
@@ -1143,13 +2808,15 @@ const DreameActionProperties = {
   'S4P50E12': 'Clean Route',
   'S4P50E13': 'Live Video Prompts',
   'S4P50E14': 'Suction Max Plus',
-  'S6A1': 'Request map',
+  'S6A1C0': 'Request map',
+  'S6A1C2': 'Delete temporary map',
   'S6A2': 'Update map data',
   'S6A2C1': 'Change map',
   'S6A2C2': 'Rename map',
   'S6A2C3': 'Delete map',
   'S6A2C4': 'Rotate map',
   'S6A2C5': 'Clean Order',
+  'S6A2C6': 'Request new map frame',
   'S6A3': 'Backup map',
   'S6A4': 'Wifi map',
   'S7A1': 'Locate',
@@ -1162,12 +2829,18 @@ const DreameActionProperties = {
   'S11A1': 'Reset filter',
   'S16A1': 'Reset sensor',
   'S15A1': 'Start auto empty',
-  'S17A1': 'Reset secondary filter',
+  'S17A1': 'Reset tank filter',
   'S18A1': 'Reset mop pad',
   'S19A1': 'Reset silver ion',
   'S20A1': 'Reset detergent',
+  'S24A1': 'Reset squeegee',
+  'S25A1': 'Reset onboard dirty water tank',
+  'S26A1': 'Reset dirty water tank',
   //'S27P17': 'Dust Box Bag Drying',
   'S27P18E1': 'Start Mopp Drying',
+  'S29A1': 'Reset deodorizer',
+  'S30A1': 'Reset wheel',
+  'S31A1': 'Reset scale inhibitor',
   //"S10001A1": "Stream video",
   //"S10001A2": "Stream audio",
   //"S10001A3": "Stream property",
@@ -1175,6 +2848,7 @@ const DreameActionProperties = {
 };
 
 const DreameActionParams = {
+  'S0P0': 'false',
   'S2A1': 'false', // Start
   'S2A2': 'false', // Pause
   'S3A1': 'false', // Charge
@@ -1210,13 +2884,17 @@ const DreameActionParams = {
   'S4P50E12': [{'siid':4,'piid':50,'value': '{"k":"CleanRoute","v":1}'}], //CleanRoute 0: off 1: on
   'S4P50E13': [{'siid':4,'piid':50,'value': '{"k":"MonitorPromptLevel","v":1}'}], //Live Video Prompts 0: Weak 1: Strong
   'S4P50E14': [{'siid':4,'piid':50,'value': '{"k":"SuctionMax","v":1}'}], //Suction Max Plus 0: off 1: on
-  'S6A1': [{'piid': 2,'value': '{"req_type":1,"frame_type":"I","force_type":1}'}], // Request map
+  'S6A1C0': [{'piid': 2,'value': '{"req_type":1,"frame_type":"I","force_type":1}'}], // Request map
+  'S6A1C2': [{'piid': 4,'value': '{"cw":0}'}], // Delete temporary map {"cw": 0} -  (discard temporary map) {"cw": 1} - (replace temporary map) {"cw": 5} - (save temporary map)
   'S6A2': [{'piid': 4,'value':'{"customeClean":[[1,2,27,2,2,2]]}'}], // Update map data | Room Settings | 1: Segment, 2: Suction Level, 27 Water volume, 2: Cleaning Times, 2: Cleaning Mode, 2: Route
   'S6A2C1': [{'piid': 4,'value': '{"sm":{},"mapid":map_id}'}], // Update map data | Change map:
   'S6A2C2': [{'piid': 4,'value': '{"nrism":{"map_id":{"name":"New_name"}}}'}],  // Update map data | Rename map: "{\"nrism\":{\"292\":{\"name\":\"Test\"}}}"
   'S6A2C3': [{'piid': 4,'value': '{"cm":{},"mapid":map_id}'}], // Update map data | Delete map
   'S6A2C4': [{'piid': 4,'value': '{"smra":{"map_id":{"ra":90}}}'}], // Update map data | Rotate map
   'S6A2C5': [{'piid': 4,'value':'{"cleanOrder":[1,2,3]}'}], // Update map data | cleanOrder
+  'S6A2C6': [{'piid': 2,'value':'{"frame_type":"I"}'}], // Request new map frame
+  // 'S6A1C1': [{'piid': 2,'value': '{"req_type":1,"frame_type":"I","force_type":1}'}],  automatically requests a new I-frame (full base map frame) to reinitialize the position,
+  // and then continues requesting subsequent P-frames using [{'piid': 2,'value':'{"map_id":xx,"frame_id":I+1,"frame_type":"P"}'}].
   'S6A3': 'false', // Backup map
   'S6A4': 'false', // Wifi map
   'S7A1': 'false', // Locate
@@ -1229,13 +2907,19 @@ const DreameActionParams = {
   'S11A1': 'false', // Reset filter
   'S16A1': 'false', // Reset sensor
   'S15A1': 'false', // Start auto empty
-  'S17A1': 'false', // Reset secondary filter
+  'S17A1': 'false', // Reset tank filter
   'S18A1': 'false', // Reset mop pad
   'S18A1C1': [{'piid': 1,'value': 19},{'piid': 21,'value': '-525,475,1225,3025'}], //Start zone cleaning \"areas\": [[-525,475,1225,3025,3,0,2]]
   'S19A1': 'false', // Reset silver ion
   'S20A1': 'false', // Reset detergent
+  'S24A1': 'false', // Reset squeegee
+  'S25A1': 'false', // Reset onboard dirty water tank
+  'S26A1': 'false', // Reset dirty water tank
   //'S27P17E1': [{'siid':27,'piid':17,'value': 0}], // drying duration of 3 hours (10800 seconds) when activated
   'S27P18E1': [{'siid':27,'piid':18,'value': 0}], // Start Mopp Drying  1: "on" 0: "off',
+  'S29A1': 'false', // Reset deodorizer
+  'S30A1': 'false', // Reset wheel'
+  'S31A1': 'false', // Reset scale inhibitor
   //"S10001A1": "false", // Stream video
   //"S10001A2": "false", // Stream audio
   //"S10001A3": "false", // Stream property
@@ -1249,7 +2933,7 @@ const DreameActionExteParams = {
   'S4P23E1': {'EN': {1: 'Customize room cleaning', 5120: 'Sweeping and mopping', 5121: 'Mopping', 5122: 'Sweeping', 5123: 'Mopping after sweeping'},
 	    'DE': {1: 'Raumreinigung anpassen', 5120: 'Saugen und Wischen', 5121: 'Wischen', 5122: 'Staubsaugen', 5123: 'Wischen nach dem Saugen'}}, //Cleaning mode 5120: vac & mop 5121: mop 5122: vacuum 5123: mop after Vac [{"siid":4,"piid":26,"value":1}] Customize room cleaning 1 On 0: off
   'S4P27E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Child lock 0: off 1: on
-  'S4P37E1':  {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Auto add detergent  0: off 1: on
+  'S4P37E1':  {'EN': {0: 'Off', 1: 'On', 2: 'Unavailable'}, 'DE': {0: 'Aus', 1: 'An', 2: 'Nicht verfügbar'}}, //Auto add detergent  0: off 1: on
   'S4P45E1': {'EN': {0: 'Off', 1: 'On'}, 'DE': {0: 'Aus', 1: 'An'}}, //Auto mount mop 0: off 1: on
   'S4P49E1': {'EN': {0: 'Manually', 1: 'intelligent'}, 'DE': {0: 'Manuell', 1: 'intelligent'}}, // Map Switching methode: 0: Manually 1: intelligent
   'S4P50E2': {'EN': {0: 'Off', 1: 'Routine Cleaning', 2: 'Deep Cleaning'}, 'DE': {0: 'Aus', 1: 'Routinereinigungsmodus', 2: 'Tiefenreinigungsmodus'}}, //"Clean Genius",
@@ -1335,6 +3019,9 @@ const {
 } = require('./lib/keywordsSynonyms.js');
 
 
+// Import Learning System
+const LearningSystem = require('./lib/learningSystem.js');
+
 const URLTK = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLWF1dGgvb2F1dGgvdG9rZW4=';
 let DH_URLTK = new Buffer.from(URLTK, 'base64');
 const URLLST = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHVzZXJiaW5kL2RldmljZS9saXN0VjI=';
@@ -1359,6 +3046,11 @@ const DHURLSENDB = 'L2RldmljZS9zZW5kQ29tbWFuZA==';
 let DH_DHURLSENDB = new Buffer.from(DHURLSENDB, 'base64');
 const DHURLSENDDOM = 'LmlvdC5kcmVhbWUudGVjaDoxMzI2Nw==';
 let DH_DHURLSENDDOM = new Buffer.from(DHURLSENDDOM, 'base64');
+const DHURLHIS = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZHJlYW1lLXVzZXItaW90L2lvdHN0YXR1cy9oaXN0b3J5';
+const DH_DHURLHIS = new Buffer.from(DHURLHIS, 'base64');
+const DHURLGDF = 'aHR0cHM6Ly9ldS5pb3QuZHJlYW1lLnRlY2g6MTMyNjcvZmlsZS1icmlkZ2UvdXNlci9nZXREZWl2aWNlRmlsZQ==';
+const DH_DHURLGDF = new Buffer.from(DHURLGDF, 'base64');
+
 let DH_Map = {};
 let In_path = '';
 let DH_Auth = '',
@@ -1372,12 +3064,18 @@ let DH_Auth = '',
   DH_Islogged = false,
   DH_Did = '',
   DH_Model = '',
+  DH_NormalizedModel = '',
   DH_Mac = '',
   DH_BDomain = '',
   DH_Domain = '',
   DH_filename = '',
   DH_CurMap = 0,
-  DH_Host = '';
+  DH_Host = '',
+  DH_CurrentFrameId = 2,
+  DH_CurrentMapId = -1,
+  DH_CurrentObjectName = '',
+  DH_LastDockStatus = -1;
+
 const canvas = createCanvas();
 const context = canvas.getContext('2d');
 canvas.height = 1024;
@@ -1385,19 +3083,48 @@ canvas.width = 1024;
 let DH_UpdateMapInterval = null;
 let DH_UpdateTheMap = true;
 
-const DREAME_IVs = {
-  'dreame.vacuum.p2114a': '6PFiLPYMHLylp7RR',
-  'dreame.vacuum.p2114o': '6PFiLPYMHLylp7RR',
-  'dreame.vacuum.p2140o': '8qnS9dqgT3CppGe1',
-  'dreame.vacuum.p2140p': '8qnS9dqgT3CppGe1',
-  'dreame.vacuum.p2149o': 'RNO4p35b2QKaovHC',
-  'dreame.vacuum.r2209': 'qFKhvoAqRFTPfKN6',
-  'dreame.vacuum.r2211o': 'dndRQ3z8ACjDdDMo',
-  'dreame.vacuum.r2216o': '4sCv3Q2BtbWVBIB2',
-  'dreame.vacuum.r2228o': 'dndRQ3z8ACjDdDMo',
-  'dreame.vacuum.r2235': 'NRwnBj5FsNPgBNbT',
-  'dreame.vacuum.r2254': 'wRy05fYLQJMRH6Mj',
+
+const DH_IV = {
+  'dreame.vacuum.p2114a': 'NlBGaUxQWU1ITHlscDdSUg==',
+  'dreame.vacuum.p2114o': 'NlBGaUxQWU1ITHlscDdSUg==',
+  'dreame.vacuum.p2140o': 'OHFuUzlkcWdUM0NwcEdlMQ==',
+  'dreame.vacuum.p2140p': 'OHFuUzlkcWdUM0NwcEdlMQ==',
+  'dreame.vacuum.p2149o': 'Uk5PNHAzNWIyUUthb3ZIQw==',
+  'dreame.vacuum.r2209': 'cUZLaHZvQXFSRlRQZktONg==',
+  'dreame.vacuum.r2211o': 'ZG5kUlEzejhBQ2pEZERNbw==',
+  'dreame.vacuum.r2216o': 'NHNDdjNRMkJ0YldWQklCMg==',
+  'dreame.vacuum.r2228o': 'ZG5kUlEzejhBQ2pEZERNbw==',
+  'dreame.vacuum.r2235': 'TlJ3bkJqNUZzTlBnQk5iVA==',
+  'dreame.vacuum.r2254': 'd1J5MDVmWUxRSk1SSDZNag==',
+  'dreame.vacuum.p2008': 'NlBGaUxQWU1ITHlscDdSUg==',
+  'dreame.vacuum.p2009': 'NlBGaUxQWU1ITHlscDdSUg==',
+  'dreame.vacuum.p2028': 'OHFuUzlkcWdUM0NwcEdlMQ==',
+  'dreame.vacuum.p2029': 'OHFuUzlkcWdUM0NwcEdlMQ==',
+  'dreame.vacuum.p2036': 'Uk5PNHAzNWIyUUthb3ZIQw==',
+  'dreame.vacuum.p2037': 'Uk5PNHAzNWIyUUthb3ZIQw==',
+  'dreame.vacuum.p2041': 'cUZLaHZvQXFSRlRQZktONg==',
+  'dreame.vacuum.p2043': 'ZG5kUlEzejhBQ2pEZERNbw==',
+  'dreame.vacuum.p2112': 'NHNDdjNRMkJ0YldWQklCMg==',
+  'dreame.vacuum.p2156': 'TlJ3bkJqNUZzTlBnQk5iVA==',
+  'dreame.vacuum.r2229': 'd1J5MDVmWUxRSk1SSDZNag==',
+  'dreame.vacuum.r2236': 'NlBGaUxQWU1ITHlscDdSUg==',
+  'dreame.vacuum.r2240': 'OHFuUzlkcWdUM0NwcEdlMQ==',
+  'dreame.vacuum.r2241': 'Uk5PNHAzNWIyUUthb3ZIQw==',
+  'dreame.vacuum.r2242': 'cUZLaHZvQXFSRlRQZktONg==',
+  'dreame.vacuum.r2243': 'ZG5kUlEzejhBQ2pEZERNbw==',
+  'dreame.vacuum.r2250': 'TlJ3bkJqNUZzTlBnQk5iVA==',
+  'dreame.vacuum.r2251': 'd1J5MDVmWUxRSk1SSDZNag==',
+  'dreame.vacuum.r2252': 'NHNDdjNRMkJ0YldWQklCMg==',
+  'dreame.vacuum.r2253': 'ZG5kUlEzejhBQ2pEZERNbw==',
+  'dreame.vacuum.r2260': 'cUZLaHZvQXFSRlRQZktONg==',
 };
+const DREAME_IVs = Object.fromEntries(
+  Object.entries(DH_IV).map(([key, value]) => [
+    key,
+    Buffer.from(value, 'base64').toString()
+  ])
+);
+
 //================> Global Get Robot position (Segment)
 const CheckArrayRooms = [];
 
@@ -1420,6 +3147,8 @@ class Dreamehome extends utils.Adapter {
     });
 
     this.DH_GenerateMap = DH_GenerateMap.bind(this);
+	    // Water Tracker Instanz
+    this.waterTracker = null;
     //setInterval(async () => {await this.DH_CheckTaskStatus();}, 1000);
   }
 
@@ -1580,7 +3309,7 @@ class Dreamehome extends utils.Adapter {
           role: 'text',
           write: true,
           read: true,
-          def: AlexaInfo[UserLang][91].replace(/^\s*[-��]?\s*"?Alexa,?\s*/i, '').replace(/"/g, '')
+          def: AlexaInfo[UserLang][911].replace(/^\s*[-��]?\s*"?Alexa,?\s*/i, '').replace(/"/g, '')
         },
         native: {},
       });
@@ -1705,10 +3434,23 @@ class Dreamehome extends utils.Adapter {
       });
 
       await this.DH_connectMqtt();
+
+	  // Refresh the token 5 minutes before it expires
+      const refreshTime = (DH_Expires - 300) * 1000; // Convert to milliseconds (300 seconds = 5 minutes)
+
       this.refreshTokenInterval = setInterval(async () => {
+        // Request a new authentication token
         await this.DH_refreshToken();
-      },
-      (DH_Expires - 100 || 3500) * 1000, );
+        // Re-authenticate MQTT connection after token refresh
+        if (this.mqttClient && this.mqttClient.connected) {
+          // Close the current MQTT connection immediately
+          this.mqttClient.end(true);
+          // Reconnect using the updated authentication credentials
+          this.DH_connectMqtt();
+        }
+      }, refreshTime);
+
+
       this.subscribeStates('*.map.*');
       await this.DH_GetSetRooms();
       await this.DH_GetSetRoomCleanSettings();
@@ -1744,10 +3486,195 @@ class Dreamehome extends utils.Adapter {
     const state = await this.getStateAsync('settings.alexaSpeakMode');
     await this.updateSpeakMode(state?.val);
 
-    // Restoring the water tank level
-    this.restoreWaterTankData();
+    //===================== INITIALIZE LEARNING SYSTEM
+    try {
+      this.log.info('Initializing Learning System...'); // Log the start of the initialization
 
-    firstStartWaterTrack = true; // Set status to true to track the tank, false to prevent cloud reset.
+      // Use DH_Did as deviceId and UserLang as language for the learning system
+      this.learningSystem = new LearningSystem(
+        this,
+        DH_Did,               // deviceId (e.g., "dreamehome.0.0000000000")
+        UserLang,             // User language (e.g., "DE")
+        {
+          Enabled: true,      // Enable the learning system
+          DebugMode: this.config.debug || true  // Enable debug mode based on the configuration
+        }
+      );
+
+      // Define constants using already imported modules for configuration
+      const constants = {
+        suctionSynonyms: suctionSynonyms,              // Imported suction synonyms from keywordsSynonyms.js
+        moppingSynonyms: moppingSynonyms,              // Imported mopping synonyms from keywordsSynonyms.js
+        AlexaRoomsNameSynonyms: AlexaRoomsNameSynonyms, // Imported Alexa room name synonyms from keywordsSynonyms.js
+        AlexaRoomsName: AlexaRoomsName,                // Imported Alexa room names from keywordsSynonyms.js
+        Alexarooms: Alexarooms,                        // Room data from main.js
+        suctionLevels: suctionLevels,                  // Imported suction levels from keywordsSynonyms.js
+        moppingLevels: moppingLevels,                  // Imported mopping levels from keywordsSynonyms.js
+        AlexaInfo: AlexaInfo,                          // Imported Alexa-specific information from keywordsSynonyms.js
+        DreameCleaningMode: DreameCleaningMode,        // Imported Dreame cleaning modes from main.js
+        DreameSuctionLevel: DreameSuctionLevel,        // Imported Dreame suction levels from main.js
+        DreameWaterVolume: DreameWaterVolume,          // Imported Dreame water volume settings from main.js
+        AlexacleanModes: AlexacleanModes,              // Imported AlexacleanModes from keywordsSynonyms.js
+      };
+
+      // Initialize the Learning System with the defined constants
+      await this.learningSystem.initialize(constants);
+
+      // Log success message if initialization is successful
+      this.log.info(`Learning System initialized successfully for device ${DH_Did}`);
+
+    } catch (error) {
+      // Log error if initialization fails
+      this.log.error(`Failed to initialize Learning System: ${error.message}`);
+      this.learningSystem = null;  // Set learning system to null in case of failure
+    }
+
+    await this.initTrHistory(); // Initializes the TR history when the adapter starts
+
+    // Request an I-frame to ensure an up-to-date, complete map base.
+    await this.requestIFrame();
+
+    // WICHTIG: Warte auf den AES-Key!
+    const DH_RobotAesKey = await this.getAesKeyFromRobot();
+
+    // Prüfen ob der Key da ist
+    if (!DH_RobotAesKey) {
+      this.log.error(`[MAIN] ❌ Konnte keinen AES-Key vom Roboter erhalten!`);
+    } else {
+      this.log.info(`[MAIN] ✅ AES-Key erfolgreich geladen: ${DH_RobotAesKey}`);
+    }
+
+    // After successful login and if DH_Did, DH_Uid, and DH_Region are set
+    if (DH_Did && DH_Uid && DH_Region) {
+
+      this.history = new DreameHistory(this, DH_Did, UserLang, {
+        uid: DH_Uid,
+        region: DH_Region,
+        model: DH_Model,
+        authKey: DH_Auth,
+        tenantId: DH_Tenant,
+        authRefresh: DH_AuthRef,
+
+        normalizedModel: DH_NormalizedModel,
+
+        DREAME_IVs: DREAME_IVs,
+
+        urlDown: DH_URLDOWNURL,
+        urlUsa: DH_URLUSA,
+        urlAuth: DH_URLAUTH,
+        urlDreameRlc: DH_URLDRLC,
+        urlDreameHis: DH_DHURLHIS,
+        urlDreameGDF: DH_DHURLGDF,
+
+        robotAesKey: DH_RobotAesKey,
+
+        refreshTokenMethod: this.DH_refreshToken.bind(this)
+      });
+
+      await this.history.initialize();
+
+	  const baseVisPath = `${DH_Did}.vis.history`;
+
+      // Channel for history visualization
+      await this.setObjectNotExistsAsync(baseVisPath, {
+        type: 'channel',
+        common: { name: 'History Visualization' },
+        native: {}
+      });
+
+      // States for navigation
+      const visStates = [
+        {
+          id: 'selectedDate',
+          name: 'Selected History Date',
+          type: 'string',
+          role: 'text',
+          def: '',
+          write: true
+        },
+        {
+          id: 'selectedIndex',
+          name: 'Selected History Index',
+          type: 'number',
+          role: 'value',
+          def: -1,
+          min: -1,
+          max: 100,
+          write: true
+        },
+        {
+          id: 'showHistory',
+          name: 'Show History Overlay',
+          type: 'boolean',
+          role: 'switch',
+          def: false,
+          write: true
+        },
+        {
+          id: 'historyList',
+          name: 'History List for Display',
+          type: 'string',
+          role: 'json',
+          def: '[]',
+          write: false
+        },
+        {
+          id: 'selectedHistory',
+          name: 'Selected History Data',
+          type: 'string',
+          role: 'json',
+          def: '{}',
+          write: false
+        },
+        {
+          id: 'historyPath',
+          name: 'History Path Data',
+          type: 'string',
+          role: 'json',
+          def: '{}',
+          write: false
+        },
+        {
+          id: 'sync',
+          name: 'History Sync State',
+          type: 'boolean',
+          role: 'button',
+          read: true,
+		  write: true,
+          def: false
+        },
+        {
+		  id: 'reload',
+          name: 'Reload Current History',
+          type: 'boolean',
+          role: 'button',
+          read: true,
+		  write: true,
+          def: false
+        }
+      ];
+
+      // Create states if they don't exist
+      for (const state of visStates) {
+        await this.setObjectNotExistsAsync(`${baseVisPath}.${state.id}`, {
+          type: 'state',
+          common: {
+            name: state.name,
+            type: state.type,
+            role: state.role,
+            read: true,
+            write: state.write || false,
+            def: state.def
+          },
+          native: {}
+        });
+      }
+
+	  this.subscribeStates('*.history.cleaning.sync');
+	  this.subscribeStates('*.history.cleaning.loadDate');
+	  this.subscribeStates('*.vis.history.reload');
+	  this.subscribeStates('*.state.water.ResetPureWaterTank');
+    }
   }
 
   async DH_CloudLogin() {
@@ -1852,11 +3779,50 @@ class Dreamehome extends utils.Adapter {
         DH_BDomain = selectedDevice.bindDomain;
         DH_Host = DH_BDomain.split('.')[0];
 
+
+        // Create normalized value for IV lookup
+        const normalizeModel = (model) => {
+          // Remove versioning suffixes like .0001
+          return model.replace(/\.\d+$/, '');
+        };
+
+        // Store as global variable
+        DH_NormalizedModel = normalizeModel(DH_Model);
+
+        this.log.info(`[MAP] Device model: ${DH_Model} (normalized: ${DH_NormalizedModel})`);
+
+        // Check whether IV exists
+        if (DREAME_IVs[DH_NormalizedModel]) {
+          this.log.info(`[MAP] IV found for model ${DH_NormalizedModel}`);
+        } else {
+          this.log.warn(`[MAP] No IV found for model ${DH_NormalizedModel} in database!`);
+        }
+
         // Update config if we used fallback
         if (usedFallback) {
           this.config.selectedDeviceIndex = 0;
           this.log.info('Updated configuration to use first device');
         }
+
+        // Initialize Water Tracking Module
+        try {
+          this.waterTracker = new WaterTrackingModule(this, DH_Did, DH_Model, DreameMopWashLevel, UserLang);
+
+          const initSuccess = await this.waterTracker.initialize();
+
+          // WaterTracker.initialize():
+          if (initSuccess) {
+            this.log.info(`[WATER] Tracker initialized successfully for ${DH_Model}`);
+
+          } else {
+            this.log.error(`[WATER] Tracker initialization returned false`);
+            this.waterTracker = null;
+          }
+        } catch (error) {
+          this.log.error(`[WATER] Tracker initialization exception: ${error.message}`);
+          this.waterTracker = null;
+        }
+
 
         // DEVICE PROPERTIES LOADING
         await this.DH_PropObject(selectedDevice, DH_Did + '.general.', 'Get listV2: ');
@@ -1869,9 +3835,6 @@ class Dreamehome extends utils.Adapter {
         const GetObjNameData = JSON.parse(JSON.stringify(GetCloudRequestObjName.data))[0].value;
         DH_filename = JSON.parse(GetObjNameData).obj_name;
         this.log.info('Fetching obj_name: ' + DH_filename);
-
-        // Initialize water tracking
-        await this.initWaterTracking();
       }
 
       for (const [CPkeyRaw, CPvalue] of Object.entries(DreameStateCustomProperties)) {
@@ -1951,12 +3914,120 @@ class Dreamehome extends utils.Adapter {
 
     await this.logFullConfig();
 
+    // Set firstStartWaterTrack to false
+    setTimeout(async () => {
+      if (this.waterTracker) {
+        // 1. Disable startup protection
+        this.waterTracker.firstStartWaterTrack = false; // Set status to false to track the tank, false to prevent cloud reset.
+        this.log.info(`[WaterTracking] Initial status polling completed - ready for live updates. FirstStartFlag: ${this.waterTracker.firstStartWaterTrack}`);
+
+	 // 2. Check for an active cleaning task
+        try {
+          await this.checkForActiveCleaningAfterSync();
+		 } catch (error) {
+          this.log.error(`[WATER-RECOVERY] Error: ${error.message}`);
+        }
+      }
+    }, 5000);
+
   }
 
   // Validates device object structure
   isValidDevice(device) {
     return device && device.did && device.model && device.mac;
   }
+
+  // Check for an active cleaning task AFTER cloud sync
+  async checkForActiveCleaningAfterSync() {
+    try {
+    // Retrieve the CURRENT values (after cloud sync)
+      const taskStatusState = await this.getStateAsync(DH_Did + '.state.TaskStatus');
+      const cleaningModeState = await this.getStateAsync(DH_Did + '.state.CleaningMode');
+      const waterVolumeState = await this.getStateAsync(DH_Did + '.state.WaterVolume');
+      const suctionLevelState = await this.getStateAsync(DH_Did + '.state.SuctionLevel');
+
+      if (taskStatusState?.val && cleaningModeState?.val) {
+        const taskStatusText = taskStatusState.val;
+        const cleaningModeText = cleaningModeState.val;
+
+        // Convert values to numeric codes
+        const taskStatusNum = Object.entries(DreameTaskStatus[UserLang])
+          .find(([key, val]) => val === taskStatusText)?.[0] || 0;
+        const cleaningModeNum = Object.entries(DreameCleaningMode[UserLang])
+          .find(([key, val]) => val === cleaningModeText)?.[0] || 5120;
+
+        const isCleaningActive = parseInt(taskStatusNum) > 0;
+        const isMoppingMode = WATER_TRACKING.MOPPING_MODES.includes(parseInt(cleaningModeNum));
+
+		 // ===== WATER TRACKER RECOVERY =====
+        if (isCleaningActive && isMoppingMode) {
+          this.log.info('[WATER-RECOVERY] Active cleaning detected after restart!');
+          this.log.info(`  TaskStatus: ${taskStatusNum} (${taskStatusText})`);
+          this.log.info(`  CleaningMode: ${cleaningModeNum} (${cleaningModeText})`);
+
+          // Enable water tracking for the ongoing cleaning task
+          this.waterTracker.isCleaningActive = true;
+          this.waterTracker.waterTracking.isMopping = true;
+
+          // Initialize water level cache
+          if (waterVolumeState?.val) {
+            const washLevel = Object.entries(DreameWaterVolume[UserLang])
+              .find(([key, val]) => val === waterVolumeState.val)?.[0] || 1;
+            this.waterTracker.waterTrackingCache.waterLevel = parseInt(washLevel);
+          }
+
+          // Start auto-save mechanism
+          await this.waterTracker.startAutoSave();
+
+          // Restore persisted tracking data
+          await this.waterTracker.restorePersistedData();
+
+          this.log.info('[WATER-RECOVERY] Tracking enabled for ongoing cleaning task');
+        }
+
+		      // ===== LEARNING SYSTEM RECOVERY =====
+        if (isCleaningActive && this.learningSystem) {
+          this.log.info('[LEARNING-SYSTEM-RECOVERY] Restoring learning session for active cleaning...');
+
+          try {
+          // Retrieve required values
+            const suctionText = suctionLevelState?.val || 'Standard';
+            const waterText = waterVolumeState?.val || 'Medium';
+
+            // Convert to numeric values
+            const suctionNum = Object.entries(DreameSuctionLevel[UserLang])
+              .find(([key, val]) => val === suctionText)?.[0] || 1;
+            const waterNum = Object.entries(DreameWaterVolume[UserLang])
+              .find(([key, val]) => val === waterText)?.[0] || 2;
+
+            // Start learning session with current settings
+            await this.learningSystem.startSession('recovered_after_restart', {
+              mode: parseInt(cleaningModeNum),
+              suction: parseInt(suctionNum),
+              water: parseInt(waterNum)
+            });
+
+            this.log.info(
+              `[LEARNING-SYSTEM-RECOVERY] Session restored: ` +
+            `mode=${cleaningModeNum}, suction=${suctionNum}, water=${waterNum}`
+            );
+
+          } catch (error) {
+            this.log.error(`[LEARNING-SYSTEM-RECOVERY] Failed to restore session: ${error.message}`);
+          }
+        }
+
+	  // No active cleaning detected
+        if (!isCleaningActive) {
+          this.log.info('[RECOVERY] No active cleaning detected after restart');
+        }
+
+      }
+    } catch (error) {
+      this.log.error(`[RECOVERY] Error: ${error.message}`);
+    }
+  }
+
 
   async DH_PropObject(InData, InPath, InLog) {
     for (const [key, value] of Object.entries(InData)) {
@@ -2001,21 +4072,6 @@ class Dreamehome extends utils.Adapter {
     }).catch((error) => {
       this.log.warn(JSON.stringify(error));
     });
-  }
-
-  async decryptDreameMap(encryptedData, model, enckey) {
-    const iv = DREAME_IVs[model];
-    if (!iv) throw new Error(`IV for model ${model} not in the database!`);
-
-    try {
-      const key = crypto.createHash('sha256').update(enckey).digest().slice(0, 32);
-      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'utf8'));
-      let decrypted = decipher.update(encryptedData);
-      decrypted = Buffer.concat([decrypted, decipher.final()]);
-      return decrypted;
-    } catch (err) {
-      throw new Error(`AES decryption failed: ${err.message}`);
-    }
   }
 
 
@@ -2301,94 +4357,189 @@ class Dreamehome extends utils.Adapter {
 
   // Parses robot map data with advanced polygon handling
   async parseRoboMap(mapDataStr, deviceModel) {
+    let buffer = null;
+    let decrypted = null;
+    let aesKey = null;
+    let mapData = null;
+    let jsonData = {};
+    let rooms = {};
+
     try {
-      // 1. Prepare and decode data
-      const [encodedData, aesKey] = mapDataStr.includes(',')
-        ? [mapDataStr.split(',')[0].replace(/-/g, '+').replace(/_/g, '/'), mapDataStr.split(',')[1]]
-        : [mapDataStr.replace(/-/g, '+').replace(/_/g, '/'), null];
+    // 1. Prepare and decode data
+      let encodedData = mapDataStr;
 
-      // 2. Base64 decode
-      let buffer = Buffer.from(encodedData, 'base64');
-
-      // 3. Perform AES decryption if needed
-      if (aesKey && deviceModel && DREAME_IVs[deviceModel]) {
-        const key = crypto.SHA256(aesKey).toString().substr(0, 32);
-        const iv = crypto.enc.Utf8.parse(DREAME_IVs[deviceModel]);
-
-        const decrypted = crypto.AES.decrypt(
-          encodedData,
-          crypto.enc.Utf8.parse(key),
-          { iv, mode: crypto.mode.CBC, padding: crypto.pad.Pkcs7 }
-        );
-
-        buffer = Buffer.from(decrypted.toString(crypto.enc.Base64), 'base64');
+      if (mapDataStr.includes(',')) {
+        const parts = mapDataStr.split(',');
+        encodedData = parts[0];
+        aesKey = parts[1];  // AES key
       }
 
-      // 4. Decompress data
-      const inflated = zlib.inflateSync(buffer);
+      // 2. Decode Base64
+      buffer = Buffer.from(encodedData.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+      encodedData = null; // Cleanup
 
-      // 5. Parse header information
+      // 3. Decompress (and decrypt if required)
+      if (aesKey) {
+        try {
+        // Prepare AES key (32 bytes for AES-256)
+          const keyHash = crypto.createHash('sha256')
+            .update(aesKey)
+            .digest('hex')
+            .substring(0, 32);
+
+          const keyBuffer = Buffer.from(keyHash, 'utf8');
+
+          const iv = DREAME_IVs[DH_NormalizedModel];
+
+          let ivBuffer;
+          const NULL_IV = Buffer.alloc(16, 0);
+
+          // Determine IV
+          if (!iv) {
+            this.log.warn(`No IV found for model ${DH_Model}! Using null IV`);
+            ivBuffer = NULL_IV;
+          } else {
+            ivBuffer = Buffer.from(iv, 'utf8');
+            if (ivBuffer.length !== 16) {
+              this.log.warn(`[MAP] IV has wrong length (${ivBuffer.length}), using null IV`);
+              ivBuffer = NULL_IV;
+            } else {
+              this.log.info(`[MAP] Using IV for model ${DH_Model}: ${iv}`);
+              this.log.info(`[MAP] IV buffer length: ${ivBuffer.length} bytes`);
+            }
+          }
+
+          if (LogData) this.log.info(`[MAP] Attempting decryption...  Key Hash: ${keyHash}, Key Buffer: ${ivBuffer}`);
+
+          // Decrypt
+          const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, ivBuffer);
+          decrypted = Buffer.concat([decipher.update(buffer), decipher.final()]);
+
+          // Release old buffer and crypto material
+          buffer = null;
+          keyBuffer.fill(0); // Overwrite key in memory
+          ivBuffer.fill(0);  // Overwrite IV in memory
+
+          // Decompress after decryption
+          buffer = zlib.inflateSync(decrypted);
+          if (LogData) this.log.info('AES decryption and decompression successful');
+
+        } catch (error) {
+          this.log.error(`AES decryption failed: ${error}`);
+          return;
+        } finally {
+        // Cleanup AES-related data
+          if (decrypted) {
+            decrypted.fill(0); // Overwrite sensitive data
+            decrypted = null;
+          }
+          aesKey = null; // Remove AES key from memory
+        }
+      } else {
+      // Only decompress
+        try {
+          buffer = zlib.inflateSync(buffer);
+        } catch (error) {
+          this.log.error(`Decompression failed: ${error}`);
+          return;
+        }
+      }
+
+      // 4. Parse header
       const header = {
-        mapId: inflated.readInt16LE(0),
-        frameType: inflated.readUInt8(4),
+        mapId: buffer.readInt16LE(0),
+        frameId: buffer.readInt16LE(2),
+        frameType: buffer.readUInt8(4), // 73=I, 80=P
         robot: {
-          x: inflated.readInt16LE(5),
-          y: inflated.readInt16LE(7),
-          angle: inflated.readInt16LE(9)
+          x: buffer.readInt16LE(5),
+          y: buffer.readInt16LE(7),
+          a: buffer.readInt16LE(9)
         },
         charger: {
-          x: inflated.readInt16LE(11),
-          y: inflated.readInt16LE(13),
-          angle: inflated.readInt16LE(15)
+          x: buffer.readInt16LE(11),
+          y: buffer.readInt16LE(13),
+          a: buffer.readInt16LE(15)
         },
-        gridSize: inflated.readInt16LE(17), // mm per pixel
-        width: inflated.readInt16LE(19),
-        height: inflated.readInt16LE(21),
+        gridSize: buffer.readInt16LE(17),
+        width: buffer.readInt16LE(19),
+        height: buffer.readInt16LE(21),
         origin: {
-          x: inflated.readInt16LE(23),
-          y: inflated.readInt16LE(25),
-          left: '',
-          top: ''
+          x: buffer.readInt16LE(23),
+          y: buffer.readInt16LE(25)
         }
       };
 
-      // 6. Calculate origin position in pixel coordinates
+      DH_CurrentFrameId = header.frameId;
+      DH_CurrentMapId = header.mapId;
+
+      // 5. Calculate origin position in pixel coordinates
       header.origin.left = Math.round(header.origin.x / header.gridSize) * -1;
       header.origin.top = Math.round(header.origin.y / header.gridSize) * -1;
 
-      // 7. Extract pixel data
+      this.log.info(`Map Header: ID=${header.mapId}, Frame=${header.frameId}, Type=${header.frameType}, Size=${header.width}x${header.height}`);
+
+      // 6. Extract pixel data
       const mapStart = 27;
       const mapEnd = mapStart + header.width * header.height;
-      const mapData = inflated.slice(mapStart, mapEnd);
 
-      // 8. Parse JSON metadata
-      const jsonData = JSON.parse(inflated.slice(mapEnd).toString());
+      if (buffer.length < mapEnd) {
+        this.log.error(`Map data too short: ${buffer.length} < ${mapEnd}`);
+        return null;
+      }
 
-      // 9. Process room pixels and create polygons
-      const rooms = {};
+      // Slice creates a new buffer reference, not a copy
+      mapData = buffer.slice(mapStart, mapEnd);
+
+      // 7. Parse JSON metadata
+      if (buffer.length > mapEnd) {
+        try {
+          const jsonStr = buffer.toString('utf8', mapEnd);
+          jsonData = JSON.parse(jsonStr);
+
+          // ========== TEST: FORCE FALLBACK ==========
+          //if (jsonData.walls_info) {
+          //this.log.warn('[TEST] Forcing fallback - deleting walls_info');
+          //jsonData.walls_info = { storeys: [] };
+          //}
+          // ===========================================
+
+        } catch (error) {
+          this.log.warn(`JSON parsing failed: ${error}`);
+        }
+      }
+
+      // 8. Process room pixels and create polygons
       for (let y = 0; y < header.height; y++) {
         for (let x = 0; x < header.width; x++) {
           const pos = y * header.width + x;
           const val = mapData.readUInt8(pos);
-          const areaId = val & 0x3f;
-          const isBorder = (val >> 7) === 1;
+          const segmentId = val & 0x3f; // Lower 6 bits = room ID
+          const isBorder = (val >> 7) === 1;  // Highest bit = border
 
-          if (areaId > 0) {
-            if (!rooms[areaId]) {
-              rooms[areaId] = {
+          if (segmentId > 0 && segmentId < 63) {
+            if (!rooms[segmentId]) {
+              rooms[segmentId] = {
                 pixels: [],
                 borders: [],
                 minX: x,
                 maxX: x,
                 minY: y,
-                maxY: y
+                maxY: y,
+                name: null,
+                customName: null,
+                type: 0,
+                index: 0
               };
             }
 
-            const room = rooms[areaId];
-            room.pixels.push({x, y});
+            const room = rooms[segmentId];
+            if (isBorder) {
+              room.borders.push({x, y});
+            } else {
+              room.pixels.push({x, y});
+            }
 
-            if (isBorder) room.borders.push({x, y});
+            // Update bounds
             if (x < room.minX) room.minX = x;
             if (x > room.maxX) room.maxX = x;
             if (y < room.minY) room.minY = y;
@@ -2397,29 +4548,86 @@ class Dreamehome extends utils.Adapter {
         }
       }
 
-      // 10. Convert to mm and create precise polygons
-      Object.keys(rooms).forEach(id => {
-        const room = rooms[id];
-        const gridSize = header.gridSize;
-        const origin = header.origin;
+      // 9. Extract room names from seg_inf and convert in ONE pass
+      if (jsonData.seg_inf) {
+        Object.keys(rooms).forEach(id => {
+          const room = rooms[id];
+          const segInfo = jsonData.seg_inf[id];
+          const gridSize = header.gridSize;
+          const origin = header.origin;
 
-        // Convert bounds to mm
-        room.minX *= gridSize;
-        room.maxX *= gridSize;
-        room.minY *= gridSize;
-        room.maxY *= gridSize;
+          if (segInfo) {
+          // Room type
+            if (segInfo.type !== undefined) {
+              room.type = segInfo.type;
+            }
 
-        // Create exact polygon matching pixel shape
-        const polygonWithHoles = this.createExactRoomPolygon(room.pixels, gridSize, origin);
-        room.polygon = polygonWithHoles.outer;
-        room.holes = polygonWithHoles.holes;
+            // Index for multiple rooms of same type
+            if (segInfo.index !== undefined) {
+              room.index = segInfo.index;
+            }
 
-        // Calculate center in mm
-        room.center = {
-          x: (room.minX + room.maxX) / 2,
-          y: (room.minY + room.maxY) / 2
-        };
-      });
+            // Custom name (base64 encoded)
+            if (segInfo.name) {
+              try {
+                room.customName = Buffer.from(segInfo.name, 'base64').toString('utf8');
+                this.log.debug(`Room ${id} custom name: ${room.customName}`);
+              } catch (e) {
+                this.log.warn(`Failed to decode custom name for room ${id}`);
+              }
+            }
+          }
+
+          // Generate default name
+          room.name = this.getRoomTypeName(room.type, room.index, room.customName);
+
+          // Convert bounds to mm
+          room.minXmm = room.minX * gridSize;
+          room.maxXmm = room.maxX * gridSize;
+          room.minYmm = room.minY * gridSize;
+          room.maxYmm = room.maxY * gridSize;
+
+          // Calculate center in mm
+          room.center = {
+            x: (room.minXmm + room.maxXmm) / 2,
+            y: (room.minYmm + room.maxYmm) / 2
+          };
+
+          // Create exact polygon matching pixel shape
+          const polygonWithHoles = this.createExactRoomPolygon(room.pixels, gridSize, origin);
+          room.polygon = polygonWithHoles.outer;
+          room.holes = polygonWithHoles.holes;
+
+          // Calculate area
+          const calculatedRoomArea = this.calculateRoomArea(room);
+
+          this.log.info(`--- Processing Room ${id}: "${room.name || 'Unnamed'}", Area: ${calculatedRoomArea} m², (Type: ${room.type}, Index: ${room.index}) ---`);
+          this.log.info(`Pixel count: ${room.pixels.length}, Border count: ${room.borders.length}`);
+          this.log.info(`Bounds (grid): minX=${room.minX}, maxX=${room.maxX}, minY=${room.minY}, maxY=${room.maxY}`);
+          this.log.info(`Grid size: ${gridSize} mm`);
+          this.log.debug(`Bounds (mm): minX=${room.minXmm}, maxX=${room.maxXmm}, minY=${room.minYmm}, maxY=${room.maxYmm}`);
+          this.log.info(`Polygon created: outer points=${room.polygon ? room.polygon.length : 0}, holes=${room.holes ? room.holes.length : 0}`);
+        });
+      }
+
+      // ========== FALLBACK FOR MISSING walls_info ==========
+      // 10. Check if walls_info exists, if not generate from pixel data
+      if (!jsonData.walls_info || !jsonData.walls_info.storeys || jsonData.walls_info.storeys.length === 0) {
+        this.log.warn('[MAP] No storeys structure found in JSON - generating walls_info from pixel data');
+
+        // Generate walls_info from pixel data
+        const generatedWallsInfo = this.generateWallsInfoFromPixels(mapData, header, jsonData, rooms);
+
+        // Add to jsonData for later use
+        jsonData.walls_info = generatedWallsInfo;
+
+        this.log.info(`[MAP] Generated walls_info with ${generatedWallsInfo.storeys[0]?.rooms?.length || 0} rooms from pixel data`);
+      } else {
+        const roomsCount = jsonData.walls_info.storeys[0]?.rooms?.length || 0;
+        this.log.info(`[MAP] Found ${roomsCount} rooms in existing walls_info structure`);
+      }
+
+      this.log.info(`Map decoded: ${Object.keys(rooms).length} rooms found`);
 
       return {
         header,
@@ -2428,9 +4636,535 @@ class Dreamehome extends utils.Adapter {
       };
 
     } catch (error) {
-      this.log.error('Error parsing map:' + error);
+      this.log.error(`Error parsing map: ${error.message}\n${error.stack}`);
       return null;
+    } finally {
+    // AGGRESSIVE CLEANUP for all resources
+      if (buffer) {
+        if (Buffer.isBuffer(buffer)) {
+          buffer.fill(0); // Overwrite sensitive data
+        }
+        buffer = null;
+      }
+
+      if (mapData) {
+      // mapData is only a reference to a buffer slice, no separate cleanup needed
+        mapData = null;
+      }
+
+      if (decrypted) {
+        decrypted.fill(0);
+        decrypted = null;
+      }
+
+      // Release objects for garbage collection
+      jsonData = null;
+      rooms = null;
+      aesKey = null;
     }
+  }
+
+  // ============================================================================
+  // PIXEL-BASED ROOM & WALL GENERATION (FALLBACK WHEN NO STOREYS STRUCTURE)
+  // ============================================================================
+
+  // Generates walls_info structure from pixel data when no storeys exist
+  generateWallsInfoFromPixels(pixelData, header, jsonData, rooms) {
+    this.log.info('[PIXEL-FALLBACK] Generating walls_info from pixel data');
+
+    const gridSize = header.gridSize;
+    const origin = header.origin;
+    const storeyRooms = [];
+
+    // Process each room from the pixel analysis
+    for (const [roomId, room] of Object.entries(rooms)) {
+      if (!room.polygon || room.polygon.length < 3) {
+        this.log.debug(`[PIXEL-FALLBACK] Room ${roomId} has invalid polygon, skipping`);
+        continue;
+      }
+
+      // Create wall segments from polygon edges
+      const walls = [];
+      const polygon = room.polygon;
+
+      for (let i = 0; i < polygon.length; i++) {
+        const j = (i + 1) % polygon.length;
+        walls.push({
+          type: 0, // normal wall
+          beg_pt_x: polygon[i].x,
+          beg_pt_y: polygon[i].y,
+          end_pt_x: polygon[j].x,
+          end_pt_y: polygon[j].y
+        });
+      }
+
+      // Get room name from jsonData.seg_inf if available
+      let roomName = room.name || `Room ${roomId}`;
+      let roomType = room.type || 0;
+      let roomIndex = room.index || 0;
+
+      // Try to get better name from seg_inf
+      if (jsonData.seg_inf && jsonData.seg_inf[roomId]) {
+        const segInfo = jsonData.seg_inf[roomId];
+        if (segInfo.name) {
+          try {
+            const decodedName = Buffer.from(segInfo.name, 'base64').toString('utf8');
+            if (decodedName) roomName = decodedName;
+          } catch (e) {
+          // Keep existing name
+          }
+        }
+        if (segInfo.type !== undefined) roomType = segInfo.type;
+        if (segInfo.index !== undefined) roomIndex = segInfo.index;
+      }
+
+      storeyRooms.push({
+        room_id: parseInt(roomId),
+        name: roomName,
+        type: roomType,
+        index: roomIndex,
+        walls: walls,
+        polygon: polygon,
+        bounds: {
+          minX: room.minXmm,
+          maxX: room.maxXmm,
+          minY: room.minYmm,
+          maxY: room.maxYmm
+        }
+      });
+
+      this.log.info(`[PIXEL-FALLBACK] Generated room ${roomId}: "${roomName}" with ${walls.length} walls, ${room.pixels.length} pixels`);
+    }
+
+    // Sort rooms by ID for consistency
+    storeyRooms.sort((a, b) => a.room_id - b.room_id);
+
+    const wallsInfo = {
+      storeys: [{
+        storey_id: 0,
+        name: 'Ground Floor',
+        rooms: storeyRooms.map(room => ({
+          room_id: room.room_id,
+          walls: room.walls
+        })),
+        doors: []  // Doors cannot be reliably detected from pixels alone
+      }]
+    };
+
+    // Store additional room data in jsonData for later use
+    jsonData._generated_rooms = storeyRooms;
+
+    return wallsInfo;
+  }
+
+  // Traces the contour of a room from its pixels (for use when no walls_info exists)
+  traceRoomContour(pixels, width, height) {
+    if (!pixels.length) return [];
+
+    // Build pixel set for quick lookup
+    const pixelSet = new Set(pixels.map(p => `${p.x},${p.y}`));
+
+    // Find top-left most pixel as starting point
+    const start = pixels.reduce((min, p) =>
+      (p.y < min.y || (p.y === min.y && p.x < min.x)) ? p : min, pixels[0]);
+
+    // 8-directional movement (clockwise)
+    const dirs = [
+      { dx: 1, dy: 0 },   // right
+      { dx: 1, dy: -1 },  // top-right
+      { dx: 0, dy: -1 },  // top
+      { dx: -1, dy: -1 }, // top-left
+      { dx: -1, dy: 0 },  // left
+      { dx: -1, dy: 1 },  // bottom-left
+      { dx: 0, dy: 1 },   // bottom
+      { dx: 1, dy: 1 }    // bottom-right
+    ];
+
+    const contour = [];
+    let current = { x: start.x, y: start.y };
+    let prevDir = 0;
+    let iterations = 0;
+    const maxIterations = 10000;
+
+    do {
+      contour.push({ x: current.x, y: current.y });
+      iterations++;
+
+      if (iterations > maxIterations) {
+        this.log.warn(`[CONTOUR] Max iterations reached, stopping`);
+        break;
+      }
+
+      // Find next pixel in clockwise direction
+      let found = false;
+      for (let i = 0; i < 8; i++) {
+        const dirIdx = (prevDir + 6 + i) % 8;
+        const dir = dirs[dirIdx];
+        const next = { x: current.x + dir.dx, y: current.y + dir.dy };
+
+        // Check bounds
+        if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height) {
+          continue;
+        }
+
+        if (pixelSet.has(`${next.x},${next.y}`)) {
+          prevDir = dirIdx;
+          current = next;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) break;
+
+    } while (current.x !== start.x || current.y !== start.y);
+
+    // Simplify contour (remove collinear points)
+    return this.simplifyContour(contour);
+  }
+
+  // Simplifies contour by removing collinear points
+  simplifyContour(contour) {
+    if (contour.length < 3) return contour;
+
+    const result = [];
+    const tolerance = 0.01; // 0.01 pixel tolerance
+
+    for (let i = 0; i < contour.length; i++) {
+      const prev = contour[(i - 1 + contour.length) % contour.length];
+      const curr = contour[i];
+      const next = contour[(i + 1) % contour.length];
+
+      // Calculate cross product to check collinearity
+      const cross = (curr.x - prev.x) * (next.y - curr.y) -
+                  (curr.y - prev.y) * (next.x - curr.x);
+
+      if (Math.abs(cross) > tolerance) {
+        result.push(curr);
+      }
+    }
+
+    return result.length < 3 ? contour : result;
+  }
+
+  // ============================================================================
+  // Old Parses robot map data with advanced polygon handling
+  // ============================================================================
+  async OLDparseRoboMap(mapDataStr, deviceModel) {
+    let buffer = null;
+    let decrypted = null;
+    let aesKey = null;
+    let mapData = null;
+    let jsonData = {};
+    let rooms = {};
+
+    try {
+      // 1. Prepare and decode data
+      let encodedData = mapDataStr;
+
+      if (mapDataStr.includes(',')) {
+        const parts = mapDataStr.split(',');
+        encodedData = parts[0];
+        aesKey = parts[1];  // AES key
+      }
+
+      // 2. Decode Base64
+      buffer = Buffer.from(encodedData.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+      encodedData = null; // Cleanup
+
+      // 3. Decompress (and decrypt if required)
+      if (aesKey) {
+        try {
+          // Prepare AES key (32 bytes for AES-256)
+          const keyHash = crypto.createHash('sha256')
+            .update(aesKey)
+            .digest('hex')
+            .substring(0, 32);
+
+          const keyBuffer = Buffer.from(keyHash, 'utf8');
+
+          const iv = DREAME_IVs[DH_NormalizedModel];
+
+          let ivBuffer;
+          const NULL_IV = Buffer.alloc(16, 0);
+
+          // Determine IV
+          if (!iv) {
+            this.log.warn(`No IV found for model ${DH_Model}! Using null IV`);
+            ivBuffer = NULL_IV;
+          } else {
+            ivBuffer = Buffer.from(iv, 'utf8');
+            if (ivBuffer.length !== 16) {
+              this.log.warn(`[MAP] IV has wrong length (${ivBuffer.length}), using null IV`);
+              ivBuffer = NULL_IV;
+            } else {
+              this.log.info(`[MAP] Using IV for model ${DH_Model}: ${iv}`);
+              this.log.info(`[MAP] IV buffer length: ${ivBuffer.length} bytes`);
+            }
+          }
+
+          if (LogData) this.log.info(`[MAP] Attempting decryption...  Key Hash: ${keyHash}, Key Buffer: ${ivBuffer}`);
+
+          // Decrypt
+          const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, ivBuffer);
+          decrypted = Buffer.concat([decipher.update(buffer), decipher.final()]);
+
+          // Release old buffer and crypto material
+          buffer = null;
+          keyBuffer.fill(0); // Overwrite key in memory
+          ivBuffer.fill(0);  // Overwrite IV in memory
+
+          // Decompress after decryption
+          buffer = zlib.inflateSync(decrypted);
+          if (LogData) this.log.info('AES decryption and decompression successful');
+
+        } catch (error) {
+          this.log.error(`AES decryption failed: ${error}`);
+          return;
+        } finally {
+          // Cleanup AES-related data
+          if (decrypted) {
+            decrypted.fill(0); // Overwrite sensitive data
+            decrypted = null;
+          }
+          aesKey = null; // Remove AES key from memory
+        }
+      } else {
+        // Only decompress
+        try {
+          buffer = zlib.inflateSync(buffer);
+        } catch (error) {
+          this.log.error(`Decompression failed: ${error}`);
+          return;
+        }
+      }
+
+      // 4. Parse header
+      const header = {
+        mapId: buffer.readInt16LE(0),
+        frameId: buffer.readInt16LE(2),
+        frameType: buffer.readUInt8(4), // 73=I, 80=P
+        robot: {
+          x: buffer.readInt16LE(5),
+          y: buffer.readInt16LE(7),
+          a: buffer.readInt16LE(9)
+        },
+        charger: {
+          x: buffer.readInt16LE(11),
+          y: buffer.readInt16LE(13),
+          a: buffer.readInt16LE(15)
+        },
+        gridSize: buffer.readInt16LE(17),
+        width: buffer.readInt16LE(19),
+        height: buffer.readInt16LE(21),
+        origin: {
+          x: buffer.readInt16LE(23),
+          y: buffer.readInt16LE(25)
+        }
+      };
+
+      DH_CurrentFrameId = header.frameId,
+      DH_CurrentMapId = header.mapId;
+
+      // 5. Calculate origin position in pixel coordinates
+      header.origin.left = Math.round(header.origin.x / header.gridSize) * -1;
+      header.origin.top = Math.round(header.origin.y / header.gridSize) * -1;
+
+      this.log.info(`Map Header: ID=${header.mapId}, Frame=${header.frameId}, Type=${header.frameType}, Size=${header.width}x${header.height}`);
+
+      // 6. Extract pixel data
+      const mapStart = 27;
+      const mapEnd = mapStart + header.width * header.height;
+
+      if (buffer.length < mapEnd) {
+        this.log.error(`Map data too short: ${buffer.length} < ${mapEnd}`);
+        return null;
+      }
+
+      // Slice creates a new buffer reference, not a copy
+      mapData = buffer.slice(mapStart, mapEnd);
+
+      // 7. Parse JSON metadata
+      if (buffer.length > mapEnd) {
+        try {
+          // toString with start position is more efficient than slice
+          const jsonStr = buffer.toString('utf8', mapEnd);
+          jsonData = JSON.parse(jsonStr);
+        } catch (error) {
+          this.log.warn(`JSON parsing failed: ${error}`);
+        }
+      }
+
+      // 8. Process room pixels and create polygons
+      for (let y = 0; y < header.height; y++) {
+        for (let x = 0; x < header.width; x++) {
+          const pos = y * header.width + x;
+          const val = mapData.readUInt8(pos);
+          const segmentId = val & 0x3f; // Lower 6 bits = room ID
+          const isBorder = (val >> 7) === 1;  // Highest bit = border
+
+          if (segmentId > 0 && segmentId < 63) {
+            if (!rooms[segmentId]) {
+              rooms[segmentId] = {
+                pixels: [],
+                borders: [],
+                minX: x,
+                maxX: x,
+                minY: y,
+                maxY: y,
+                name: null,
+                customName: null,
+                type: 0,
+                index: 0
+              };
+            }
+
+            const room = rooms[segmentId];
+            if (isBorder) {
+              room.borders.push({x, y});
+            } else {
+              room.pixels.push({x, y});
+            }
+
+            // Update bounds
+            if (x < room.minX) room.minX = x;
+            if (x > room.maxX) room.maxX = x;
+            if (y < room.minY) room.minY = y;
+            if (y > room.maxY) room.maxY = y;
+          }
+        }
+      }
+
+      // 9. Extract room names from seg_inf and convert in ONE pass
+      if (jsonData.seg_inf) {
+        Object.keys(rooms).forEach(id => {
+          const room = rooms[id];
+          const segInfo = jsonData.seg_inf[id];
+          const gridSize = header.gridSize;
+          const origin = header.origin;
+
+          if (segInfo) {
+            // Room type
+            if (segInfo.type !== undefined) {
+              room.type = segInfo.type;
+            }
+
+            // Index for multiple rooms of same type
+            if (segInfo.index !== undefined) {
+              room.index = segInfo.index;
+            }
+
+            // Custom name (base64 encoded)
+            if (segInfo.name) {
+              try {
+                room.customName = Buffer.from(segInfo.name, 'base64').toString('utf8');
+                this.log.debug(`Room ${id} custom name: ${room.customName}`);
+              } catch (e) {
+                this.log.warn(`Failed to decode custom name for room ${id}`);
+              }
+            }
+          }
+
+          // Generate default name
+          room.name = this.getRoomTypeName(room.type, room.index, room.customName);
+
+          // Convert bounds to mm
+          room.minXmm = room.minX * gridSize;
+          room.maxXmm = room.maxX * gridSize;
+          room.minYmm = room.minY * gridSize;
+          room.maxYmm = room.maxY * gridSize;
+
+          // Calculate center in mm
+          room.center = {
+            x: (room.minXmm + room.maxXmm) / 2,
+            y: (room.minYmm + room.maxYmm) / 2
+          };
+
+          // Create exact polygon matching pixel shape
+          const polygonWithHoles = this.createExactRoomPolygon(room.pixels, gridSize, origin);
+          room.polygon = polygonWithHoles.outer;
+          room.holes = polygonWithHoles.holes;
+
+          // Calculate area
+          const calculatedRoomArea = this.calculateRoomArea(room);
+
+          this.log.info(`--- Processing Room ${id}: "${room.name || 'Unnamed'}", Area: ${calculatedRoomArea} m², (Type: ${room.type}, Index: ${room.index}) ---`);
+          this.log.info(`Pixel count: ${room.pixels.length}, Border count: ${room.borders.length}`);
+          this.log.info(`Bounds (grid): minX=${room.minX}, maxX=${room.maxX}, minY=${room.minY}, maxY=${room.maxY}`);
+          this.log.info(`Grid size: ${gridSize} mm`);
+          this.log.debug(`Bounds (mm): minX=${room.minXmm}, maxX=${room.maxXmm}, minY=${room.minYmm}, maxY=${room.maxYmm}`);
+          this.log.info(`Polygon created: outer points=${room.polygon ? room.polygon.length : 0}, holes=${room.holes ? room.holes.length : 0}`);
+        });
+      }
+
+      this.log.info(`Map decoded: ${Object.keys(rooms).length} rooms found`);
+
+      return {
+        header,
+        rooms,
+        jsonData
+      };
+
+    } catch (error) {
+      this.log.error(`Error parsing map: ${error.message}\n${error.stack}`);
+      return null;
+    } finally {
+      // AGGRESSIVE CLEANUP for all resources
+      if (buffer) {
+        if (Buffer.isBuffer(buffer)) {
+          buffer.fill(0); // Overwrite sensitive data
+        }
+        buffer = null;
+      }
+
+      if (mapData) {
+        // mapData is only a reference to a buffer slice, no separate cleanup needed
+        mapData = null;
+      }
+
+      if (decrypted) {
+        decrypted.fill(0);
+        decrypted = null;
+      }
+
+      // Release objects for garbage collection
+      jsonData = null;
+      rooms = null;
+      aesKey = null;
+    }
+  }
+
+
+  getRoomTypeName(type, index = 0, customName = null) {
+    // Custom name always has priority
+    if (customName) {
+      return customName;
+    }
+    const baseName = SegmentToName[UserLang][type] || `Room ${type}`;
+
+    // If multiple rooms of the same type exist, append index
+    if (index > 0) {
+      return `${baseName} ${index + 1}`;
+    }
+
+    return baseName;
+  }
+
+  // Calculate room area (in square meters)
+  calculateRoomArea(room) {
+    if (!room.polygon || room.polygon.length < 3) return 0;
+
+    let area = 0;
+    const n = room.polygon.length;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += room.polygon[i].x * room.polygon[j].y;
+      area -= room.polygon[j].x * room.polygon[i].y;
+    }
+
+    // Area in square meters (since coordinates are in mm)
+    return Math.abs(area) / 2 / 1000000;
   }
 
   // Creates a polygon from room pixel data, including holes
@@ -3017,6 +5751,45 @@ class Dreamehome extends utils.Adapter {
         },
         native: {}
       }),
+      // Path state for the current map
+      this.setObjectNotExistsAsync(`${In_path}Path${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `Robot Path (Map ${requestedFloor})`,
+          type: 'string',
+          role: 'json',
+          write: false,
+          read: true,
+          def: '{"raw":"","points":[],"segments":[],"timestamp":0}'
+        },
+        native: {}
+      }),
+      // Raw data for the current map
+      this.setObjectNotExistsAsync(`${In_path}RawData${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `Raw data as returned by the device (Map ${requestedFloor})`,
+          type: 'string',
+          role: 'text',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {}
+      }),
+      // Current "tr" string to the history
+      this.setObjectNotExistsAsync(`${In_path}TrHistory${actualFloor}`, {
+        type: 'state',
+        common: {
+          name: `Tr history as returned by the device (Map ${requestedFloor})`,
+          type: 'string',
+          role: 'json',
+          write: false,
+          read: true,
+          def: ''
+        },
+        native: {}
+      }),
       this.setObjectNotExists(`${In_path}vishtml${actualFloor}`, {
         type: 'state',
         common: {
@@ -3054,7 +5827,7 @@ class Dreamehome extends utils.Adapter {
 
         if (response?.status === 200) {
           const responseData = JSON.stringify(response.data);
-          this.log.info(`[SUCCESS] Received data: ${responseData.substring(0, 100)}...`);
+          if (LogData) this.log.info(`[SUCCESS] Received data: ${responseData.substring(0, 100)}...`);
           return response.data;
         } else {
           this.log.warn(`[WARNING] Unexpected response status (${response.status}) while fetching file.`);
@@ -3145,7 +5918,7 @@ class Dreamehome extends utils.Adapter {
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.WaterVolume`, DreameSetWaterVolume[UserLang], `${SortiRoom.Name} Water Volume`);
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.Repeat`, DreameSetRepeat[UserLang], `${SortiRoom.Name} Repeat`);
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningMode`, DreameCleaningMode[UserLang], `${SortiRoom.Name} Cleaning Mode`);
-      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningRoute`, DreameSetRoute[UserLang], `${SortiRoom.Name} Cleaning Route`);
+      await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.CleaningRoute`, DreameCleaningRoute[UserLang], `${SortiRoom.Name} Cleaning Route`);
       await this.DH_setRoomPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.Cleaning`, DreameSetCleanRoom[UserLang], `${SortiRoom.Name} Cleaning`);
       await this.DH_setRoomIDPath(DH_Did + `.map.${DH_CurMap}.${SortiRoom.Name}.RoomID`, SortiRoom.Id, `${SortiRoom.Name} ID`);
 
@@ -3566,7 +6339,7 @@ class Dreamehome extends utils.Adapter {
 
         // If mode setting failed after 3 attempts, log an error and return false
         if (!modeSetSuccessfully) {
-          this.log.info(`[DiningTable] ${AlexaInfo[UserLang][46]}`);
+          this.log.info(`[DiningTable] ${AlexaInfo[UserLang][601]}`);
           return false;
         }
 
@@ -3701,7 +6474,7 @@ class Dreamehome extends utils.Adapter {
                   RetPointValue = 0; // fallback
                   if (LogData) this.log.warn(`Failed reading S2P1 for drying: ${err}`);
                 }
-              } else {
+			  }else {
                 const Readpath = DH_Did + '.state.' + (DreameStateProperties[SPkey.split('E')[0]]).replace(/\w\S*/g, function(SPName) {
                   return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
                 }).replace(/\s/g, '');
@@ -3759,7 +6532,7 @@ class Dreamehome extends utils.Adapter {
 						   this.log.warn('Failed to split "' + SPvalue + '" State failed: ' + error);
                   }
                 }
-		  }
+		      }
             }
             if (LogData) {
 			   this.log.info('Set and update ' + SPvalue + ' value to: ' + JSON.stringify(RetPointValue));
@@ -3920,6 +6693,9 @@ class Dreamehome extends utils.Adapter {
       DH_OldTaskStatus = DH_NewTaskStatus;
       //if (LogData) {
       this.log.info('A new cleaning was initiated, the object state PosHistory was reset to :' + DH_OldTaskStatus);
+
+	   await this.resetTrHistory(); // [TR] History reset for new cleaning
+      await this.resetPosHistory(); // // Reset cache: '[TR2POS] Reset for new cleaning
       //}
     }
   }
@@ -3930,218 +6706,6 @@ class Dreamehome extends utils.Adapter {
     }).join(''));
   }
 
-  // Helper functions outside of DH_GenerateMap
-  async DH_GetRobotPosition(Position, SegmentObject) {
-    let currentSegment = null;
-    let result = null;
-
-    for (const segment of Object.values(SegmentObject)) {
-      let inside = false;
-      const { X: xCoords, Y: yCoords } = segment;
-
-      for (let i = 0, j = xCoords.length - 1; i < xCoords.length; j = i++) {
-        const xi = xCoords[i], yi = yCoords[i];
-        const xj = xCoords[j], yj = yCoords[j];
-
-        const intersect = ((yi > Position[1]) !== (yj > Position[1])) &&
-                (Position[0] < ((xj - xi) * (Position[1] - yi) / (yj - yi) + xi));
-        if (intersect) inside = !inside;
-      }
-
-      if (inside) {
-        currentSegment = segment;
-        break;
-      }
-    }
-
-    if (currentSegment) {
-      const roomName = currentSegment.Name;
-      const roomPath = `${DH_Did}.state.cleaninginfo.${DH_CurMap}.${roomName}`;
-
-      if (!roomData[roomName]) {
-        roomData[roomName] = {
-          points: new Set(),
-          totalArea: await this.calculatePolygonArea(currentSegment.X, currentSegment.Y) / 100,
-          lastUpdated: 0
-        };
-        await this.createRoomStates(roomPath, currentSegment.Name);
-      }
-
-      const roundedX = Math.round(Position[0] * 10) / 10;
-      const roundedY = Math.round(Position[1] * 10) / 10;
-      roomData[roomName].points.add(`${roundedX},${roundedY}`);
-
-      if (lastPosition) {
-        const pointsBetween = await this.getPointsBetween(lastPosition, Position);
-        pointsBetween.forEach(([x, y]) => {
-          const roundedX = Math.round(x * 10) / 10;
-          const roundedY = Math.round(y * 10) / 10;
-          roomData[roomName].points.add(`${roundedX},${roundedY}`);
-        });
-      }
-
-      const now = Date.now();
-      if (now - roomData[roomName].lastUpdated > 2000) {
-        const cleanedArea = roomData[roomName].points.size;
-        const coveragePercent = (cleanedArea / roomData[roomName].totalArea) * 100;
-        //this.log.info(parseFloat((cleanedArea / 10000).toFixed(2)));
-        if (parseFloat((cleanedArea / 10000).toFixed(2)) > 0.5) {
-          await this.updateRoomStates(roomPath, {
-            Name: currentSegment.Name,
-            TotalArea: parseFloat((roomData[roomName].totalArea / 10000).toFixed(2)),
-            CleanedArea: parseFloat((cleanedArea / 10000).toFixed(2)),
-            CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
-            LastUpdate: new Date().toISOString()
-          });
-        }
-
-
-        await this.setState(`${DH_Did}.state.CurrentRoomCleaningName`, currentSegment.Name, true);
-        await this.setState(`${DH_Did}.state.CurrentRoomCleaningNumber`, currentSegment.Id, true);
-        await this.setState(`${DH_Did}.state.CurrentRoomCoveragePercent`, parseFloat(coveragePercent.toFixed(1)), true);
-
-        await this.setObjectNotExistsAsync(`${DH_Did}.vis.robotUpdate`, {
-          type: 'state',
-          common: {
-            name: 'RobotUpdate',
-            type: 'mixed',
-            role: 'state',
-            write: false,
-            read: true,
-            def: ''
-          },
-          native: {},
-        });
-
-        // Create the complete object for history and live update
-        result = {
-          position: { x: Position[0], y: Position[1] },
-          currentRoom: currentSegment.Name,
-          currentId: currentSegment.Id,
-          TotalArea: parseFloat((roomData[roomName].totalArea / 10000).toFixed(2)),
-          CleanedArea: parseFloat((cleanedArea / 10000).toFixed(2)),
-          CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
-          timestamp: now
-        };
-
-        // Set the complete object for live update
-        await this.setStateAsync(`${DH_Did}.vis.robotUpdate`, {
-          val: JSON.stringify(result),
-          ack: true
-        });
-
-        roomData[roomName].lastUpdated = now;
-      }
-    }
-
-    lastPosition = Position;
-    // return the complete object for history
-    return result;
-  }
-
-  async calculateTotalCoverage() {
-    let totalArea = 0;
-    let totalCleaned = 0;
-
-    for (const room in roomData) {
-      totalArea += roomData[room].totalArea;
-      totalCleaned += roomData[room].points.size;
-    }
-
-    return totalArea > 0 ? (totalCleaned / totalArea) * 100 : 0;
-  }
-
-  // Creates all required ioBroker states for a room
-  async createRoomStates(roomPath, roomName) {
-  // Create channel object
-    await this.setObjectNotExistsAsync(roomPath, {
-      type: 'channel',
-      common: {
-        name: roomName,
-        role: 'info'
-      },
-      native: {}
-    });
-
-    // Define all state objects to be created
-    const states = {
-      'Name': { type: 'string', role: 'text' },
-      'TotalArea': { type: 'number', unit: 'm²', role: 'value' },
-      'CleanedArea': { type: 'number', unit: 'm²', role: 'value' },
-      'CoveragePercent': { type: 'number', unit: '%', role: 'value' },
-      'LastUpdate': { type: 'string', role: 'date' }
-    };
-
-    // Create each state object
-    for (const [state, config] of Object.entries(states)) {
-      await this.setObjectNotExistsAsync(`${roomPath}.${state}`, {
-        type: 'state',
-        common: {
-          ...config,
-          name: `${roomName} ${state}`,
-          read: true,
-          write: false
-        },
-        native: {}
-      });
-    }
-  }
-
-  // Updates all states for a room
-  async updateRoomStates(roomPath, data) {
-    for (const [key, value] of Object.entries(data)) {
-      await this.setStateAsync(`${roomPath}.${key}`, { val: value, ack: true });
-    }
-  }
-
-  // Resets all tracking variables
-  async resetVariables() {
-    visitedPointsPerSegment = {}; // Clear visited points tracking
-    lastPosition = null; // Reset last known position
-    roomData = {}; // Clear all room data
-  }
-
-  // Bresenham's line algorithm to get all points between two coordinates
-  async getPointsBetween([x0, y0], [x1, y1]) {
-    const points = [];
-    const dx = Math.abs(x1 - x0);
-    const dy = Math.abs(y1 - y0);
-    const sx = x0 < x1 ? 1 : -1;
-    const sy = y0 < y1 ? 1 : -1;
-    let err = dx - dy;
-
-    while (true) {
-      points.push([x0, y0]);
-      if (x0 === x1 && y0 === y1) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) { err -= dy; x0 += sx; }
-      if (e2 < dx) { err += dx; y0 += sy; }
-    }
-    return points;
-  }
-
-  // Calculates coverage percentage for a room
-  async calculateCoveragePercent(segment, visitedPointsSet) {
-  // 1. Calculate total area of the segment in dm�
-    const totalArea = (await this.calculatePolygonArea(segment.X, segment.Y)) / 100;
-
-    // 2. Calculate covered area (1 point = 1dm�)
-    const coveredArea = (visitedPointsSet.size / 100);
-
-    // 3. Calculate percentage (capped at 100%)
-    const percent = Math.min(100, (coveredArea / totalArea) * 100);
-
-    return parseFloat(percent.toFixed(2));
-  }
-
-  // Calculates area of a polygon using the shoelace formula
-  async calculatePolygonArea(xCoords, yCoords) {
-    let area = 0;
-    for (let i = 0, j = xCoords.length - 1; i < xCoords.length; j = i++) {
-      area += (xCoords[j] + xCoords[i]) * (yCoords[j] - yCoords[i]);
-    }
-    return Math.abs(area / 2); // Absolute value of area
-  }
 
   /**
  * Calculates the geometric center of a room based on wall coordinates
@@ -4238,6 +6802,111 @@ class Dreamehome extends utils.Adapter {
     }
   }
 
+  async loadAllReadOnlyProperties() {
+    this.log.info('Loading all READ-ONLY properties...');
+
+
+    // Speziell S0P0 (Total Cruise Time)
+    //await this.getProperty(12, 6); // TOTAL_CRUISE_TIME
+    //await this.getProperty(6, 3);
+    //await this.requestIFrame();
+    //await this.getProperty(4, 1); // STATUS
+    //await this.getProperty(4, 2); // CLEANING_TIME
+    //await this.getProperty(4, 3); // CLEANED_AREA
+    //await this.getProperty(4, 8); // CLEANING_START_TIME
+    //await this.getProperty(4, 9); // CLEAN_LOG_FILE_NAME
+    //await this.requestMapDataFromCloud('ali_dreame/IU574398/2066037316/8', DH_CurrentFrameId);
+    //await this.fetchCruisingHistory(25);
+
+    if (this.history) {
+      const now = Date.now();
+      this.log.info('[HISTORY] Starting update check');
+      // Checks every 10 seconds for new history data (max ~4 min)
+      await this.history.waitForNewCleaning(now);
+
+    }
+
+  }
+
+  async getDeviceEvents(key, limit, timeStart = 0) {
+    // Verwende deine bestehende DH_URLRequest Methode
+    const params = {
+      uid: DH_Uid,
+      did: DH_Did,
+      from: timeStart,
+      limit: limit,
+      siid: key.split('.')[0],
+      eiid: key.split('.')[1],
+      region: DH_Region,
+      type: 3 // 3 = Event
+    };
+
+    try {
+      // Baue die URL für History-Endpunkt
+      const historyUrl = `https://${DH_Region}.iot.dreame.tech:13267/dreame-user-iot/iotstatus/history`;
+
+      const response = await this.DH_URLRequest(historyUrl, params);
+      this.log.info(historyUrl + ' | ' + JSON.stringify(response) + ' | Response: ' + JSON.stringify(response.data));
+      if (response && response.data && response.data.list) {
+        return response.data.list;
+      }
+      return null;
+
+    } catch (error) {
+      this.log.error(`[HISTORY] Failed to get device events: ${error.message}`);
+      return null;
+    }
+  }
+
+  async getProperty(siid, piid) {
+    try {
+      const requestId = Math.floor(Math.random() * 9000) + 1000;
+      const command = {
+        did: DH_Did,
+        id: requestId,
+        data: {
+          did: DH_Did,
+          id: requestId,
+          method: 'get_properties',
+          params: [{
+            siid: siid,
+            piid: piid
+          }]
+        }
+      };
+
+      const response = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, command);
+
+      if (response && response.data && response.data.result) {
+        const result = response.data.result[0];
+        if (result.code === 0) {
+          const propertyName = this.getPropertyName(siid, piid);
+          if (propertyName) {
+            const path = `${DH_Did}.state.${propertyName}`;
+					 await this.DH_getType(result.value, path);
+
+            await this.setStateAsync(path, result.value, true);
+            this.log.debug(`Loaded ${propertyName}: ${result.value}`);
+          }
+        }
+      }
+    } catch (error) {
+      this.log.error(`getProperty(${siid},${piid}) error: ${error.message}`);
+    }
+  }
+
+  getPropertyName(siid, piid) {
+    const key = `S${siid}P${piid}`;
+    const name = DreameStateProperties[key];
+    if (name) {
+      return name.replace(/\w\S*/g, w =>
+        w.charAt(0).toUpperCase() + w.substr(1).toLowerCase()
+      ).replace(/\s/g, '');
+    }
+    return null;
+  }
+
+
   async DH_URLSend(DHurl, SetData) {
     return await this.DH_requestClient({
       method: 'post',
@@ -4266,6 +6935,96 @@ class Dreamehome extends utils.Adapter {
     });
   }
 
+  async getAesKeyFromRobot() {
+    try {
+      // 1. Generate RSA key pair (1024 bit)
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 1024,
+        publicKeyEncoding: {
+          type: 'spki',
+          format: 'der'
+        },
+        privateKeyEncoding: {
+          type: 'pkcs8',
+          format: 'der'
+        }
+      });
+
+      // 2. Convert public key to Base64
+      const publicKeyBase64 = publicKey.toString('base64');
+      this.log.info(`[AES] Sent Public Key: ${publicKeyBase64}`);
+
+      // 3. Call action 14,1 with piid=5
+      const requestId = Math.floor(Math.random() * 9000) + 1000;
+      const command = {
+        did: DH_Did,
+        id: requestId,
+        data: {
+          did: DH_Did,
+          id: requestId,
+          method: 'action',
+          params: {
+            did: DH_Did,
+            siid: 14,
+            aiid: 1,
+            in: [{
+              piid: 5,
+              value: publicKeyBase64
+            }]
+          }
+        }
+      };
+
+      const response = await this.DH_URLSend(
+        DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB,
+        command
+      );
+
+      // 4. The response contains the encrypted AES key
+      if (response?.data?.result?.out?.[0]?.value) {
+        const encryptedKeyBase64 = response.data.result.out[0].value;
+
+        if (!encryptedKeyBase64) {
+          this.log.error(`[AES] Robot returned an empty value!`);
+          return null;
+        }
+
+        this.log.info(`[AES] Received response (encrypted): ${encryptedKeyBase64}`);
+
+        // 5. Convert the private key into a usable key object
+        const privateKeyObject = crypto.createPrivateKey({
+          key: privateKey,
+          format: 'der',
+          type: 'pkcs8'
+        });
+
+        // 6. Decrypt using the private key
+        const encryptedKey = Buffer.from(encryptedKeyBase64, 'base64');
+
+        const aesKey = crypto.privateDecrypt(
+          {
+            key: privateKeyObject,  // Use the converted key object
+            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+            oaepHash: 'sha1'
+          },
+          encryptedKey
+        );
+
+        // 7. STORE AS BASE64
+        const aesKeyBase64 = aesKey.toString('base64');
+        this.log.info(`[AES] Decrypted AES key (Base64): ${aesKeyBase64}`);
+
+        return aesKeyBase64;
+      }
+    } catch (error) {
+      this.log.error(`[AES] Error while retrieving AES key: ${error.message}`);
+      if (error.code) {
+        this.log.error(`Code: ${error.code}`);
+      }
+    }
+    return null;
+  }
+
   // Optimized for minimal resource consumption
   async DH_connectMqtt() {
   // If an MQTT client already exists, close the old connection and remove listeners
@@ -4274,19 +7033,28 @@ class Dreamehome extends utils.Adapter {
       this.mqttClient.end(true); // Immediately close the connection and clean up resources
     }
 
-    // Create a new MQTT client
-    this.mqttClient = mqtt.connect('mqtts://' + DH_BDomain, {
-      clientId: 'p_' + crypto.randomBytes(8).toString('hex'),
+    // Create a new MQTT client instance
+    this.log.info(`Create a new MQTT client instance: mqtts://${DH_BDomain} | /status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
+    this.mqttClient = mqtt.connect('mqtts:' + DH_BDomain, {
+      clientId: 'p_' + crypto.randomBytes(8).toString('hex'), // Generate a unique client ID
       username: DH_Uid,
       password: DH_Auth,
-      rejectUnauthorized: false,
-      reconnectPeriod: 10000,
+      rejectUnauthorized: false, // Allow self-signed certificates (if applicable)
+      reconnectPeriod: 10000, // Automatic reconnect interval (10 seconds)
+      keepalive: 60, // Send keepalive packets every 60 seconds
+      connectTimeout: 30000, // Connection timeout (30 seconds)
     });
 
-    // On connection success
+    // Triggered when the connection to the broker is successfully established
     this.mqttClient.on('connect', () => {
       this.log.info('Connection to MQTT successfully established');
+
+      // Subscribe to the device status topic
       this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/${DH_Region}/`);
+      //this.mqttClient.subscribe(`/status/${DH_Did}/${DH_Uid}/${DH_Model}/eu/`);
+
+
+      // Check current task status after successful connection
       this.DH_CheckTaskStatus();
     });
 
@@ -4328,6 +7096,18 @@ class Dreamehome extends utils.Adapter {
             DH_UpdateTheMap = false;
           }
 
+	  if (JSON.stringify(element.siid) === '6' && JSON.stringify(element.piid) === '3') {
+	        const parts = element.value.split('/');
+            const frameId = parseInt(parts[3]);
+		      const objectPath = element.value;
+
+            if (LogData) this.log.info(`Get Map List: ${objectPath}`);
+
+            // Load immediately from the cloud – NO WAITING!
+            //await this.requestMapDataFromCloud(objectPath, frameId);
+
+          }
+
           const ObjectPoint = await this.DH_SearchIID('S' + element.siid + 'P' + element.piid);
           if (ObjectPoint) {
             const path = DH_Did + '.state.' + ObjectPoint.replace(/\w\S*/g, function(SPName) {
@@ -4357,6 +7137,23 @@ class Dreamehome extends utils.Adapter {
                 await this.setState(ReadpathCM, Setvalue, true);
               }
 
+			  if ('S' + element.siid + 'P' + element.piid == 'S4P23') { // Cleaning Mode
+				      DH_NowCleaningMode = parseInt(Setvalue);
+				      switch(DH_NowCleaningMode) {
+                  case 1: // Customize room cleaning
+                  case 3840: // Customize room cleaning
+                  case 5120: // Sweeping and mopping
+                  case 5123: // Mopping after sweeping
+                    DH_FirstOperator = 'W';
+                    break;
+                  case 5121: // Mopping
+                    DH_FirstOperator = 'M';
+                    break;
+                  case 5122: // Sweeping
+                    DH_FirstOperator = 'S';
+                }
+                this.log.info(`[MODE] Cleaning Mode updated to: ${DH_NowCleaningMode}`);
+              }
               let AppChanged = false;
               for (const ex in DreameActionExteParams) {
                 if (ex.indexOf('S' + element.siid + 'P' + element.piid) !== -1) {
@@ -4373,26 +7170,122 @@ class Dreamehome extends utils.Adapter {
       }
     });
 
-    // Error handling for MQTT
     this.mqttClient.on('error', async (error) => {
-      this.log.error(error);
-      if (error.message && error.message.includes('Not authorized')) {
+      const errorMessage = error.message || String(error);
+      if (errorMessage.includes('ECONNRESET')) {
+        this.log.info('MQTT connection reset, reconnecting...');
+      } else if (errorMessage.includes('Not authorized')) {
         this.log.error('Not authorized to connect to MQTT');
         this.setState('info.connection', false, true);
         await this.DH_refreshToken();
+      } else {
+        this.log.error('MQTT error: ' + errorMessage);
       }
     });
 
-    // When the connection is closed
-    this.mqttClient.on('close', () => {
-      this.log.info('MQTT Connection closed');
-    });
   }
 
+  // Request map Data from the cloud
+  async requestMapDataFromCloud(objectPath, frameId) {
+    let mapData = null;
+    let urlResponse = null;
+    try {
+      if (LogData) this.log.info(`Request map data from cloud for ${objectPath}`);
+
+      const urlCommand = {
+        did: DH_Did,
+        model: DH_Model,
+        filename: objectPath,
+        region: DH_Region
+      };
+
+      urlResponse = await this.DH_URLRequest(DH_URLDOWNURL, urlCommand);
+
+      if (urlResponse?.data) {
+        if (LogData) this.log.info(`Got download URL: ${urlResponse.data}`);
+
+        mapData = await this.DH_getFile(urlResponse.data);
+
+        if (mapData) {
+		        // Check if the response is an array (as in frame 8)
+          if (Array.isArray(mapData) || (typeof mapData === 'string' && mapData.startsWith('['))) {
+
+            // It is an array containing multiple maps
+            this.log.info(`Processing array with ${mapData.length} map entries`);
+
+            // Process each map entry in the array
+            for (const mapEntry of mapData) {
+              if (!Array.isArray(mapEntry.info)) continue;
+
+              // Sort recovery infos by time descending to get the newest
+              const newest = mapEntry.info.sort((a, b) => b.time - a.time)[0];
+
+              if (!newest || !newest.thb) continue;
+
+              const date = new Date(newest.time * 1000);
+              this.log.info(`Downloading newest map (id: ${mapEntry.id}) with timestamp: ${date.toLocaleString()}`);
+
+              // Only uncompress the newest map
+              await this.DH_uncompress(newest.thb, DH_Did + '.mqtt.');
+            }
+
+          } else {
+          // Normal single map data (previous behavior)
+            this.log.info(`Processing map data for frame ${frameId}`);
+            await this.DH_uncompress(JSON.stringify(mapData), DH_Did + '.mqtt.');
+            if (LogData) this.log.info(`Add map data: ${frameId}`);
+	    }
+        }
+      } else {
+        this.log.warn(`No URL in response for frame ${frameId}`);
+      }
+    } catch (error) {
+      this.log.error(`Failed to load map data: ${error.message}\n${error.stack}`);
+    } finally {
+      // CLEAN UP
+      mapData = null;
+      if (urlResponse) {
+        urlResponse.data = null;
+        urlResponse = null;
+      }
+    }
+  }
+
+  // Helper function for I-Frame request
+  async requestIFrame() {
+    const requestId = Math.floor(Math.random() * 9000) + 1000;
+    const command = {
+      did: DH_Did,
+      id: requestId,
+      data: {
+        did: DH_Did,
+        id: requestId,
+        method: 'action',
+        params: {
+          did: DH_Did,
+          siid: 6,
+          aiid: 1,
+          in: [{
+            piid: 2,
+            value: JSON.stringify({req_type: 1, frame_type: 'I', force_type: 1})
+          }]
+        }
+      }
+    };
+
+    await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, command);
+    this.log.info('I-Frame requested');
+	    setTimeout(async () => {
+	  // Request updated map data from the cloud to ensure data is up to date
+      await this.requestMapDataFromCloud(DH_CurrentObjectName, DH_CurrentFrameId);
+	  }, 2000); // Wait 2 second
+  }
 
   async DH_SetPropSPID(InSetPropSPID, InSetvalue) {
 
-	  //if ((InSetPropSPID !== 'S6P3' /*"Status"*/ ) && (InSetPropSPID !== 'S6P1' /*"Status"*/ )) { this.log.info(`=======> from DH_SetPropSPID: (${InSetPropSPID}) Set to : ${InSetvalue}`);}
+    const numericValue = parseInt(InSetvalue); // Calculate numerical value
+
+    //if ((InSetPropSPID !== 'S6P3' /*"Status"*/ ) && (InSetPropSPID !== 'S6P1' /*"Status"*/ )) { this.log.info(`=======> from DH_SetPropSPID: (${InSetPropSPID}) Set to : ${InSetvalue}`);}
     if (InSetPropSPID == 'S2P1' /*"State"*/ ) {
       InSetvalue = DreameVacuumState[UserLang][parseInt(InSetvalue)];
     }
@@ -4410,59 +7303,307 @@ class Dreamehome extends utils.Adapter {
       InSetvalue = DreameStatus[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P4' /*"Suction level"*/ ) {
-      InSetvalue = DreameSuctionLevel[UserLang][parseInt(InSetvalue)];
+
+
+      // === LEARNING SYSTEM: SuctionLevel Update ====
+      if (this.learningSystem) {
+        const suctionLevel = this.learningSystem.parseSuctionLevel(numericValue);
+        this.learningSystem.updateSessionFromMQTT({ suction: suctionLevel });
+        this.log.info(`[LEARNING-SYSTEM] Suction update: ${suctionLevel}`);
+      }
+
+      // Convert Suction level number into readable text
+      InSetvalue = DreameSuctionLevel[UserLang][numericValue];
     }
     if (InSetPropSPID == 'S4P5' /*"Water volume"*/ ) {
+	  const fixedValue = numericValue === -1 ? 3 : numericValue;
 
-      // Invalidate cache after successful update
-      consumptionDataCache = {
-        data: null,  // Clear cache
-        lastUpdate: 0 // Reset timestamp
-      };
+      // Inform Water Tracker
+      if (this.waterTracker) {
+        this.waterTracker.waterTrackingCache.waterLevel = fixedValue;
+      }
 
-	  const fixedValue  = parseInt(InSetvalue);
-	  // Log only if the value was changed from -1
       if (fixedValue === -1) {
         this.log.warn(`Water volume value was -1 and has been changed to the highest level (3)`);
       }
-      InSetvalue = DreameWaterVolume[UserLang][fixedValue === -1 ? 3 : fixedValue];
-      waterTrackingCache.waterLevel = InSetvalue;
+
+      // === LEARNING SYSTEM: WaterVolume Update ===
+      if (this.learningSystem) {
+        const waterVolume = this.learningSystem.parseWaterVolume(fixedValue);
+        this.learningSystem.updateSessionFromMQTT({ water: waterVolume });
+        this.log.info(`[LEARNING-SYSTEM] Water update: ${waterVolume} (original: ${numericValue})`);
+      }
+
+      // Convert Water volume number into readable text
+      InSetvalue = DreameWaterVolume[UserLang][fixedValue];
+
     }
 
     if (InSetPropSPID == 'S4P6' /*"Water tank"*/ ) {
       InSetvalue = DreameWaterTank[UserLang][parseInt(InSetvalue)];
     }
 
-    if (InSetPropSPID == 'S4P7' /*"Task status"*/ ) {
-
+    if (InSetPropSPID == 'S4P7' /* "Task status" */ ) {
+      const oldTaskStatus = DH_NowTaskStatus;
       DH_NowTaskStatus = isNaN(+InSetvalue) ? 0 : +InSetvalue;
-      if (LogData) {
-	  this.log.info(`=======> from DH_SetPropSPID: DH_NowTaskStatus is ${DH_NowTaskStatus} (${InSetPropSPID}) Set to : ${InSetvalue}`);
+
+      // IMPORTANT: Detect cleaning (mopping) events and forward them to the tracker
+      if (this.waterTracker) {
+
+        // Cleaning has STARTED (previous status: 0, new status: 1 or 3)
+        if (oldTaskStatus === 0 && (DH_NowTaskStatus === 1 || DH_NowTaskStatus === 3)) {
+          this.log.info(`[WATER] Cleaning STARTED (TaskStatus: ${DH_NowTaskStatus})`);
+
+	       // 1. Reset position history state
+          await this.setState(DH_Did + '.vis.PosHistory' + DH_CurMap, '{}', true);
+		   // 2. Reset tracking variables
+          DH_CleanStatus = false;
+          DH_SetLastStatus = false;
+          DH_OldTaskStatus = DH_NewTaskStatus;
+          this.log.info('A new cleaning was initiated, the object state PosHistory was reset to :' + DH_OldTaskStatus);
+
+		  // 3. Reset roomData (used for coverage calculation)
+          if (typeof roomData !== 'undefined') {
+            roomData = {}; // Fully clear
+            this.log.info('[RESET] roomData cleared');
+          }
+
+          // 4. Reset roomAreaHistory (used for delta calculation)
+          if (this.roomAreaHistory) {
+            this.roomAreaHistory = {};
+            this.log.info('[RESET] roomAreaHistory cleared');
+          }
+
+          // 5. Reset historyCopy tracking
+          if (this.historyCopies) {
+            this.historyCopies = {};
+          }
+
+          // 6. Reset robotData tracking
+          if (this.robotDataCache) {
+            this.robotDataCache = {};
+          }
+
+          // 7. Reset coverage tracking
+          if (this.roomCoverageHistory) {
+            this.roomCoverageHistory = {};
+          }
+
+          // 8. Reset water tracker room data
+          if (this.waterTracker && this.waterTracker.waterTracking) {
+            this.waterTracker.waterTracking.roomData = {};
+            this.waterTracker.waterTracking.lastRoom = null;
+            this.waterTracker.waterTracking.lastUpdate = Date.now();
+          }
+
+          // 9. Reset Learning System learned rooms (for the new session)
+          if (this.learningSystem && this.learningSystem.currentSession) {
+            this.learningSystem.currentSession.learnedRooms = new Set();
+            this.learningSystem.currentSession.roomProgress = {};
+            this.log.info('[RESET] Learning session tracking cleared');
+          }
+
+          this.log.info(`[RESET] Complete reset for new cleaning (TaskStatus: ${DH_OldTaskStatus})`);
+
+
+		  // Small delay to allow CleaningMode to update
+          setTimeout(async () => {
+            // =========== RESET WATER TRACKING FOR A NEW CLEANING SESSION ===========
+            if (this.waterTracker.waterTracking) {
+		      this.waterTracker.waterTracking.isMopping = true;
+              this.waterTracker.waterTracking.roomData = {};
+              this.waterTracker.waterTracking.lastRoom = null;
+              this.waterTracker.waterTracking.lastUpdate = Date.now();
+            }
+            const modeState = await this.getStateAsync(DH_Did + '.state.CleaningMode');
+            if (modeState?.val) {
+              const modeValue = parseInt(modeState.val);
+
+              // Check if the current mode indicates mopping
+              if (WATER_TRACKING.MOPPING_MODES.includes(modeValue)) { //  [5120, 5121, 5123, 3840]
+                if (this.waterTracker) {
+                  this.waterTracker.waterTracking.isMopping = true;
+                  await this.waterTracker.handleCleaningStart();
+                  this.log.info(`[WATER] Mopping started (Mode: ${modeValue})`);
+                }
+              }
+            }
+          }, 800);
+
+		  // =========== LEARNING SYSTEM: SESSION MANAGEMENT ===========
+          // Start the learning system session with a delay (because CleaningMode happens later)
+          if (this.learningSystem) {
+            setTimeout(() => {
+              this.learningSystem.startLearningSession(); // Start the learning session after 1 second
+            }, 1000);
+          }
+
+        }
+
+        // Cleaning has FINISHED (previous status: >0, new status: 0)
+        else if (oldTaskStatus > 0 && DH_NowTaskStatus === 0) {
+          this.log.info(`[WATER] Cleaning COMPLETED`);
+
+          if (this.waterTracker.waterTracking?.isMopping) {
+            await this.waterTracker.handleCleaningComplete();
+            this.waterTracker.waterTracking.isMopping = false; // Reset mopping state
+          }
+
+		  // =========== LEARNING SYSTEM: SESSION MANAGEMENT ===========
+		  // If there is an active learning session, stop it
+          if (this.learningSystem && this.learningSystem.currentSession?.isActive) {
+            setTimeout(() => {
+              this.learningSystem.stopSession();
+              this.log.info('[LEARNING-SYSTEM] Session stopped');
+            }, 2000);
+          }
+
+		        // =========== HISTORY UPDATE: WAIT FOR CLOUD ===========
+          // Wait 2 seconds so the cloud has time to store the event
+          setTimeout(async () => {
+            if (this.history) {
+              const now = Date.now();
+              this.log.info('[HISTORY] Starting update check (delayed)');
+              await this.history.waitForNewCleaning(now);
+            }
+          }, 2000);
+
+		    // ===== VARIABLES RESET FOR A NEW CLEANING CYCLE =====
+          await this.resetVariables();
+        }
       }
+
       InSetvalue = DreameTaskStatus[UserLang][parseInt(InSetvalue)];
     }
-    if (InSetPropSPID == 'S4P23' /*"Cleaning mode"*/ ) {
 
-      // Invalidate cache after successful update
-      consumptionDataCache = {
-        data: null,  // Clear cache
-        lastUpdate: 0 // Reset timestamp
-      };
-      // Check Mopp Mode to calculate water consumption
-      waterTracking.isMopping = WATER_TRACKING.MOPPING_MODES.includes(parseInt(InSetvalue));
-	  if (LogData) {
-        this.log.info(`=======> from DH_SetPropSPID: isMopping is : ${waterTracking.isMopping} => ${InSetvalue}`);
+    if (InSetPropSPID == 'S4P13' /*"Clean log status"*/ ) {
+      InSetvalue = DreameCleaningStatus[UserLang][parseInt(InSetvalue)];
+    }
+
+    if (InSetPropSPID == 'S4P20' /*"Relocation status"*/ ) {
+      InSetvalue = DreameRelocationStatus[UserLang][parseInt(InSetvalue)];
+    }
+
+    if (InSetPropSPID === 'S4P22' /* AI detection */ ) {
+      const num = Number(InSetvalue);
+
+      if (num === 0) {
+        InSetvalue = DreameAIProperty[UserLang][0];
+      } else if (num < 0 || isNaN(num)) {
+        InSetvalue = DreameAIProperty[UserLang]['-1'];
+      } else {
+        const result = [];
+
+        for (const bit of Object.keys(DreameAIProperty[UserLang]).map(Number)) {
+          if (bit > 0 && (num & bit) === bit) {
+            result.push(DreameAIProperty[UserLang][bit]);
+          }
+        }
+
+        InSetvalue = result.join(', ');
+      }
+    }
+
+    if (InSetPropSPID == 'S4P23' /* "Cleaning mode" */ ) {
+	  DH_NowCleaningMode = parseInt(InSetvalue);
+
+						      switch(DH_NowCleaningMode) {
+        case 1: // Customize room cleaning
+        case 3840: // Customize room cleaning
+        case 5120: // Sweeping and mopping
+        case 5123: // Mopping after sweeping
+          DH_FirstOperator = 'W';
+          break;
+        case 5121: // Mopping
+          DH_FirstOperator = 'M';
+          break;
+        case 5122: // Sweeping
+          DH_FirstOperator = 'S';
+      }
+      const modeValue = parseInt(InSetvalue);
+      const isMopping = WATER_TRACKING.MOPPING_MODES.includes(modeValue);
+
+      // Debug log section
+      this.log.info(`=== [WATER CRITICAL] Cleaning Mode Update ===`);
+      this.log.info(`Mode value: ${modeValue}`);
+      this.log.info(`Is mopping mode => ${isMopping}`);
+      this.log.info(`Mopping modes: ${JSON.stringify(WATER_TRACKING.MOPPING_MODES)}`);
+
+      // === LATE INITIALIZATION IF MISSING ===
+      // Initialize the water tracker if it is missing and we enter a mopping mode
+      if (!this.waterTracker && isMopping) {
+        this.log.warn(`[WATER] Tracker missing - attempting late initialization`);
+        try {
+          this.waterTracker = new WaterTrackingModule(this, DH_Did, DH_Model, DreameMopWashLevel, UserLang);
+          await this.waterTracker.initialize();
+          this.log.info(`[WATER] Late initialization successful`);
+
+          // Short delay to ensure initialization has fully completed
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          this.log.error(`[WATER] Late initialization failed: ${error.message}`);
+        }
+      }
+      // === END LATE INITIALIZATION ===
+
+      // Inform the WaterTracker about cleaning mode changes
+      if (this.waterTracker && this.waterTracker.waterTracking) {
+        this.waterTracker.waterTracking.isMopping = isMopping;
+        this.waterTracker.waterTrackingCache.mode = DreameCleaningMode[UserLang][modeValue];
+        this.log.info(`[WATER] Tracker updated: isMopping=${isMopping}`);
+      } else {
+        // Extra debug information explaining why tracker is unavailable
+        if (!this.waterTracker) {
+          this.log.warn(`[WATER] waterTracker is null/undefined`);
+        } else if (!this.waterTracker.waterTracking) {
+          this.log.warn(`[WATER] waterTracker exists but waterTracking is null/undefined`);
+        }
       }
 
-      InSetvalue = DreameCleaningMode[UserLang][parseInt(InSetvalue)];
+	    // === LEARNING SYSTEM: CleaningMode Update ===
+      if (this.learningSystem) {
+        const cleaningMode = this.learningSystem.parseCleaningMode(modeValue);
+        this.learningSystem.updateSessionFromMQTT({ mode: cleaningMode });
+        this.log.info(`[LEARNING-SYSTEM] Mode update: ${cleaningMode} (${DreameCleaningMode[UserLang][modeValue]})`);
+      }
 
-	  waterTrackingCache.mode = InSetvalue;
-
+      // Convert mode number into readable text
+      InSetvalue = DreameCleaningMode[UserLang][modeValue];
 
     }
-    if (InSetPropSPID == 'S4P25' /*"Self wash base status"*/ ) {
-      InSetvalue = DreameSelfWashBaseStatus[UserLang][parseInt(InSetvalue)];
+
+    if (InSetPropSPID == 'S4P25' /* "Self wash base status" */ ) {
+      const newStatus = parseInt(InSetvalue);
+
+      // Convert status number into readable text
+      InSetvalue = DreameSelfWashBaseStatus[UserLang][newStatus];
+
+      // Only proceed if the water tracker exists
+      if (this.waterTracker) {
+        // Trigger water consumption calculation when the wash process has ended
+        if (newStatus === 0) { // 0 = "Idle" (wash process completed)
+          try {
+            // PREVENT MULTIPLE TRIGGERS!
+            const now = Date.now();
+            const lastWashTime = this.waterTracker.lastWashTime || 0;
+
+            if (now - lastWashTime < 30000) { // 30 seconds cooldown
+              this.log.info(`[WASH] Skipping - wash was already processed recently`);
+              return InSetvalue;
+            }
+
+            // Store timestamp of the last processed wash
+            this.waterTracker.lastWashTime = now;
+
+            await this.waterTracker.handleMopWashComplete();
+            this.log.info('[WASH] Water consumption calculated after wash completion');
+          } catch (error) {
+            this.log.error(`[WASH] Error in water calculation: ${error.message}`);
+          }
+        }
+      }
     }
+
     if (InSetPropSPID == 'S4P28' /*"Carpet sensitivity"*/ ) {
       InSetvalue = DreameCarpetSensitivity[UserLang][parseInt(InSetvalue)];
     }
@@ -4476,16 +7617,62 @@ class Dreamehome extends utils.Adapter {
       InSetvalue = DreameLowWaterWarning[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S4P46' /*"Mop wash level"*/ ) {
-      InSetvalue = DreameMopWashLevel[UserLang][parseInt(InSetvalue)];
+      const washLevel = parseInt(InSetvalue);
+
+      // Inform the WaterTracker about the selected water level
+      if (this.waterTracker) {
+        this.waterTracker.waterTrackingCache.waterLevel = washLevel;
+		   this.log.info(`[WaterTracking] Cache updated: washLevel = ${washLevel}`);
+      }
+
+      InSetvalue = DreameMopWashLevel[UserLang][washLevel];
+    }
+    if (InSetPropSPID == 'S4P58' /*"Task type"*/ ) {
+      InSetvalue = DreameTaskType[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P60' /*"Drainage status"*/ ) {
+      InSetvalue = DreameDrainageStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P83' /*"Device capability"*/ ) {
+      InSetvalue = DreameDeviceCapability[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S5P1' /*"DND"*/ ) {
+      InSetvalue = DreameDND[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S6P11' /*"Map recovery status"*/ ) {
+      InSetvalue = DreameMapRecoveryStatus[UserLang][parseInt(InSetvalue)];
+    }
+
+    if (InSetPropSPID == 'S6P3' /*"Object name"*/ ) {
+      const parts = InSetvalue.split('/');
+      const frameId = parseInt(parts[3]);
+      const objectPath = InSetvalue;
+	  DH_CurrentObjectName = InSetvalue;//InSetvalue.replace(/\/\d+$/, '/0');
+      if (LogData) this.log.info(`Get Map List: ${objectPath}`);
+
+      await this.requestMapDataFromCloud(objectPath, frameId);
+    }
+
+    if (InSetPropSPID == 'S6P14' /*"Backup map status"*/ ) {
+      InSetvalue = DreameMapBackupStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S7P10' /*"Voice assistant language"*/ ) {
+      InSetvalue = DreameVoiceAssistantLanguage[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S15P1' /*"Auto dust collecting"*/ ) {
       InSetvalue = DreameAutoDustCollecting[UserLang][parseInt(InSetvalue)];
     }
-    if (InSetPropSPID == 'S4P63' /*"Cleaning completed"*/ ) {
-      DH_CompletStatus = JSON.parse(JSON.stringify(InSetvalue));
+    if (InSetPropSPID == 'S15P2' /*"Auto empty frequency"*/ ) {
+      InSetvalue = DreameAutoEmptyMode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S15P3' /*"Dust collection"*/ ) {
+      InSetvalue = DreameDustCollection[UserLang][parseInt(InSetvalue)];
     }
     if (InSetPropSPID == 'S15P5' /*"Auto empty status"*/ ) {
       InSetvalue = DreameAutoEmptyStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S4P63' /*"Cleaning completed"*/ ) {
+      DH_CompletStatus = JSON.parse(JSON.stringify(InSetvalue));
     }
 
     if (InSetPropSPID == 'S27P2' /*"Dirty water tank"*/ ) {
@@ -4496,34 +7683,6 @@ class Dreamehome extends utils.Adapter {
         await this.DH_setState(DWpath, DreameVacuumErrorCode[UserLang][0], true);
       }
       InSetvalue = DreameDirtyWaterTank[UserLang][parseInt(InSetvalue)];
-    }
-    if (InSetPropSPID == 'OLDS27P1' /*"Pure water tank"*/ ) {
-      let DWpath = DH_Did + '.state.' + DreameStateProperties['S4P41'].replace(/\w\S*/g, function(SPName) { /*"Change Low water warning Object"*/
-        return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-      }).replace(/\s/g, '');
-      if (InSetvalue == 1) {
-        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][6], true);
-      } else if (InSetvalue == 2) {
-        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][2], true);
-      } else if (InSetvalue == 3) {
-        await this.DH_setState(DWpath, DreameLowWaterWarning[UserLang][0], true);
-      }
-      DWpath = DH_Did + '.state.' + DreameStateProperties['S4P6'].replace(/\w\S*/g, function(SPName) { /*"Change Water tank Object"*/
-        return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
-      }).replace(/\s/g, '');
-      if (InSetvalue == 1) {
-        await this.DH_setState(DWpath, DreameWaterTank[UserLang][0], true);
-      } else if (InSetvalue == 2) {
-        await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
-      } else if (InSetvalue == 3) {
-        await this.DH_setState(DWpath, DreameWaterTank[UserLang][1], true);
-      }
-
-      this.log.warn(`Water tank removed. InSetvalue: ${InSetvalue} and firstStartWaterTrack: ${firstStartWaterTrack}`);
-      // Handle tank status changes
-      await this.handleTankStatusChange(InSetvalue);
-
-      InSetvalue = DreamePureWaterTank[UserLang][parseInt(InSetvalue)];
     }
 
     if (InSetPropSPID == 'S27P1' /* "Pure water tank" */) {
@@ -4561,6 +7720,12 @@ class Dreamehome extends utils.Adapter {
         lowWarningValue = DreameLowWaterWarning[UserLang]['-1'];
       }
 
+      // Handle tank status changes
+      if (this.waterTracker) {
+        //	this.log.warn(`Water tank removed. InSetvalue: ${InSetvalue} and firstStartWaterTrack: ${firstStartWaterTrack}`);
+        await this.waterTracker.handleTankStatusChange(statusCode);
+      }
+
       // Write the low-water warning state
       await this.DH_setState(DWpath, lowWarningValue, true);
 
@@ -4579,159 +7744,1906 @@ class Dreamehome extends utils.Adapter {
       // Write the water tank state
       await this.DH_setState(DWpath, waterTankValue, true);
 
-      // Log tank status for debugging
-      this.log.info(`Water tank status: ${statusCode} = ${waterTankValue}, firstStartWaterTrack: ${firstStartWaterTrack}`);
+      // Log tank status
+      this.log.info(`Water tank status: ${statusCode} = ${waterTankValue}`);
 
-      // Handle tank status changes
-      await this.handleTankStatusChange(statusCode);
-
-      // Do not overwrite InSetvalue � only log the interpreted value
+      // Only log the interpreted value
       this.log.info(`Pure water tank: ${DreamePureWaterTank[UserLang][statusCode.toString()]}`);
     }
 
-	    if (InSetPropSPID == 'S27P3' /*Dust Bag Staus"*/ ) {
+    if (InSetPropSPID == 'S27P3' /*Dust Bag Staus"*/ ) {
       InSetvalue = DreameDustBagStatus[UserLang][parseInt(InSetvalue)];
     }
-		    if (InSetPropSPID == 'S27P4' /*"Detergent Status"*/ ) {
+    if (InSetPropSPID == 'S27P4' /*"Detergent Status"*/ ) {
       InSetvalue = DreameDetergentStatus[UserLang][parseInt(InSetvalue)];
     }
-		    if (InSetPropSPID == 'S27P5' /*"Station Drainage Status"*/ ) {
+    if (InSetPropSPID == 'S27P5' /*"Station Drainage Status"*/ ) {
       InSetvalue = DreameStationDrainageStatus[UserLang][parseInt(InSetvalue)];
     }
-
+    if (InSetPropSPID == 'S27P8' /*"Second cleaning status"*/ ) {
+      InSetvalue = DreameSecondCleaning[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S27P15' /*"Hot water status"*/ ) {
+      InSetvalue = DreameHotWaterStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P3' /*Auto LDS lifting*/ ) {
+      InSetvalue = DreameAutoLdsLifting[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P4' /*LDS state*/ ) {
+      InSetvalue = DreameLdsState[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P5' /*Cleangenius mode*/ ) {
+      InSetvalue = DreameCleanGeniusMode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P6' /*Quick wash mode*/ ) {
+      InSetvalue = DreameQuickWashMode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P8' /*Water temperature*/ ) {
+      InSetvalue = DreameWaterTemperature[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P9' /*Clean efficiency*/ ) {
+      InSetvalue = DreameCleanEfficiency[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P18' /*Dynamic obstacle clean*/ ) {
+      InSetvalue = DreameDynamicObstacleClean[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P22' /*Smart mop washin*/ ) {
+      InSetvalue = DreameSmartMopWashing[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P24' /*Mop after vacuum*/ ) {
+      InSetvalue = DreameMopAfterVacuum[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P27' /*Silent drying*/ ) {
+      InSetvalue = DreameSilentDrying[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P28' /*Hair compression*/ ) {
+      InSetvalue = DreameHairCompression[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P29' /*Side brush carpet rotate*/ ) {
+      InSetvalue = DreameSideBrushCarpetRotate[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P30' /*ERP low power*/ ) {
+      InSetvalue = DreameErpLowPower[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P38' /*Obstacle crossing*/ ) {
+      InSetvalue = DreameObstacleCrossing[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P39' /*Visual resume*/ ) {
+      InSetvalue = DreameVisualResume[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P52' /*Mopping with detergent*/ ) {
+      InSetvalue = DreameMoppingWithDetergent[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P53' /*Pressurized cleaning*/ ) {
+      InSetvalue = DreamePressurizedCleaning[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P58' /*Realtime particle detect*/ ) {
+      InSetvalue = DreameRealtimeParticleDetect[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P59' /*Ignore stairs*/ ) {
+      InSetvalue = DreameIgnoreStairs[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P61' /*Ring light always on*/ ) {
+      InSetvalue = DreameRingLightAlwaysOn[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S28P79' /*Store mode*/ ) {
+      InSetvalue = DreameStoreMode[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S99P1' /*Factory test status*/ ) {
+      InSetvalue = DreameFactoryTestStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S99P8' /*Self test status*/ ) {
+      InSetvalue = DreameSelfTestStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S99P15' /*Calibration status*/ ) {
+      InSetvalue = DreameCalibrationStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S99P25' /*AI test status*/ ) {
+      InSetvalue = DreameAiTestStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S99P35' /*Mop test status*/ ) {
+      InSetvalue = DreameMopTestStatus[UserLang][parseInt(InSetvalue)];
+    }
+    if (InSetPropSPID == 'S10001P1' /*Stream status*/ ) {
+      InSetvalue = DreameStreamStatus[UserLang][parseInt(InSetvalue)];
+    }
 
     return InSetvalue;
   }
 
+
+  // ============================================================================
+  // DECOMPRESSION & MAP DATA PROCESSING
+  // ============================================================================
+
+  // Decompresses and processes map data from the robot
   // Optimized for minimal resource consumption
+  // Steps: Base64 decode -> decrypt if required -> Decompress -> JSON parse -> Process TR data -> Propagate MQTT
   async DH_uncompress(In_Compressed, In_path) {
-  // Replace URL-safe characters with the standard Base64 characters
-    let input_Raw = In_Compressed.replace(/-/g, '+').replace(/_/g, '/');
+    let buffer = null;
+    let decrypted = null;
+    let jsonread = null;
+    let header = null;
 
-    let decode;
     try {
-    // Decompress the data synchronously using inflateSync and convert the buffer to a string
-      decode = zlib.inflateSync(Buffer.from(input_Raw, 'base64')).toString();
-    } catch (err) {
-    // Log a warning if decompression fails
-      this.log.warn('Error during decompression: ' + err);
-      return; // Exit if decompression fails
+      // 1. Check if an AES key is present (format: "data,key")
+      let encodedData = In_Compressed;
+      let aesKey = null;
+
+	  // Find the first comma
+      const commaIndex = In_Compressed.indexOf(',');
+
+	  if (commaIndex > 0) {
+        // Check if the part BEFORE the comma looks like Base64
+        const possibleBase64 = In_Compressed.substring(0, commaIndex);
+
+        // Simple test: check allowed characters and minimum length
+        const looksLikeBase64 = /^[A-Za-z0-9+\/_-]+$/.test(possibleBase64) && possibleBase64.length > 100;
+
+        if (looksLikeBase64) {
+          // Part before the comma is Base64 → probably encrypted
+          encodedData = possibleBase64;
+          aesKey = In_Compressed.substring(commaIndex + 1);
+          this.log.info(`[MAP] Detected: Encrypted with key length ${aesKey.length}`);
+        } else {
+          // Part before comma is not Base64 → comma belongs to the data
+          if (LogData) this.log.info(`[MAP] Detected: Not encrypted (comma in data)`);
+        }
+      } else {
+        if (LogData) this.log.info(`[MAP] Detected: Not encrypted (no comma)`);
+      }
+
+      // 2. Prepare Base64
+      //buffer = Buffer.from(encodedData.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+	  const cleanBase64 = encodedData.replace(/[-_]/g, match => match === '-' ? '+' : '/');
+      buffer = Buffer.from(cleanBase64, 'base64');
+
+      // Cleanup encodedData since it is no longer needed
+      encodedData = null;
+      // input_Raw = null;
+
+      // 3. Decompress (and decrypt if required)
+      if (aesKey) {
+        try {
+          // Prepare AES key (32 bytes for AES-256)
+          const keyHash = crypto.createHash('sha256')
+            .update(aesKey)
+            .digest('hex')
+            .substring(0, 32);
+
+          const keyBuffer = Buffer.from(keyHash, 'utf8');
+
+          // IV = 16 zero bytes
+          const ivBuffer = Buffer.alloc(16, 0);
+
+          if (LogData) this.log.info(`[MAP] Attempting decryption...  Key Hash: ${keyHash}, Key Buffer: ${ivBuffer}`);
+
+          // Decrypt
+          const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, ivBuffer);
+          decrypted = Buffer.concat([decipher.update(buffer), decipher.final()]);
+
+          // Release old buffer and crypto material
+          buffer = null;
+          keyBuffer.fill(0); // Overwrite key in memory
+          ivBuffer.fill(0);  // Overwrite IV in memory
+
+          // Decompress after decryption
+          buffer = zlib.inflateSync(decrypted);
+          if (LogData) this.log.info('AES decryption and decompression successful');
+
+        } catch (error) {
+          this.log.error(`AES decryption failed: ${error}`);
+          return;
+        } finally {
+          // Cleanup AES-related data
+          if (decrypted) {
+            decrypted.fill(0); // Overwrite sensitive data
+            decrypted = null;
+          }
+          aesKey = null; // Remove AES key from memory
+        }
+      } else {
+        // Only decompress
+        try {
+          buffer = zlib.inflateSync(buffer);
+        } catch (error) {
+          this.log.error(`Decompression failed: ${error}`);
+          return;
+        }
+      }
+
+      // 4. Store raw data (for debugging)
+      if (LogData) {
+        await this.setStateAsync(`${DH_Did}.vis.RawData${DH_CurMap || '0'}`, {
+          val: buffer.toString('binary'),
+          ack: true
+        });
+      }
+
+      // 5. Parse header (27 bytes)
+      header = {
+        mapId: buffer.readInt16LE(0),
+        frameId: buffer.readInt16LE(2),
+        frameType: buffer.readUInt8(4),
+        robot: {
+          x: buffer.readInt16LE(5),
+          y: buffer.readInt16LE(7),
+          a: buffer.readInt16LE(9)
+        },
+        charger: {
+          x: buffer.readInt16LE(11),
+          y: buffer.readInt16LE(13),
+          a: buffer.readInt16LE(15)
+        },
+        gridSize: buffer.readInt16LE(17),
+        width: buffer.readInt16LE(19),
+        height: buffer.readInt16LE(21),
+        origin: {
+          x: buffer.readInt16LE(23),
+          y: buffer.readInt16LE(25)
+        }
+      };
+
+      DH_CurrentFrameId = header.frameId,
+      DH_CurrentMapId = header.mapId;
+
+      // 6. Extract map data
+      const mapStart = 27;
+      const mapEnd = mapStart + header.width * header.height;
+
+      if (buffer.length < mapEnd) {
+        this.log.error(`Map data too short: ${buffer.length} < ${mapEnd}`);
+        return;
+      }
+
+      // 7. Parse JSON metadata (everything after the map data)
+      if (buffer.length > mapEnd) {
+        try {
+          // Convert only the JSON part to string
+          const jsonStr = buffer.toString('utf8', mapEnd);
+          jsonread = JSON.parse(jsonStr);
+
+          // 8. Parse cleanset (if present)
+          if (jsonread.cleanset && typeof jsonread.cleanset === 'string') {
+            jsonread.cleanset = JSON.parse(jsonread.cleanset);
+          }
+
+          // 9. Parse robot (if present)
+          if (jsonread.robot && typeof jsonread.robot === 'string') {
+            jsonread.robot = JSON.parse(jsonread.robot);
+          }
+
+        } catch (error) {
+          this.log.warn(`JSON parsing failed: ${error.message}`);
+        }
+      }
+
+      // 10. Process TR data (if present)
+      if (jsonread?.tr) {
+        await this.processTrData(jsonread.tr);
+      }
+
+      // 11. Propagate via MQTT
+      if (jsonread && Object.keys(jsonread).length > 0) {
+        await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
+      }
+
+    } catch (error) {
+      this.log.error(`DH_uncompress failed: ${error.message}\n${error.stack}`);
+    } finally {
+      // Aggressive CLEAN UP for garbage collector
+      if (buffer) {
+        if (Buffer.isBuffer(buffer)) {
+          buffer.fill(0); // Overwrite sensitive data
+        }
+        buffer = null;
+      }
+
+      if (decrypted) {
+        decrypted.fill(0);
+        decrypted = null;
+      }
+
+      jsonread = null;
+      header = null;
     }
-
-    // Use a regular expression to extract the JSON-like structure from the decompressed string
-    let jsondecode = decode.match(/[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}/gis);
-
-    let jsonread;
-    try {
-    // Try to parse the extracted JSON string
-      jsonread = JSON.parse(jsondecode);
-    } catch (err) {
-    // Log a warning if JSON parsing fails
-      this.log.warn('Unable to parse Map-Data: DH_uncompress | Uncompress error response: ' + err);
-      return; // Exit if JSON parsing fails
-    }
-
-    // If JSON is valid, proceed to process it further
-    if (!jsonread) {
-      return; // Exit if no valid JSON found
-    }
-
-    // Call another method to handle the decoded JSON data
-    await this.DH_PropMQTTObject(jsonread, DH_Did + '.mqtt.', 'Decode map: ');
-
-    // Nullify variables to release memory after processing
-    input_Raw = null;
-    decode = null;
-    jsondecode = null;
-    jsonread = null;
   }
 
+  // Processes TR (track/path) data from the robot
+  async processTrData(currentTr) {
+    try {
+      const now = Date.now();
+
+      // 1. Check whether this string already exists (duplicate protection)
+      if (currentTr === DH_LastTrString) return;
+
+      // 2. Add the new string to the history
+      DH_TrHistory.push(currentTr);
+      DH_LastTrString = currentTr;
+
+      // 3. Parse the string
+      const pathData = await this.DH_ParseTrPath(currentTr);
+
+      // 4. Add points to the overall list
+      if (pathData.fullPath && pathData.fullPath.length > 0) {
+
+        // ===== 1. FIRST PASS: Find the LAST cleaning operator in this string =====
+        // We need to know the operator for 'l' points that come AFTER a cleaning operator
+        let lastCleaningOperatorInThisString = null;
+        for (const p of pathData.fullPath) {
+          if (p.operator === 'W' || p.operator === 'M' || p.operator === 'S') {
+            lastCleaningOperatorInThisString = p.operator;
+            lastCleaningOperator = p.operator;  // Update global for future strings
+          }
+        }
+
+        // ===== 2. NOW PROCESS EACH POINT INDIVIDUALLY =====
+        const newPoints = pathData.fullPath.map((p, index) => {
+
+          // Determine cleaningMode for THIS SPECIFIC POINT
+          let cleaningMode = 'none';
+
+          // Case 1: Point is a cleaning operator itself
+          if (p.operator === 'S') {
+            cleaningMode = 'sweep';
+            lastCleaningOperator = 'S';  // Update global immediately
+          } else if (p.operator === 'M') {
+            cleaningMode = 'mop';
+            lastCleaningOperator = 'M';
+          } else if (p.operator === 'W') {
+            cleaningMode = 'both';
+            lastCleaningOperator = 'W';
+          }
+          // Case 2: Point is 'l' or 'L' - use the most recent cleaning operator
+          else if ((p.operator === 'l' || p.operator === 'L')) {
+
+            // Priority:
+            // 1. If we found a cleaning operator in THIS string before this point
+            // 2. Otherwise use the global lastCleaningOperator from previous strings
+            const operatorToUse = lastCleaningOperatorInThisString || lastCleaningOperator;
+
+            if (operatorToUse) {
+              cleaningMode = operatorToUse === 'W'
+                ? 'both'
+                : (operatorToUse === 'M' ? 'mop' : 'sweep');
+            }
+          }
+
+          // Return enriched point
+          return {
+            x: p.x,
+            y: p.y,
+            type: p.type,
+            operator: p.operator,
+            cleaningMode: cleaningMode,
+            isCleaning: cleaningMode !== 'none',
+            timestamp: now,
+            stringIndex: DH_TrHistory.length - 1,
+            pointIndex: index,
+            totalPointsInString: pathData.fullPath.length,
+            currentOperatorAtThisPoint: lastCleaningOperator  // Debug
+          };
+        });
+
+        // Append to the master list
+        DH_AllPathPoints.push(...newPoints);
+
+        // Debug: log if the operator changed in this string
+        if (lastCleaningOperatorInThisString) {
+          this.log.info(`[TR] String ${DH_TrHistory.length - 1}: New operator ${lastCleaningOperatorInThisString} | Total points: ${newPoints.length}`);
+        }
+
+        // 5. Limit number of stored points (save memory)
+        const MAX_POINTS = 50000;
+        if (DH_AllPathPoints.length > MAX_POINTS) {
+          const removedCount = DH_AllPathPoints.length - MAX_POINTS;
+          DH_AllPathPoints = DH_AllPathPoints.slice(-MAX_POINTS);
+          this.log.info(`[TR] Points limited: removed ${removedCount} oldest points`);
+        }
+      }
+
+      // 6. Store EVERYTHING in ONE state
+      const completeData = {
+        strings: DH_TrHistory,
+        points: DH_AllPathPoints,
+        lastUpdate: now,
+        totalStrings: DH_TrHistory.length,
+        totalPoints: DH_AllPathPoints.length,
+        lastString: currentTr
+      };
+
+      await this.setStateAsync(`${DH_Did}.vis.TrHistory${DH_CurMap || '0'}`, {
+        val: JSON.stringify(completeData),
+        ack: true
+      });
+
+    } catch (trError) {
+      this.log.error(`[TR] Processing error: ${trError.message}`);
+    }
+  }
+
+
+  // ============================================================================
+  // MQTT PROPAGATION & STATE MANAGEMENT
+  // ============================================================================
+
+  // Propagates MQTT data to ioBroker states
+  // Handles caching, translation, and special cases like task status and position tracking
   async DH_PropMQTTObject(InData, InPath, InLog) {
-    const validTaskStatuses = [1, 2, 3, 4, 5]; // List of valid task statuses for robot
-    const validNowStatuses = [2, 4, 18, 19, 20, 25]; // List of valid current statuses for robot
+    const validTaskStatuses = [1, 2, 3, 4, 5]; // List of valid task statuses for the robot
+    const validNowStatuses = [2, 4, 18, 19, 20, 25]; // List of valid current statuses for the robot
 
     for (const [key, value] of Object.entries(InData)) {
       let valueCopy = value;
       const path = InPath + key;
-      if (path && valueCopy != null) {
 
-        // Check if the path contains '.cleanset' and if the value is an object
-        if (path.endsWith('.cleanset') && typeof valueCopy === 'object') {
-          if (LogData) {
-            this.log.info('==> cleanset Path found | typeof: ' + typeof valueCopy);
-          }
-          valueCopy = JSON.stringify(valueCopy);  // Serialize the object to a JSON string for transmission
-        }
+      try {
+        if (path && valueCopy != null) {
 
-        // Handle non-object values, including arrays (arrays should also be serialized)
-        if (typeof valueCopy !== 'object' || Array.isArray(valueCopy)) {
-          if (LogData) {
-            this.log.info(`${InLog} Set ${path} to ${valueCopy}`);
+          // Check whether this is one of our specific map data properties
+          const mapPropertyName = mapDataProperties[key];
+          if (mapPropertyName) {
+            await this.handleMapProperty(key, valueCopy, mapPropertyName);
+            continue;
           }
 
-          // If the value is an array, serialize it into a JSON string
-          if (Array.isArray(valueCopy)) {
+          // Check if the path ends with '.cleanset' and if the value is an object
+          if (path.endsWith('.cleanset') && typeof valueCopy === 'object') {
+            if (LogData) {
+              this.log.info('==> cleanset Path found | typeof: ' + typeof valueCopy);
+            }
+            valueCopy = JSON.stringify(valueCopy); // Serialize object to JSON string for transmission
+          }
+
+          if (path.endsWith('.robot') && typeof valueCopy === 'object') {
             valueCopy = JSON.stringify(valueCopy);
           }
 
-          // Set the value and its type in the state
-          await this.DH_getType(valueCopy, path);
-          await this.DH_setState(path, valueCopy, true);
-
-          // Handle logic specific to paths related to robot states
-          if (path.includes('.robot')) {
+          // SPECIAL CASE: If the value is a string that starts with '[' and ends with ']'
+          if (typeof valueCopy === 'string') {
             try {
-            // Parse the value and update the robot's position
-              const robotData = await this.DH_GetRobotPosition(JSON.parse(valueCopy), CheckArrayRooms);
-              if (LogData) {
-                this.log.info('Call DH_GetRobotPosition: ' + JSON.stringify(robotData));
-              }
-              if (robotData) {
-				  if (LogData) {
-				  this.log.info('Pass DH_GetRobotPosition... | ' + validTaskStatuses.includes(DH_NowTaskStatus) + ' | ' + validNowStatuses.includes(DH_NowStatus));
-				  }
-                // Update history with the complete object
-				  // If the current task status is one of the valid values and the robot is in one of the valid statuses
-                if (validTaskStatuses.includes(DH_NowTaskStatus) && validNowStatuses.includes(DH_NowStatus)) {
-                  await this.DH_SetHistory(robotData, DH_Did + '.vis.PosHistory' + DH_CurMap);
-                  DH_CleanStatus = true;
-                  DH_SetLastStatus = false;
-                }
-              }
-            } catch (SRPerror) {
-              this.log.error(`Failed to update robot position for value: ${valueCopy}. Error: ${SRPerror.message}`);
-            }
-
-            // Check the task completion status and handle history updates
-            if ((DH_CompletStatus === 100) || (DH_NowStatus == 14)) {
-            // If the task is complete, reset cleaning and status flags
-              DH_CleanStatus = false;
-              DH_SetLastStatus = false;
-              await this.resetVariables();
-
-			  // Water level tracking at the end of cleaning
-			    if (waterTracking.isMopping) {
-                await this.handleCleaningComplete();
-                waterTracking.isMopping = false; // Reset Mopping-Flag
-              }
-            }
-
-            // If cleaning is in progress but not yet complete, record history
-            if (DH_CompletStatus < 100 && DH_CleanStatus && !DH_SetLastStatus) {
-
-              // Update water level state when cleaning starts
-              if (waterTracking.isMopping && DH_CompletStatus == 0) {
-                await this.handleCleaningStart();
-              }
-
-              DH_SetLastStatus = true;
-            // Optionally, uncomment this line if needed to set history back to base position
-            // await this.DH_SetHistory("{}", DH_Did + ".vis.PosHistory" + DH_CurMap);
+              // Try to parse it – if it is a JSON string, this will succeed
+              const parsed = JSON.parse(valueCopy);
+              valueCopy = parsed;
+              this.log.debug(`String ${key} successfully parsed as JSON`);
+            } catch (e) {
+              // Not valid JSON – keep it as a string
+              this.log.debug(`String ${key} is not valid JSON: ${e.message}`);
             }
           }
+
+          if (path.endsWith('.motion_action_statistics') && typeof valueCopy === 'object') {
+			 await this.DH_PropMQTTObject(valueCopy, path + '.', InLog);
+          }
+
+          // Handle non-object values, including arrays
+          if (typeof valueCopy !== 'object' || Array.isArray(valueCopy)) {
+            await this.handleRegularState(key, valueCopy, path, InLog);
+          }
+        }
+      } catch (error) {
+        this.log.error(`Error processing key ${key}: ${error.message}`);
+      }
+    }
+  }
+
+  // Handles map property states with caching and translation
+  async handleMapProperty(key, value, mapPropertyName) {
+  // Cache check: update only if the value has changed
+    const cacheKey = `${DH_Did}.mqtt.state.${mapPropertyName}`;
+    const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+
+    if (mapValueCache[cacheKey] !== stringValue) {
+      mapValueCache[cacheKey] = stringValue;
+
+      // Apply translation
+      const translatedValue = await this.translateMapValue(key, value);
+
+      const statePathName = mapPropertyName.replace(/\w\S*/g, function(SPName) {
+        return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
+      }).replace(/\s/g, '');
+
+      const statePath = DH_Did + '.mqtt.state.' + statePathName;
+
+      // Use translatedValue instead of valueCopy
+      await this.DH_getType(translatedValue, statePath);
+      await this.DH_setState(statePath, translatedValue, true);
+
+      if (LogData) {
+        this.log.info(`[MAP] Updated ${key} -> ${mapPropertyName}: ${translatedValue}`);
+      }
+    }
+  }
+
+  // Handles regular state updates (non-map properties)
+  async handleRegularState(key, value, path, InLog) {
+    if (LogData) {
+      this.log.info(`${InLog} Set ${path} to ${value}`);
+    }
+
+    // If the value is an array, serialize it into a JSON string
+    if (Array.isArray(value)) {
+      value = JSON.stringify(value);
+    }
+
+    // 1. Handle special cases (PATH, TASK STATUS) and update ONLY visual states (robotUpdate, PosHistory)
+    await this.handleTaskStatus(path, value);      // updates waterTracking
+    await this.handlePathAndPosition(path, value); // updates robotUpdate, PosHistory
+
+    // 2. Set the original state (with correct type) and update ONLY the MQTT state
+    await this.DH_getType(value, path);            // determines the type (number, string, etc.)
+    await this.DH_setState(path, value, true);     // stores the value in the MQTT state
+  }
+
+
+
+  // ============================================================================
+  // TASK STATUS & WATER TRACKING
+  // ============================================================================
+
+  // Handles task status changes for water tracking
+  async handleTaskStatus(path, value) {
+    if (!path.includes('.state.TaskStatus')) return;
+
+    const oldTaskStatus = DH_NowTaskStatus;
+    const newTaskStatus = parseInt(value);
+
+    // Update global variable for task status
+    DH_NowTaskStatus = newTaskStatus;
+
+    // Detect cleaning start: Task changes from idle (0) to cleaning (1,2,3,4) but NOT fast mapping (5)
+    if (oldTaskStatus === 0 && newTaskStatus > 0 && newTaskStatus !== 5) {
+      await this.handleCleaningStart();
+    }
+    // Detect cleaning end: Task changes from cleaning to completed/idle (0)
+    else if (oldTaskStatus > 0 && oldTaskStatus !== 5 && newTaskStatus === 0) {
+      await this.handleCleaningEnd();
+    }
+  }
+
+  // Handles cleaning start for water tracking
+  async handleCleaningStart() {
+    this.log.info(`[WATER] Cleaning task started via MQTT`);//: ${oldTaskStatus} -> ${newTaskStatus}`);
+
+    // Wait a moment for CleaningMode to update, then check if it's a mopping mode
+    setTimeout(async () => {
+      try {
+        const modeState = await this.getStateAsync(DH_Did + '.state.CleaningMode');
+        if (modeState && modeState.val !== undefined) {
+          const modeValue = parseInt(modeState.val);
+          const isMoppingMode = [5120, 5121, 5123, 3840].includes(modeValue);
+
+          if (isMoppingMode && this.waterTracker && this.waterTracker.waterTracking) {
+          // Start water tracking
+            this.waterTracker.waterTracking.isMopping = true;
+            await this.waterTracker.handleCleaningStart();
+
+            // Cache water level
+            const waterVolumeState = await this.getStateAsync(DH_Did + '.state.WaterVolume');
+            if (waterVolumeState && waterVolumeState.val !== undefined) {
+              const waterLevel = parseInt(waterVolumeState.val);
+              this.waterTracker.waterTrackingCache.waterLevel = waterLevel === -1 ? 3 : waterLevel;
+            }
+
+            this.log.info(`[WATER] Mopping session started (Mode: ${modeValue})`);
+          }
+        }
+      } catch (error) {
+        this.log.error(`[WATER] Failed to start mopping tracking: ${error.message}`);
+      }
+    }, 1000); // Wait 1 second for all states to update
+
+    // Request a fresh IFrame at the start of cleaning
+    await this.requestIFrame();
+  }
+
+  // Handles the end of a cleaning task and triggers related processes
+  async handleCleaningEnd() {
+    this.log.info(`[WATER] Cleaning task completed via MQTT`);//: ${oldTaskStatus} -> ${newTaskStatus}`);
+
+    // Stop water tracking if a mopping session is active
+    if (this.waterTracker?.waterTracking?.isMopping) {
+      await this.waterTracker.handleCleaningComplete();
+      this.waterTracker.waterTracking.isMopping = false;
+      this.log.info(`[WATER] Mopping session completed`);
+    }
+
+    // End the learning session if one is currently active
+    if (this.learningSystem?.currentSession) {
+      await this.learningSystem.endSession('completed');
+      this.log.info(`[LEARNING] Session ended`);
+    }
+
+    // Request a fresh IFrame after cleaning has finished to get the final cleaned map state
+    setTimeout(async () => {
+      try {
+        await this.requestIFrame();
+	   this.log.info('Request a fresh IFrame after the cleaning task has finished');
+      } catch (error) {
+        this.log.warn(`[IFRAME] Failed to request fresh IFrame: ${error.message}`);
+      }
+    }, 5000); // Wait 5 seconds
+
+			  // =========== LEARNING SYSTEM: SESSION MANAGEMENT ===========
+		  // If there is an active learning session, stop it
+    if (this.learningSystem && this.learningSystem.currentSession?.isActive) {
+      setTimeout(() => {
+        this.learningSystem.stopSession();
+        this.log.info('[LEARNING-SYSTEM] Session stopped');
+      }, 2000);
+    }
+
+  }
+
+
+  // ============================================================================
+  // PATH & POSITION PROCESSING
+  // ============================================================================
+
+  // Handles path (.tr) and robot position (.robot) data
+  async handlePathAndPosition(path, value) {
+    if (!path.includes('.tr') && !path.includes('.robot')) return;
+
+    let position = null;
+    let operator = 'L';
+    let isCleaning = false;
+    let source = '';
+
+    // CASE 1: PATH DATA (.tr)
+    if (path.includes('.tr')) {
+      const result = await this.handleTrPathData(value);
+      position = result.position;
+      operator = result.operator;
+      isCleaning = result.isCleaning;
+      source = 'tr';
+
+      // TR active update timestamp
+      lastTrTimestamp = Date.now();
+    }
+    // CASE 2: ROBOT POSITION (.robot)
+    else if (path.includes('.robot')) {
+      const result = await this.handleRobotPositionData(value);
+      position = result.position;
+      operator = 'L';
+      isCleaning = false;
+      source = 'robot';
+    }
+
+
+    // Shared processing for both sources
+    if (position) {
+
+
+      await this.processPosition(position, operator, isCleaning, source);
+
+      // Check whether TR has been active within the last 3 seconds
+      const isTrInactive = (Date.now() - lastTrTimestamp) > 1000;
+
+      // IMPORTANT: Update robotUpdate state for .robot data
+      if (source === 'robot' && isTrInactive && !isCleaning) {
+        //this.log.info(`[Robot POS] Using pre-parsed: ${position[0]},${position[1]}`);
+        let currentSegment = null; // Currently active cleaning segment
+        for (const segment of Object.values(CheckArrayRooms)) {
+          if (await this.isPointInRoom(position, segment)) {
+            currentSegment = segment;
+            break;
+          }
+        }
+
+        const roomName = currentSegment ? currentSegment.Name : 'unknown';
+
+        await this.setStateAsync(`${DH_Did}.vis.robotUpdate`, {
+          val: JSON.stringify({
+            position: {
+              x: position[0],
+              y: position[1]
+            },
+            currentRoom: roomName,
+            currentId: null,
+            timestamp: Date.now(),
+            operator: 'l',
+            pathType: 'LINE',
+            isCleaning: false,
+            movement: 'disconnected',
+            source: 'robot'
+          }),
+          ack: true
+        });
+
+        // Live updates for current room
+        if (currentSegment) {
+          await this.setState(`${DH_Did}.state.CurrentRoomCleaningName`, currentSegment.Name, true);
+          await this.setState(`${DH_Did}.state.CurrentRoomCleaningNumber`, currentSegment.Id, true);
+          //await this.setState(`${DH_Did}.state.CurrentRoomCoveragePercent`, parseFloat(coveragePercent.toFixed(1)), true);
+		    } else {
+          await this.setState(`${DH_Did}.state.CurrentRoomCleaningName`, '', true);
+          await this.setState(`${DH_Did}.state.CurrentRoomCleaningNumber`, -1, true);
         }
       }
     }
+  }
+
+  // Handles TR path data to extract position
+  async handleTrPathData(value) {
+    let position = null;
+    let operator = 'L';
+    let isCleaning = false;
+
+    // NO PARSING - simply retrieve the last point from DH_AllPathPoints
+    if (DH_AllPathPoints && DH_AllPathPoints.length > 0) {
+      const lastDataPoint = DH_AllPathPoints[DH_AllPathPoints.length - 1];
+      position = [lastDataPoint.x, lastDataPoint.y];
+      operator = lastDataPoint.operator;
+
+      if (operator === 'W' || operator === 'M' || operator === 'S') {
+        DH_FirstOperator = operator;
+      }
+      // Determine whether the robot is currently cleaning: Cleaning operators: W (Sweep & Mop), M (Mop), S (Sweep)
+      isCleaning = (DH_FirstOperator === 'W' || DH_FirstOperator === 'M' || DH_FirstOperator === 'S');
+
+      if (LogData) {
+        this.log.info(`[TR POS] Using pre-parsed: ${position[0]},${position[1]} (${DH_AllPathPoints.length} total points)`);
+      }
+    } else {
+    // Fallback (should never happen)
+      this.log.warn('[TR POS] No points available, parsing directly');
+      const pathData = await this.DH_ParseTrPath(value);
+      if (pathData.fullPath.length > 0) {
+        const lastPoint = pathData.fullPath[pathData.fullPath.length - 1];
+        position = [lastPoint.x, lastPoint.y];
+        operator = lastPoint.operator;
+        isCleaning = true;
+      }
+    }
+
+    return { position, operator, isCleaning };
+  }
+
+  // Handles robot position data
+  async handleRobotPositionData(value) {
+    let position = null;
+
+    try {
+      const robotPos = JSON.parse(value);
+      if (Array.isArray(robotPos) && robotPos.length >= 2) {
+        position = [robotPos[0], robotPos[1]];
+
+        if (LogData) {
+          this.log.info(`[ROBOT] Position: ${position[0]},${position[1]}`);
+        }
+      }
+    } catch (e) {
+      this.log.error(`[ROBOT] Failed to parse position: ${e.message}`);
+    }
+
+    return { position };
+  }
+
+  // Processes position data for both TR and robot sources
+  async processPosition(position, operator, isCleaning, source) {
+    const robotPosition = position;
+
+    await this.updatePosHistoryFromTr();
+
+    // Task completion check
+    if ((DH_CompletStatus === 100) || (DH_NowStatus == 14)) {
+      DH_CleanStatus = false;
+      DH_SetLastStatus = false;
+      //await this.resetVariables();
+    }
+
+    // Cleaning in progress flag
+    if (DH_CompletStatus < 100 && DH_CleanStatus && !DH_SetLastStatus) {
+      DH_SetLastStatus = true;
+    }
+  }
+
+
+  // ============================================================================
+  // TR PATH PARSING
+  // ============================================================================
+
+  // Parses the robot's "tr" path string into structured path points. Example: "M100,200L50,0W100,100S200,200" returns decoded path data
+  async DH_ParseTrPath(trString, forceCleaning = false) {
+    try {
+    // If input is empty or not a string, return an empty result
+      if (!trString || typeof trString !== 'string') {
+        return {
+          fullPath: [],
+          cleaningSegments: [],
+          rawString: trString,
+          pointCount: 0
+        };
+      }
+
+      // Parse each operator + coordinates | Operators: M (Mop), W (Sweep + Mop), S (Sweep), L/l (line movement)
+      const regex = /(?<operator>[MWSLl])(?<x>-?\d+),(?<y>-?\d+)/g;
+      const matches = [...trString.matchAll(regex)];
+
+      let currentPosition = { x: 0, y: 0 };  // Tracks the robot's last position
+      const pathPoints = [];                 // Array of all points (full path)
+      const cleaningSegments = [];           // Array of consecutive cleaning segments
+      let currentSegment = null;             // Currently active cleaning segment
+
+      for (const match of matches) {
+        const operator = match.groups.operator;
+        const x = parseInt(match.groups.x);
+        const y = parseInt(match.groups.y);
+
+        let point;
+        let pathType;
+        let isCleaningPoint = false;
+
+        if (operator === 'L' || operator === 'l') {
+        // Relative movement for lines
+          currentPosition = {
+            x: currentPosition.x + x,
+            y: currentPosition.y + y
+          };
+          point = { x: currentPosition.x, y: currentPosition.y };
+          pathType = 'LINE';
+          isCleaningPoint = forceCleaning;
+        } else {
+        // Absolute movement for cleaning operators
+          currentPosition = { x, y };
+          point = { x, y };
+
+          switch(operator) {
+            case 'M':
+              pathType = 'MOP';
+              isCleaningPoint = true;
+              break;
+            case 'S':
+              pathType = 'SWEEP';
+              isCleaningPoint = true;
+              break;
+            case 'W':
+              pathType = 'SWEEP_AND_MOP';
+              isCleaningPoint = true;
+              break;
+            default:
+              pathType = 'UNKNOWN';
+              isCleaningPoint = false;
+          }
+        }
+
+        // Add point to the full path array
+        pathPoints.push({
+          x: point.x,
+          y: point.y,
+          type: pathType,
+          operator: operator,
+          isCleaning: isCleaningPoint,
+          timestamp: Date.now()
+        });
+
+        // Only create segments for cleaning points
+        if (isCleaningPoint) {
+          if (!currentSegment || currentSegment.type !== pathType) {
+          // Start a new cleaning segment
+            if (currentSegment) cleaningSegments.push(currentSegment);
+            currentSegment = {
+              type: pathType,
+              operator: operator,
+              points: [point]
+            };
+          } else {
+          // Same type as previous segment - continue adding points
+            currentSegment.points.push(point);
+          }
+        }
+      }
+
+      // Push the last segment if it exists
+      if (currentSegment) cleaningSegments.push(currentSegment);
+
+      return {
+        fullPath: pathPoints,
+        cleaningSegments: cleaningSegments,
+        rawString: trString,
+        pointCount: pathPoints.length,
+        cleaningPointCount: pathPoints.filter(p => p.isCleaning).length,
+        cleaningSegmentCount: cleaningSegments.length
+      };
+    } catch (error) {
+      this.log.error(`ParseTrPath failed: ${error.message}`);
+      return { fullPath: [], cleaningSegments: [], rawString: trString, pointCount: 0 };
+    }
+  }
+
+
+  // ============================================================================
+  // POSITION HISTORY MANAGEMENT
+  // ============================================================================
+
+  // Converts TR path points into PosHistory entries, updates coverage, and sends robotUpdate event
+  async updatePosHistoryFromTr() {
+    try {
+      if (!DH_TrHistory?.length || !DH_AllPathPoints?.length) {
+        return;
+      }
+
+      const totalPoints = DH_AllPathPoints.length;
+
+      if (totalPoints <= lastPosHistoryPointIndex + 1) {
+        return;
+      }
+
+      // 1. LOAD EXISTING POSHISTORY (ONLY ONCE)
+      if (!posHistoryLoaded) {
+        await this.loadPosHistory();
+      }
+
+      // 2. DETERMINE NEW POINT RANGE
+      const startIndex = lastPosHistoryPointIndex + 1;
+      const newPointsCount = totalPoints - startIndex;
+
+      if (newPointsCount === 0) return;
+
+      const startTime = Date.now();
+      const firstOperator = DH_AllPathPoints[0]?.operator || 'L';
+      const isMoppingSession = (firstOperator === 'W' || firstOperator === 'M');
+
+      // 3. PROCESS ONLY NEW POINTS
+      for (let i = startIndex; i < totalPoints; i++) {
+        await this.processPointForHistory(i, isMoppingSession);
+      }
+
+      lastPosHistoryPointIndex = totalPoints - 1;
+
+      // 5. SAVE COMPLETE HISTORY
+      await this.setStateAsync(
+        `${DH_Did}.vis.PosHistory${DH_CurMap || '0'}`,
+        {
+          val: JSON.stringify(posHistoryCache),
+          ack: true
+        }
+      );
+
+      // 6. SEND robotUpdate
+      await this.sendRobotUpdate(totalPoints, newPointsCount);
+
+      const duration = Date.now() - startTime;
+      if (LogData) {
+        this.log.info(`[TR2POS] ${newPointsCount} new points processed (total: ${totalPoints}) in ${duration}ms`);
+      }
+
+    } catch (error) {
+      this.log.error(`[TR2POS] Error: ${error.message}`);
+    }
+  }
+
+  // Loads existing position history from state
+  async loadPosHistory() {
+    try {
+      const existingState = await this.getStateAsync(
+        `${DH_Did}.vis.PosHistory${DH_CurMap || '0'}`
+      );
+
+      if (existingState?.val) {
+        posHistoryCache = JSON.parse(existingState.val);
+        lastPosHistoryPointIndex = Object.keys(posHistoryCache).length - 1;
+        this.log.info(`[TR2POS] Loaded: ${lastPosHistoryPointIndex + 1} points`);
+      } else {
+        posHistoryCache = {};
+        lastPosHistoryPointIndex = -1;
+      }
+    } catch (e) {
+      posHistoryCache = {};
+      lastPosHistoryPointIndex = -1;
+    }
+    posHistoryLoaded = true;
+  }
+
+  // Processes a single point for position history
+  async processPointForHistory(index, isMoppingSession) {
+    const point = DH_AllPathPoints[index];
+
+    let movement = 'absolute';
+    if (point.operator === 'L') movement = 'disconnected';
+    if (point.operator === 'l') movement = 'connected';
+
+    let currentRoom = null;
+    let currentId = null;
+    let totalArea = 0;
+    let cleanedArea = 0;
+    let coveragePercent = 0;
+
+    try {
+    // DH_GetRobotPosition updates roomData
+      const roomData_result = await this.DH_GetRobotPosition(
+        [point.x, point.y],
+        CheckArrayRooms,
+        'tr',
+        true
+      );
+
+      if (roomData_result) {
+        currentRoom = roomData_result.currentRoom;
+        currentId = roomData_result.currentId;
+        totalArea = roomData_result.TotalArea || 0;
+        cleanedArea = roomData_result.CleanedArea || 0;
+        coveragePercent = roomData_result.CoveragePercent || 0;
+      }
+    } catch (e) {
+    // Ignore errors
+    }
+
+    // COMPLETE HISTORY ENTRY
+    posHistoryCache[index] = {
+      position: { x: point.x, y: point.y },
+      currentRoom,
+      currentId,
+      TotalArea: totalArea,
+      CleanedArea: cleanedArea,
+      CoveragePercent: coveragePercent,
+      timestamp: point.timestamp || Date.now(),
+      operator: point.operator,
+      pathType: point.type || 'LINE',
+      isCleaning: point.isCleaning || isMoppingSession,
+      movement,
+      source: 'tr'
+    };
+  }
+
+  // Sends robot update with latest position and coverage data
+  async sendRobotUpdate(totalPoints, newPointsCount) {
+    const lastPoint = DH_AllPathPoints[totalPoints - 1];
+    const lastEntry = posHistoryCache[totalPoints - 1];
+
+    await this.setStateAsync(`${DH_Did}.vis.robotUpdate`, {
+      val: JSON.stringify({
+        position: { x: lastPoint.x, y: lastPoint.y },
+        currentRoom: lastEntry?.currentRoom || null,
+        currentId: lastEntry?.currentId || null,
+        TotalArea: lastEntry?.TotalArea || 0,
+        CleanedArea: lastEntry?.CleanedArea || 0,
+        CoveragePercent: lastEntry?.CoveragePercent || 0,
+        timestamp: Date.now(),
+        operator: lastPoint.operator,
+        pathType: lastPoint.type || 'LINE',
+	  cleaningMode: lastPoint.cleaningMode || 'none',
+        isCleaning: lastEntry?.isCleaning || false,
+        movement: lastEntry?.movement || 'absolute',
+        source: 'tr',
+        totalPoints,
+        newPoints: newPointsCount
+      }),
+      ack: true
+    });
+  }
+
+
+  // ============================================================================
+  // ROOM & COVERAGE CALCULATION
+  // ============================================================================
+
+  // Determines which room the robot is in and calculates cleaning coverage. Uses ray casting for room detection and grid-based coverage calculation
+  async DH_GetRobotPosition(Position, SegmentObject, source = 'unknown', isCleaning = false) {
+    let currentSegment = null;
+    let result = null;
+
+    // =========== 1. ROOM DETECTION (Ray Casting Algorithm) ===========
+    for (const segment of Object.values(SegmentObject)) {
+      if (this.isPointInRoom(Position, segment)) {
+        currentSegment = segment;
+        break;
+      }
+    }
+
+    // Exit if robot is not in any known room
+    if (!currentSegment) return null;
+
+    const roomName = currentSegment.Name;
+    const roomPath = `${DH_Did}.state.cleaninginfo.${DH_CurMap}.${roomName}`;
+    const now = Date.now();
+
+    // =========== 2. ROOM INITIALIZATION (First time only) ===========
+    if (!roomData[roomName]) {
+      await this.initializeRoom(roomName, currentSegment, roomPath);
+    }
+
+    // =========== 3. POINT COLLECTION DURING CLEANING ===========
+    if (isCleaning) {
+      await this.collectCleaningPoints(roomName, Position);
+    }
+
+    // =========== 4. COVERAGE CALCULATION (Every 2 seconds) ===========
+    if (now - roomData[roomName].lastUpdated > 2000) {
+      result = await this.calculateRoomCoverage(roomName, currentSegment, roomPath, Position, source, isCleaning, now);
+    }
+
+    return result;
+  }
+
+  // Ray casting algorithm to determine if point is inside polygon
+  isPointInRoom(point, segment) {
+    let inside = false;
+    const { X: xCoords, Y: yCoords } = segment;
+
+    for (let i = 0, j = xCoords.length - 1; i < xCoords.length; j = i++) {
+      const xi = xCoords[i], yi = yCoords[i];
+      const xj = xCoords[j], yj = yCoords[j];
+
+      const intersect = ((yi > point[1]) !== (yj > point[1])) &&
+            (point[0] < ((xj - xi) * (point[1] - yi) / (yj - yi) + xi));
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
+  }
+
+  // Initialize a new room data structure
+  async initializeRoom(roomName, segment, roomPath) {
+  // Calculate room area using shoelace formula (coordinates in mm² -> convert to m²)
+    const totalAreaM2 = await this.calculatePolygonArea(segment.X, segment.Y) / 1000000;
+
+    roomData[roomName] = {
+      points: new Set(),           // Unique cleaned points with 10cm precision
+      totalArea: totalAreaM2,      // Room size in m² from map data
+      lastUpdated: 0,              // Timestamp of last coverage calculation
+      lastPosition: null           // Previous position for Bresenham interpolation
+    };
+
+    await this.createRoomStates(roomPath, segment.Name);
+    this.log.info(`[ROOM] New room initialized: ${roomName} = ${totalAreaM2.toFixed(2)}m²`);
+  }
+
+  // Collect cleaning points with Bresenham interpolation
+  async collectCleaningPoints(roomName, currentPos) {
+    const room = roomData[roomName];
+
+    // Add current position with 10cm precision (round to 1 decimal)
+    const key = `${currentPos[0].toFixed(1)},${currentPos[1].toFixed(1)}`;
+    room.points.add(key);
+
+    // Bresenham line algorithm - fills gaps between position updates
+    const lastPos = room.lastPosition;
+    if (lastPos) {
+      const pointsBetween = await this.getPointsBetween(lastPos, currentPos);
+      pointsBetween.forEach(([x, y]) => {
+        const roundedX = Math.round(x * 10) / 10;
+        const roundedY = Math.round(y * 10) / 10;
+        room.points.add(`${roundedX},${roundedY}`);
+      });
+    }
+
+    room.lastPosition = currentPos;
+
+    // Debug: Log every 100 points
+    if (room.points.size % 100 === 0) {
+      this.log.debug(`[ROOM] ${roomName}: ${room.points.size} points collected`);
+    }
+  }
+
+  // Calculate room coverage and update states
+  async calculateRoomCoverage(roomName, segment, roomPath, position, source, isCleaning, timestamp) {
+    const room = roomData[roomName];
+    const cleanedPoints = room.points.size;
+
+    // ===== CLEANED AREA FORMULA =====
+    const GRID_SIZE = 0.01;      // 10cm grid
+    const CELL_AREA = GRID_SIZE * GRID_SIZE;  // 0.0001 m² per cell
+
+    // EMPIRICAL FORMULA: ((points � cellArea) � 2) / 1.3
+    // Derived from Dreame app calibration: 4.53m² room ? ~10m² displayed
+    // �2 = cleaning width 20cm (double 10cm grid)
+    // /1.3 = correction for overlaps, path efficiency, and app display
+    // Result: 1 point � 0.0001538 m² actual cleaned area
+    const cleanedArea = ((cleanedPoints * CELL_AREA) * 2) / 1.3; // m²
+    const totalArea = room.totalArea;
+
+    // Calculate coverage percentage (NOT capped at 100% - shows multiple cleanings)
+    const coveragePercent = totalArea > 0 ? (cleanedArea / totalArea) * 100 : 0;
+
+    // Debug output
+    this.logRoomCoverage(roomName, cleanedPoints, cleanedArea, totalArea, coveragePercent);
+
+    // Update states if significant cleaning occurred
+    if (cleanedArea > 0.5) {
+      await this.updateRoomStates(roomPath, {
+        Name: segment.Name,
+        TotalArea: parseFloat(totalArea.toFixed(2)),
+        CleanedArea: parseFloat(cleanedArea.toFixed(2)),
+        CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
+        LastUpdate: new Date().toISOString()
+      });
+    }
+
+    // Live updates for current room
+    await this.setState(`${DH_Did}.state.CurrentRoomCleaningName`, segment.Name, true);
+    await this.setState(`${DH_Did}.state.CurrentRoomCleaningNumber`, segment.Id, true);
+    await this.setState(`${DH_Did}.state.CurrentRoomCoveragePercent`, parseFloat(coveragePercent.toFixed(1)), true);
+
+    // ===== GET CLEANING MODE FROM THE LAST RECORDED POINT =====
+    let cleaningMode = 'none';
+    if (DH_AllPathPoints && DH_AllPathPoints.length > 0) {
+      const lastPoint = DH_AllPathPoints[DH_AllPathPoints.length - 1];
+      cleaningMode = lastPoint.cleaningMode || 'none';
+    }
+
+    // Create result object
+    const result = {
+      position: { x: position[0], y: position[1] },
+      currentRoom: segment.Name,
+      currentId: segment.Id,
+      TotalArea: parseFloat(totalArea.toFixed(2)),
+      CleanedArea: parseFloat(cleanedArea.toFixed(2)),
+      CoveragePercent: parseFloat(coveragePercent.toFixed(1)),
+      cleaningMode: cleaningMode,
+      PointCount: cleanedPoints,
+      source: source,
+      isCleaning: isCleaning,
+      timestamp: timestamp,
+      estimatedSessions: cleanedArea > totalArea ? Math.round(cleanedArea / totalArea) : 1
+    };
+
+    // Ensure robotUpdate state exists and update
+    await this.ensureRobotUpdateState();
+    await this.setStateAsync(`${DH_Did}.vis.robotUpdate`, {
+      val: JSON.stringify(result),
+      ack: true
+    });
+
+    room.lastUpdated = timestamp;
+
+    // ===== LEARNING SYSTEM INTEGRATION =====
+    await this.updateLearningSystem(roomName, coveragePercent, cleanedArea, cleaningMode);
+
+    // ===== WATER TRACKING INTEGRATION =====
+    await this.updateWaterTracking(roomName, cleanedArea, cleaningMode);
+
+    return result;
+  }
+
+  // Log room coverage debug information
+  logRoomCoverage(roomName, cleanedPoints, cleanedArea, totalArea, coveragePercent) {
+    if (LogData) {
+      this.log.info('========== ROOM COVERAGE DEBUG ==========');
+      this.log.info(`[DEBUG] Room: ${roomName}`);
+      this.log.info(`[DEBUG] Points Collected: ${cleanedPoints}`);
+      this.log.info(`[DEBUG] Grid: 10cm � 10cm = 0.0001m² per point`);
+      this.log.info(`[DEBUG] Empirical Factor: 2/1.3 = ${(2/1.3).toFixed(3)}`);
+      this.log.info(`[DEBUG] Cleaned Area: ${cleanedArea.toFixed(2)} m²`);
+      this.log.info(`[DEBUG] Room Area: ${totalArea.toFixed(2)} m²`);
+      this.log.info(`[DEBUG] Final Coverage: ${coveragePercent.toFixed(1)}%`);
+
+      if (cleanedArea > totalArea) {
+        const sessions = Math.round(cleanedArea / totalArea);
+        this.log.warn(`[WARNING] Cleaned area exceeds room size - ${sessions} cleaning sessions detected`);
+        this.log.warn(`[WARNING] Expected for ${sessions} sessions: ${(totalArea * sessions).toFixed(2)} m²`);
+      }
+      this.log.info('==========================================');
+    }
+  }
+
+  // Ensure robotUpdate state exists
+  async ensureRobotUpdateState() {
+    await this.setObjectNotExistsAsync(`${DH_Did}.vis.robotUpdate`, {
+      type: 'state',
+      common: {
+        name: 'robotUpdate',
+        type: 'mixed',
+        role: 'state',
+        write: false,
+        read: true,
+        def: ''
+      },
+      native: {}
+    });
+  }
+
+  // ============================================================================
+  // ===== UPDATE LEARNING SYSTEM IF ENABLED =====
+  // ============================================================================
+  async updateLearningSystem(roomName, coveragePercent, cleanedArea, cleaningMode = 'none') {
+    if (!this.learningSystem) return;
+
+    // ===== LEARN ONLY WHEN ACTUAL CLEANING IS HAPPENING =====
+    if (cleaningMode === 'none') {
+      if (this.learningSystem.config.DebugMode) {
+        this.log.debug(`[LEARNING] Skipping - no cleaning mode`);
+      }
+      return;
+    }
+
+    // Check minimum coverage threshold required for learning
+    if (coveragePercent < this.learningSystem.config.MinCoverageForLearn) {
+      return;
+    }
+
+    // ===== MAP CLEANING MODE TO NUMERIC VALUE =====
+    const CLEANING_MODE_MAP = {
+      'sweep': 5122,  // Vacuum only
+      'mop': 5121,    // Mop only
+      'both': 5120    // Vacuum + mop
+    };
+    const learningMode = CLEANING_MODE_MAP[cleaningMode] || -1;
+
+    // ===== START LEARNING SESSION IF NOT ALREADY ACTIVE =====
+    if (!this.learningSystem.currentSession) {
+      try {
+        const waterVolumeState = await this.getStateAsync(DH_Did + '.state.WaterVolume');
+        const suctionLevelState = await this.getStateAsync(DH_Did + '.state.SuctionLevel');
+
+        // Retrieve required values
+        const suctionText = suctionLevelState?.val || 'Standard';
+        const waterText = waterVolumeState?.val || 'Medium';
+
+        // Convert text values to numeric representations
+        const suctionNum = Object.entries(DreameSuctionLevel[UserLang])
+          .find(([key, val]) => val === suctionText)?.[0] || 1;
+        const waterNum = Object.entries(DreameWaterVolume[UserLang])
+          .find(([key, val]) => val === waterText)?.[0] || 2;
+
+        // Start learning session with current cleaning settings
+        await this.learningSystem.startSession('mqtt', {
+          mode: learningMode,
+          suction: parseInt(suctionNum),
+          water: parseInt(waterNum)
+        });
+
+        this.log.info(`[LEARNING] Session started: mode=${learningMode} (${cleaningMode}), suction=${suctionNum}, water=${waterNum}` );
+      } catch (error) {
+        this.log.error(`[LEARNING] Failed to start session: ${error.message}`);
+        return;
+      }
+    }
+
+    // ===== UPDATE CLEANING MODE IN CURRENT SESSION (ONLY IF CHANGED) =====
+    if (this.learningSystem.currentSession && learningMode !== -1) {
+
+      // Get current session values as fallback
+      let suction = this.learningSystem.currentSession?.settings?.suction ?? 1;
+      let water   = this.learningSystem.currentSession?.settings?.water ?? 2;
+
+      // Mop-only mode: suction is not used
+      if (learningMode === 5121) suction = null;
+
+      // Sweep-only mode: water is not used
+      if (learningMode === 5122) water = null;
+
+      // Both mode: ensure suction and water have valid values
+      if (learningMode === 5120 && (!suction || !water)) {
+        const waterVolumeState = await this.getStateAsync(DH_Did + '.state.WaterVolume');
+        const suctionLevelState = await this.getStateAsync(DH_Did + '.state.SuctionLevel');
+
+        const suctionText = suctionLevelState?.val || 'Standard';
+        const waterText = waterVolumeState?.val || 'Medium';
+
+        const suctionNum = Object.entries(DreameSuctionLevel[UserLang])
+          .find(([key, val]) => val === suctionText)?.[0] || 1;
+        const waterNum = Object.entries(DreameWaterVolume[UserLang])
+          .find(([key, val]) => val === waterText)?.[0] || 2;
+
+        suction = parseInt(suctionNum);
+        water = parseInt(waterNum);
+      }
+
+      // Only update if something actually changed
+      const current = this.learningSystem.currentSession.settings;
+      if (
+        current.mode !== learningMode ||
+    current.suction !== suction ||
+    current.water !== water
+      ) {
+        this.learningSystem.updateSessionFromMQTT({
+          mode: learningMode,
+          suction: suction,
+          water: water
+        });
+
+        this.log.info(
+          `[LEARNING] Mode update: mode=${learningMode}, suction=${suction}, water=${water}`
+        );
+      } else if (this.learningSystem.config.DebugMode) {
+        this.log.debug(`[LEARNING] Mode unchanged, skipping session update`);
+      }
+    }
+
+
+
+    // ===== UPDATE ROOM PROGRESS =====
+    await this.learningSystem.updateRoomProgress(roomName, coveragePercent, cleanedArea);
+
+
+    // Check if the room has already been learned during the current session
+    const hasLearned = this.learningSystem.currentSession?.learnedRooms?.has(roomName);
+    // Minimum coverage required to trigger a full learning process
+    const minCoverage = this.learningSystem.config.MinCoverageForLearn;
+
+    // CASE 1: Room NOT learned yet AND coverage is high enough -> Perform full learning (store all parameters)
+    if (!hasLearned && coveragePercent >= minCoverage) {
+      try {
+        const learned = await this.learningSystem.learnFromRoom(
+          roomName,
+          coveragePercent,
+          cleanedArea,
+          1,  // Default repetitions (single pass)
+          this.learningSystem.currentSession?.settings?.mode,
+          this.learningSystem.currentSession?.settings?.suction,
+          this.learningSystem.currentSession?.settings?.water
+        );
+
+        if (learned) {
+          this.log.info(`[LEARNING] Learned ${roomName} at ${coveragePercent.toFixed(1)}% (mode: ${cleaningMode})`);
+        }
+      } catch (error) {
+        this.log.error(`[LEARNING] Learn error: ${error.message}`);
+      }
+      // CASE 2: Room already learned in this session -> Only update coverage and area (lightweight update)
+    } else if (hasLearned) {
+
+	  // Room already learned in this session ?-> update only lastCoverage, lastArea, and coverageHistory to avoid duplicate learning and inflated statistics.
+	  const updateLastCoverageLastArea =  await this.learningSystem.updateRoomCoverage(roomName, coveragePercent, cleanedArea);
+      if (this.learningSystem.config.DebugMode && !updateLastCoverageLastArea) {
+        this.log.info(`[LEARNING] Already learned ${roomName}, skipping`);
+      }
+    }
+  }
+
+  // ============================================================================
+  // ===== UPDATE WATER TRACKING IF ENABLED =====
+  // ============================================================================
+  async updateWaterTracking(roomName, cleanedArea, cleaningMode = 'none') {
+  // Only execute if water tracking is available/enabled
+    if (!this.waterTracker?.waterTracking) {
+      return;
+    }
+
+    // ===== CHECK IF THE ROBOT IS ACTUALLY MOPPING =====
+    const isActuallyMopping = (cleaningMode === 'mop' || cleaningMode === 'both');
+
+    if (!isActuallyMopping) {
+      if (this.waterTracker.waterTracking.isMopping) {
+      // We previously assumed it was mopping, but it is no longer mopping
+        this.log.info(`[WATER] Mopping ended - mode changed to ${cleaningMode}`);
+        this.waterTracker.waterTracking.isMopping = false;
+      }
+      return;
+    }
+
+    // ===== START MOPPING IF NOT ALREADY ACTIVE =====
+    if (!this.waterTracker.waterTracking.isMopping) {
+      this.waterTracker.waterTracking.isMopping = true;
+      this.waterTracker.waterTracking.cleaningMode = cleaningMode;
+      await this.waterTracker.handleCleaningStart();
+      this.log.info(`[WATER] Mopping started - mode: ${cleaningMode}`);
+    }
+
+    // Validate required parameters
+    if (!cleanedArea || !roomName) {
+      return;
+    }
+
+    try {
+
+      if (LogData) {
+        this.log.info('========== WATER DEBUG]  ==========');
+	  this.log.info(`[WATER DEBUG] Mode: ${cleaningMode}`);
+	  this.log.info(`[WATER DEBUG] Room: ${roomName}`);
+        this.log.info(`[WATER DEBUG] waterTracker exists: ${!!this.waterTracker}`);
+        this.log.info(`[WATER DEBUG] waterTracking exists: ${!!this.waterTracker.waterTracking}`);
+        this.log.info(`[WATER DEBUG] isMopping: ${this.waterTracker.waterTracking.isMopping}`);
+        this.log.info(`[WATER DEBUG] currentMl: ${this.waterTracker.waterTracking.currentMl}`);
+        this.log.info(`[WATER DEBUG] CleanedArea: ${cleanedArea.toFixed(2)}m²`);
+        this.log.info('==========================================');
+      }
+
+	  // Update water consumption based on cleaned area
+      await this.waterTracker.updateWaterConsumption(cleanedArea, roomName);
+
+      if (LogData) {
+        this.log.info(`[WATER] Consumption updated for ${roomName}: ${cleanedArea.toFixed(2)}m²`);
+      }
+
+    } catch (error) {
+      this.log.error(`[WATER] Update failed: ${error.message}`);
+    }
+  }
+
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
+  // Bresenham's line algorithm to get all points between two coordinates
+  async getPointsBetween([x0, y0], [x1, y1]) {
+    const points = [];
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+
+    while (true) {
+      points.push([x0, y0]);
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 < dx) { err += dx; y0 += sy; }
+    }
+    return points;
+  }
+
+  // Calculates area of a polygon using the shoelace formula
+  async calculatePolygonArea(xCoords, yCoords) {
+    let area = 0;
+    for (let i = 0, j = xCoords.length - 1; i < xCoords.length; j = i++) {
+      area += (xCoords[j] + xCoords[i]) * (yCoords[j] - yCoords[i]);
+    }
+    return Math.abs(area / 2);
+  }
+
+  // Calculates coverage percentage for a room
+  async calculateCoveragePercent(segment, visitedPointsSet) {
+  // Calculate total area of the segment in dm²
+    const totalArea = (await this.calculatePolygonArea(segment.X, segment.Y)) / 100;
+    // Calculate covered area (1 point = 1dm²)
+    const coveredArea = (visitedPointsSet.size / 100);
+    // Calculate percentage (capped at 100%)
+    const percent = Math.min(100, (coveredArea / totalArea) * 100);
+    return parseFloat(percent.toFixed(2));
+  }
+
+  // Calculates total coverage across all rooms
+  async calculateTotalCoverage() {
+    let totalArea = 0;
+    let totalCleaned = 0;
+
+    for (const room in roomData) {
+      totalArea += roomData[room].totalArea;
+      totalCleaned += roomData[room].points.size;
+    }
+
+    return totalArea > 0 ? (totalCleaned / totalArea) * 100 : 0;
+  }
+
+
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+
+  // Creates all required ioBroker states for a room
+  async createRoomStates(roomPath, roomName) {
+  // Create channel object
+    await this.setObjectNotExistsAsync(roomPath, {
+      type: 'channel',
+      common: {
+        name: roomName,
+        role: 'info'
+      },
+      native: {}
+    });
+
+    // Define all state objects to be created
+    const states = {
+      'Name': { type: 'string', role: 'text' },
+      'TotalArea': { type: 'number', unit: 'm²', role: 'value' },
+      'CleanedArea': { type: 'number', unit: 'm²', role: 'value' },
+      'CoveragePercent': { type: 'number', unit: '%', role: 'value' },
+      'LastUpdate': { type: 'string', role: 'date' }
+    };
+
+    // Create each state object
+    for (const [state, config] of Object.entries(states)) {
+      await this.setObjectNotExistsAsync(`${roomPath}.${state}`, {
+        type: 'state',
+        common: {
+          ...config,
+          name: `${roomName} ${state}`,
+          read: true,
+          write: false
+        },
+        native: {}
+      });
+    }
+  }
+
+  // Updates all states for a room
+  async updateRoomStates(roomPath, data) {
+    for (const [key, value] of Object.entries(data)) {
+      await this.setStateAsync(`${roomPath}.${key}`, { val: value, ack: true });
+    }
+  }
+
+
+  // ============================================================================
+  // INITIALIZATION & RESET FUNCTIONS
+  // ============================================================================
+
+  // Initializes TR history when the adapter starts - Called ONLY ONCE
+  async initTrHistory() {
+    try {
+      this.log.info('[TR INIT] Loading existing state...');
+
+      const existingState = await this.getStateAsync(`${DH_Did}.vis.TrHistory${DH_CurMap || '0'}`);
+      if (existingState && existingState.val) {
+        const parsed = JSON.parse(existingState.val);
+
+        // Populate global variables from the stored state
+        DH_TrHistory = parsed.strings || [];
+        DH_AllPathPoints = parsed.points || [];
+        DH_LastTrString = DH_TrHistory.length > 0
+          ? DH_TrHistory[DH_TrHistory.length - 1]
+          : '';
+
+        this.log.info(
+          `[TR INIT] Loaded: ${DH_TrHistory.length} strings, ${DH_AllPathPoints.length} points`
+        );
+      } else {
+      // No existing state found - start fresh
+        DH_TrHistory = [];
+        DH_AllPathPoints = [];
+        DH_LastTrString = '';
+
+        this.log.info('[TR INIT] Fresh start - no existing state');
+      }
+    } catch (error) {
+      this.log.error(`[TR INIT] Error: ${error.message}`);
+
+      // In case of error, start fresh
+      DH_TrHistory = [];
+      DH_AllPathPoints = [];
+      DH_LastTrString = '';
+    }
+
+    await this.initPosHistory();
+  }
+
+  // Initializes position history when the adapter starts
+  async initPosHistory() {
+  // Reset cache so it will be reloaded on first update
+    posHistoryCache = null;
+    posHistoryLoaded = false;
+    lastPosHistoryPointIndex = -1;
+    // Call once at startup to populate cache
+    await this.updatePosHistoryFromTr();
+  }
+
+  // Resets TR history for a new cleaning cycle
+  async resetTrHistory() {
+    const oldStrings = DH_TrHistory.length;
+    const oldPoints = DH_AllPathPoints.length;
+
+    // Clear arrays
+    DH_TrHistory = [];
+    DH_AllPathPoints = [];
+    DH_LastTrString = '';
+
+    // Clear stored state
+    await this.setStateAsync(`${DH_Did}.vis.TrHistory${DH_CurMap || '0'}`, {
+      val: JSON.stringify({
+        strings: [],
+        points: [],
+        lastUpdate: Date.now(),
+        totalStrings: 0,
+        totalPoints: 0,
+        reset: true
+      }),
+      ack: true
+    });
+
+    this.log.info(`[TR RESET] Cleared: ${oldStrings} strings, ${oldPoints} points`);
+  }
+
+  // Resets position history for a new cleaning cycle
+  async resetPosHistory() {
+    posHistoryCache = {};
+    lastPosHistoryPointIndex = -1;
+    posHistoryLoaded = true; // Remains true, but cache is empty
+
+    await this.setStateAsync(`${DH_Did}.vis.PosHistory${DH_CurMap || '0'}`, {
+      val: JSON.stringify({}),
+      ack: true
+    });
+
+    this.log.info('[TR2POS] Reset for new cleaning');
+  }
+
+  // Resets all tracking variables for a new cleaning cycle
+  async resetVariables() {
+    lastPosition = null; // Reset last known position
+    roomData = {}; // Clear all room data
+
+    // Reset path data
+    await this.setStateAsync(`${DH_Did}.vis.Path${DH_CurMap || '0'}`, {
+      val: JSON.stringify({ raw: '', points: [], segments: [], timestamp: 0 }),
+      ack: true
+    });
+
+    if (this.waterTracker?.waterTracking?.isMopping) {
+      await this.waterTracker.handleCleaningComplete();
+      this.waterTracker.waterTracking.isMopping = false;
+      this.waterTracker.waterTrackingCache.mode = null;
+      this.waterTracker.waterTrackingCache.waterLevel = null;
+      this.waterTracker.lastCleanedArea = 0;
+      this.waterTracker.lastWaterUpdateTime = 0;
+      this.log.info(`[WATER] Mopping stopped`);
+    }
+
+    this.log.info('[Reset: WATER | Path] Variables reset for new cleaning cycle');
+  }
+
+
+  async translateMapValue(originalKey, value) {
+    if (value === null || value === undefined) return value;
+    if (isNaN(parseInt(value))) return value;
+
+    const numValue = parseInt(value);
+
+    // Basic map properties
+    if (originalKey === 'wm') { // work status
+      return DreameWorkStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'ris') { // saved map status
+      return DreameSavedMapStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'rpur') { // restored map status
+      return DreameRestoredMapStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'fsm') { // frame map status
+      return DreameFrameMapStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'suw') { // temporary map type
+      return DreameTemporaryMapType[UserLang][numValue] || value;
+    }
+    if (originalKey === 'risp') { // new map status
+      return DreameNewMapStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'oc') { // docked status
+      if (DH_LastDockStatus !== numValue) {
+        DH_LastDockStatus = numValue;
+        // Request an I-frame to ensure an up-to-date, complete map base.
+		    await this.requestIFrame();
+      }
+
+      return DreameDockedStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'iscleanlog') { // clean log status
+      return DreameCleanLogStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'l2r') { // line-to-robot status
+      return DreameLineToRobotStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'cf') { // completion status
+      return DreameCompletedStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'us') { // recovery map data status
+      return DreameRecoveryMapDataStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'mra') { // map rotation (degrees)
+      // Rotation is a degree value, not an enum
+      return value + '°';
+    }
+
+    // Cleaning data
+    if (originalKey === 'cs') { // cleaned area
+      return value;// + 'm²';
+    }
+    if (originalKey === 'ct') { // cleaning time
+      return value + ' s';
+    }
+    if (originalKey === 'clean_finish_remain_electricity') { // remaining battery percentage
+      return value + '%';
+    }
+    if (originalKey === 'ds') { // dust collection count
+      return value + 'x';
+    }
+    if (originalKey === 'wt') { // mop wash count
+      return value + 'x';
+    }
+    if (originalKey === 'multime') { // multiple cleaning time type
+      return DreameMultipleCleaningTimeType[UserLang][numValue] || value;
+    }
+    if (originalKey === 'dos') { // DOS status
+      return DreameDosStatus[UserLang][numValue] || value;
+    }
+    if (originalKey === 'mooClean') { // mopping mode
+      return DreameMoppingMode[UserLang][numValue] || value;
+    }
+    if (originalKey === 'customeclean') { // customized cleaning type
+      return DreameCustomizedCleaningType[UserLang][numValue] || value;
+    }
+
+    // History data
+    if (originalKey === 'smd') { // startup method
+      return DreameStartupMethod[UserLang][numValue] || value;
+    }
+    if (originalKey === 'ctyi') { // task end type
+      return DreameTaskEndType[UserLang][numValue] || value;
+    }
+    if (originalKey === 'cmc') { // cleanup method
+      return DreameCleanupMethod[UserLang][numValue] || value;
+    }
+
+    // Recommended areas
+    if (originalKey === 'rec_vw.type') { // recommended area type
+      return DreameRecommendedAreaType[UserLang][numValue] || value;
+    }
+    if (originalKey === 'rec_vws.type') { // recommended threshold type
+      return DreameRecommendedThresholdType[UserLang][numValue] || value;
+    }
+
+    // CleanArea (cleaned segments)
+    if (originalKey === 'CleanArea') { // cleaned segment type
+      return DreameCleanAreaType[UserLang][numValue] || value;
+    }
+
+    // Cleaning status
+    if (originalKey === 'cleaning_status') {
+      return DreameCleaningStatus[UserLang][numValue] || value;
+    }
+
+    // Recovery map type
+    if (originalKey === 'recovery_map_type') {
+      return DreameRecoveryMapType[UserLang][numValue] || value;
+    }
+
+    // Obstacle picture status
+    if (originalKey === 'picture_status') {
+      return DreameObstaclePictureStatus[UserLang][numValue] || value;
+    }
+
+    // Obstacle ignore status
+    if (originalKey === 'ignore_status') {
+      return DreameObstacleIgnoreStatus[UserLang][numValue] || value;
+    }
+
+    // Clean-again status
+    if (originalKey === 'cleanagain') {
+      return DreameCleanAgainStatus[UserLang][numValue] || value;
+    }
+
+    // Mop-after-sweep status
+    if (originalKey === 'clt') {
+      return DreameMopAfterSweepStatus[UserLang][numValue] || value;
+    }
+
+    // Second mopping status
+    if (originalKey === 'ctyo') {
+      return DreameSecondMoppingStatus[UserLang][numValue] || value;
+    }
+
+    // Second cleaning status
+    if (originalKey === 'ismultiple') {
+      return DreameSecondCleaningStatus[UserLang][numValue] || value;
+    }
+
+    // Cleanset type
+    if (originalKey === 'cleanset_type') {
+      return DreameCleansetType[UserLang][numValue] || value;
+    }
+
+    // Path type (tr type in map data)
+    /* if (originalKey === 'tr') {
+        // Path type can be letter-based (L, S, W, M)
+        if (value === 'L' || value === 'S' || value === 'W' || value === 'M') {
+            return DreamePathType[UserLang][value] || value;
+        }
+    }*/
+
+    // Furniture type
+    if (originalKey === 'ai_furniture' || originalKey === 'furniture_type') {
+      return DreameFurnitureType[UserLang][numValue] || value;
+    }
+
+    // Segment type
+    if (originalKey === 'segment_type') {
+      return DreameSegmentTypeCode[UserLang][numValue] || value;
+    }
+
+    // Map frame type
+    if (originalKey === 'frame_type') {
+      return DreameMapFrameType[UserLang][numValue] || value;
+    }
+
+    // Map pixel type
+    if (originalKey === 'pixel_type') {
+      return DreameMapPixelType[UserLang][numValue] || value;
+    }
+
+    return value;
   }
 
   async DH_SetHistory(NewRobVal, InRobPath) {
@@ -4762,7 +9674,11 @@ class Dreamehome extends utils.Adapter {
               TotalArea: parsed.TotalArea,
               CleanedArea: parsed.CleanedArea,
               CoveragePercent: parsed.CoveragePercent,
-              timestamp: parsed.timestamp || Date.now()
+              timestamp: parsed.timestamp || Date.now(),
+				                operator: NewRobVal.operator || 'L',    // 'L', 'l', 'M', 'S', 'W'
+              pathType: NewRobVal.pathType,     // 'LINE', 'MOP', 'SWEEP', 'SWEEP_AND_MOP'
+              isCleaning: NewRobVal.isCleaning || false, // true/false - cleaning or just moving
+              movement: NewRobVal.movement      // 'absolute' or 'relative'
             };
           }
         } catch (e) {
@@ -4781,22 +9697,56 @@ class Dreamehome extends utils.Adapter {
           TotalArea: NewRobVal.TotalArea,
           CleanedArea: NewRobVal.CleanedArea,
           CoveragePercent: NewRobVal.CoveragePercent,
-          timestamp: NewRobVal.timestamp || Date.now()
+          timestamp: NewRobVal.timestamp || Date.now(),
+          operator: NewRobVal.operator || 'L',    // 'L', 'l', 'M', 'S', 'W'
+          pathType: NewRobVal.pathType,     // 'LINE', 'MOP', 'SWEEP', 'SWEEP_AND_MOP'
+          isCleaning: NewRobVal.isCleaning || false, // true/false - cleaning or just moving
+          movement: NewRobVal.movement      // 'absolute' or 'relative'
         };
       } else {
         throw new Error(`Invalid position format: ${typeof NewRobVal}`);
       }
 
-	  // Update water consumption if mopping is active
-      if (waterTracking.isMopping && historyEntry.CleanedArea && historyEntry.currentRoom) {
-        isCleaningActive = true;
-        await this.updateWaterConsumption(historyEntry.CleanedArea, historyEntry.currentRoom);
+      // Update water consumption if mopping is active
+      // Update water consumption if mopping is active
+      // === WATER TRACKING INTEGRATION ===
 
-        // Check the current robot status at startup
-        if (!firstWaterTrackingActive) {
-          await this.checkInitialCleaningStatus();
+      if (LogData) {
+        this.log.info('[WATER DEBUG] ------------------------------');
+        this.log.info(`[WATER DEBUG] waterTracker exists: ${!!this.waterTracker}`);
+
+        if (this.waterTracker) {
+          this.log.info(`[WATER DEBUG] waterTracking exists: ${!!this.waterTracker.waterTracking}`);
+
+          if (this.waterTracker.waterTracking) {
+            this.log.info(`[WATER DEBUG] isMopping: ${this.waterTracker.waterTracking.isMopping}`);
+            this.log.info(`[WATER DEBUG] currentMl: ${this.waterTracker.waterTracking.currentMl}`);
+          }
+        }
+
+        this.log.info(`[WATER DEBUG] CleanedArea: ${historyEntry.CleanedArea}`);
+        this.log.info(`[WATER DEBUG] currentRoom: ${historyEntry.currentRoom}`);
+        this.log.info('[WATER DEBUG] ------------------------------');
+      }
+      if (this.waterTracker &&
+    this.waterTracker.waterTracking &&
+    this.waterTracker.waterTracking.isMopping &&
+    historyEntry.CleanedArea &&
+    historyEntry.currentRoom) {
+
+        if (LogData) {
+          this.log.info(`[WATER] Updating consumption for ${historyEntry.currentRoom}: ${historyEntry.CleanedArea}m²`);
+        }
+
+        try {
+          await this.waterTracker.updateWaterConsumption(historyEntry.CleanedArea, historyEntry.currentRoom);
+          //this.log.info(`[WATER] Consumption update completed`);
+        } catch (error) {
+          this.log.error(`[WATER] Consumption update failed: ${error.message}`);
+          this.log.error(error.stack);
         }
       }
+      // === END WATER TRACKING ===
 
       // 2. Load existing history data
       let history = {};
@@ -4845,680 +9795,6 @@ class Dreamehome extends utils.Adapter {
     }
   }
 
-  //==================> Initialization
-  async initWaterTracking() {
-    waterTracking = {
-      currentMl: WATER_TRACKING.MAX_ML,
-      initialMl: WATER_TRACKING.MAX_ML,
-      roomData: {},
-      isMopping: false,
-      lastRoom: null,
-      lastUpdate: Date.now()
-    };
-
-    // Create state objects
-    const states = [
-      { id: 'consumptionData', name: 'Water consumption data', type: 'string', role: 'json', def: '{}' },
-      { id: 'currentMlPerSqm', name: 'Current water consumption', type: 'number', role: 'value', unit: 'ml/m²', def: WATER_TRACKING.DEFAULT_ML_PER_SQM },
-      { id: 'PureWaterTank', name: 'Current pure water tank level', type: 'number', role: 'value.percent', unit: '%', def: 100, min: 0, max: 100 },
-      { id: 'beforeRemoval', name: 'Water level before tank removal', type: 'number', role: 'value', unit: 'ml', def: 0, min: 0, max: WATER_TRACKING.MAX_ML },
-      { id: 'roomConsumption', name: 'Water consumption by room', type: 'string', role: 'json' },
-      { id: 'lastRemovalTime', name: 'Last water tank removal time', type: 'number', role: 'value.time', def: 0 },
-      { id: 'current', name: 'Current water level', type: 'number', role: 'value.water', unit: 'ml', min: 0, max: WATER_TRACKING.MAX_ML, def: WATER_TRACKING.MAX_ML },
-      { id: 'learningStats', name: 'Water consumption statistics', type: 'string', role: 'json' },
-      { id: 'lastError', name: 'Last water tracking error', type: 'string', role: 'json' }
-    ];
-
-    for (const state of states) {
-      await this.setObjectNotExistsAsync(`${DH_Did}.state.water.${state.id}`, {
-        type: 'state',
-        common: {
-          name: state.name,
-          type: state.type,
-          role: state.role,
-          read: true,
-          write: state.id !== 'roomConsumption' && state.id !== 'learningStats',
-          def: state.def,
-          ...(state.unit && { unit: state.unit }),
-          ...(state.min !== undefined && { min: state.min }),
-          ...(state.max !== undefined && { max: state.max })
-        },
-        native: {}
-      });
-    }
-  }
-
-  //==================> Core functions
-  async updateWaterConsumption(currentAreaM2, currentRoom) {
-    try {
-      if (!waterTracking) await this.initWaterTracking();
-
-      // Validation
-      if (!waterTracking.isMopping || !currentRoom || currentAreaM2 <= 0) {
-        //if (LogData) this.log.debug('Water tracking skipped - invalid conditions');
-        this.log.debug('Water tracking skipped - invalid conditions');
-        return;
-      }
-
-      // Initialize room data
-      waterTracking.roomData[currentRoom] ??= {
-        lastRecordedArea: 0,
-        consumedMl: 0,
-        firstContactArea: null,
-        maxCleanedArea: 0,
-        lastUpdateTime: Date.now(),
-        consumptionRates: []
-      };
-      const room = waterTracking.roomData[currentRoom];
-
-      if (!room.consumptionRates) {
-        room.consumptionRates = [];
-      }
-
-
-      // Recognize room changes
-      if (room.firstContactArea === null || waterTracking.lastRoom !== currentRoom) {
-        room.firstContactArea = currentAreaM2;
-        room.lastRecordedArea = currentAreaM2;
-        waterTracking.lastRoom = currentRoom;
-        //if (LogData) this.log.info(`New room: ${currentRoom} | Area: ${currentAreaM2.toFixed(2)}m²`);
-        this.log.info(`New room: ${currentRoom} | Area: ${currentAreaM2.toFixed(2)}m²`);
-        return;
-      }
-
-      // Calculate area progress
-      const newArea = currentAreaM2 - room.lastRecordedArea;
-      if (newArea < WATER_TRACKING.MIN_AREA_DELTA) {
-        if (LogData) this.log.info(`Area delta too small: ${newArea.toFixed(3)}m²`);
-        return;
-      }
-
-      // Calculate consumption
-      const mlConsumptionRate = await this.getWaterConsumptionRate();
-      const mlPerSqm = Math.min(150, Math.max(10, mlConsumptionRate || WATER_TRACKING.DEFAULT_ML_PER_SQM));
-
-      const estimatedConsumption = newArea * mlPerSqm;
-      const actualConsumption = Math.min(estimatedConsumption, waterTracking.currentMl);
-      const consumptionAccuracy = await this.calculateConsumptionAccuracy(
-        estimatedConsumption, actualConsumption, newArea);
-
-      // Update tracking
-      waterTracking.currentMl -= actualConsumption;
-      room.consumedMl += actualConsumption;
-      room.lastRecordedArea = currentAreaM2;
-      room.maxCleanedArea = Math.max(room.maxCleanedArea, currentAreaM2);
-      room.lastUpdateTime = Date.now();
-      waterTracking.lastUpdate = Date.now();
-
-      // Save consumption rate
-      if (actualConsumption > 0 && newArea > 0.1) {
-        const actualMlPerSqm = actualConsumption / newArea;
-        room.consumptionRates.push({
-          rate: actualMlPerSqm,
-          area: newArea,
-          timestamp: Date.now(),
-          confidence: consumptionAccuracy
-        });
-
-        if (room.consumptionRates.length > 10) {
-          room.consumptionRates.shift();
-        }
-      }
-
-      // Update learning model
-      if (actualConsumption > 0) {
-        const adjustedRate = mlPerSqm * (actualConsumption / estimatedConsumption);
-        await this.updateConsumptionData(adjustedRate, {
-          confidence: consumptionAccuracy,
-          area: newArea,
-          room: currentRoom,
-          isPartial: actualConsumption < estimatedConsumption
-        });
-      }
-
-      // Update states
-      await this.updateWaterLevelState();
-
-      // if (LogData) {
-      this.log.info([
-        `[WATER] Room: ${currentRoom}`,
-        `Area: +${newArea.toFixed(2)}m² (total ${currentAreaM2.toFixed(2)}m²)`,
-        `Used: ${actualConsumption}ml (est ${estimatedConsumption.toFixed(1)}ml)`,
-        `Rate: ${mlPerSqm.toFixed(1)}?${(actualConsumption/newArea).toFixed(1)}ml/m²`,
-        `Accuracy: ${(consumptionAccuracy*100).toFixed(0)}%`,
-        `Remaining: ${waterTracking.currentMl}ml/${WATER_TRACKING.MAX_ML}ml`
-      ].join(' | '));
-      //}
-
-      // Autosave when significant progress is made
-      if (newArea > 1.0) {
-        await this.saveWaterData();
-      }
-
-    } catch (error) {
-      this.log.error(`Water calculation error: ${error.stack || error.message}`);
-      await this.setStateAsync(`${DH_Did}.state.water.lastError`, {
-        val: JSON.stringify({
-          message: error.message,
-          stack: error.stack,
-          timestamp: Date.now()
-        }),
-        ack: true
-      });
-    }
-  }
-
-  //==================> Learning functions
-  async updateConsumptionData(mlPerSqm, context = {}) {
-    try {
-      const { confidence = 1.0, area = 0, room = 'unknown', isPartial = false } = context;
-
-      // Validation
-      if (typeof mlPerSqm !== 'number' || isNaN(mlPerSqm)) {
-        this.log.warn(`Invalid consumption value: ${mlPerSqm}`);
-        return;
-      }
-
-      // Limit value range
-      const clampedMl = Math.max(5, Math.min(200, mlPerSqm));
-
-      // Generate learning key
-      const mode = waterTrackingCache.mode; //await this.getStateValue(`${DH_Did}.state.CleaningMode`) || 0;
-      const waterLevel = waterTrackingCache.waterLevel; //await this.getStateValue(`${DH_Did}.state.WaterVolume`) || 0;
-
-      const key = `${room}_${mode}_${waterLevel}`;
-      const globalKey = `global_${mode}_${waterLevel}`;
-
-      // Load data
-      const data = await this.getConsumptionData();
-      data[key] = data[key] || [];
-      data[globalKey] = data[globalKey] || [];
-
-      // Create new entry
-      const newEntry = {
-        value: clampedMl,
-        weight: confidence * (isPartial ? 0.7 : 1.0),
-        area: area,
-        timestamp: Date.now(),
-        remainingMl: waterTracking.currentMl,
-        room: room
-      };
-
-      // Add entries
-      data[key].push(newEntry);
-      data[globalKey].push({ ...newEntry, weight: newEntry.weight * 0.6 });
-
-      // Clean up data
-      [key, globalKey].forEach(k => {
-        data[k] = data[k]
-          .sort((a, b) => b.weight - a.weight || b.timestamp - a.timestamp)
-          .slice(0, WATER_TRACKING.LEARNING_SAMPLES);
-      });
-
-      // Statistical analysis
-      const stats = await this.calculateConsumptionStats(data[key]);
-      if (stats.stdDev > 30 && data[key].length > 5) {
-        data[key] = data[key].filter(entry =>
-          Math.abs(entry.value - stats.median) < 2 * stats.mad
-        );
-      }
-
-      // Update LearningStats
-      await this.updateLearningStats();
-
-      // Save
-      await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
-        val: JSON.stringify(data),
-        ack: true
-      });
-
-      // Update average
-      await this.updateWeightedAverage(data[key]);
-
-      // Invalidate cache after successful update
-      consumptionDataCache = {
-        data: null,  // Clear cache
-        lastUpdate: 0 // Reset timestamp
-      };
-
-
-    } catch (error) {
-      this.log.error(`updateConsumptionData failed: ${error.stack}`);
-    }
-  }
-
-  //=================> Historical averages
-  async updateLearningStats() {
-    try {
-      const data = await this.getConsumptionData();
-
-      // 1. Collect ALL consumption data (global + per room)
-      const allSamples = Object.values(data).flatMap(entries =>
-        entries.map(entry => entry.value)
-      );
-
-      // 2. Calculate statistical key figures
-      const stats = {
-        lastUpdated: new Date().toISOString(),
-        avgConsumption: allSamples.length > 0
-          ? parseFloat((allSamples.reduce((a, b) => a + b, 0) / allSamples.length).toFixed(1))
-          : null,
-        minConsumption: allSamples.length > 0
-          ? Math.min(...allSamples).toFixed(1)
-          : null,
-        maxConsumption: allSamples.length > 0
-          ? Math.max(...allSamples).toFixed(1)
-          : null,
-        totalSamples: allSamples.length,
-        roomsTracked: Object.keys(data).filter(k => k.startsWith('room_')).length
-      };
-
-      // 3. Save the statistics
-      await this.setStateAsync(`${DH_Did}.state.water.learningStats`, {
-        val: JSON.stringify(stats),
-        ack: true
-      });
-
-    } catch (error) {
-      this.log.error(`Failed to update learning stats: ${error.message}`);
-    }
-  }
-  //=================> Tank management
-  async handleTankStatusChange(InSetvalue) {
-    if (InSetvalue == 1 && firstStartWaterTrack) { // Tank removed
-      await this.setStateAsync(`${DH_Did}.state.water.beforeRemoval`, {
-        val: waterTracking.currentMl,
-        ack: true
-      });
-      await this.setStateAsync(`${DH_Did}.state.water.lastRemovalTime`, {
-        val: Date.now(),
-        ack: true
-      });
-      this.log.info(`Water tank removed. Saved level: ${waterTracking.currentMl}ml`);
-    }
-    else if ((InSetvalue == 0 || InSetvalue == 2 || InSetvalue == 3) && firstStartWaterTrack) { // Tank inserted
-      const beforeRemoval = await this.getStateValue(`${DH_Did}.state.water.beforeRemoval`) || 0;
-      const lastRemovalTime = await this.getStateValue(`${DH_Did}.state.water.lastRemovalTime`) || 0;
-
-      const removalDuration = Date.now() - lastRemovalTime;
-      const MIN_REMOVAL_TIME = 5000;
-      const MAX_REMOVAL_TIME = 3600000;
-
-      if (removalDuration >= MIN_REMOVAL_TIME && removalDuration <= MAX_REMOVAL_TIME) {
-        const refillRatio = await this.calculateSmartRefillRatio(beforeRemoval, lastRemovalTime);
-        waterTracking.currentMl = Math.min(
-          WATER_TRACKING.MAX_ML,
-          beforeRemoval + (WATER_TRACKING.MAX_ML - beforeRemoval) * refillRatio
-        );
-
-        await this.updateWaterLevelState();
-        this.log.info(`Tank refilled: ${waterTracking.currentMl}ml (${Math.round(refillRatio * 100)}%)`);
-      }
-    }
-  }
-
-  //=================> Helper function for the water consumption
-  async calculateConsumptionAccuracy(estimatedMl, actualMl, areaM2) {
-    if (actualMl <= 0 || areaM2 < 0.1 || estimatedMl <= 0) return 0.3;
-
-    const actualRate = actualMl / areaM2;
-    const expectedRate = estimatedMl / areaM2;
-    const rateDeviation = Math.abs(actualRate - expectedRate) / expectedRate;
-    const absErrorNorm = Math.abs(actualMl - estimatedMl) / WATER_TRACKING.MAX_ML;
-
-    const accuracy = 1 - Math.min(0.7, (rateDeviation * 0.6 + absErrorNorm * 0.4));
-    return Math.max(0.3, Math.min(1.0, accuracy));
-  }
-
-  async updateWeightedAverage(entries) {
-    if (!entries?.length) return;
-
-    const now = Date.now();
-    const weightedValues = entries.map(entry => {
-      const ageHours = (now - entry.timestamp) / (1000 * 60 * 60);
-      const timeWeight = Math.max(0.2, 1 - Math.pow(ageHours / 72, 2));
-      return {
-        value: entry.value,
-        weight: entry.weight * timeWeight
-      };
-    });
-
-    const totalWeight = weightedValues.reduce((sum, e) => sum + e.weight, 0);
-    const weightedAvg = weightedValues.reduce((sum, e) =>
-      sum + (e.value * e.weight), 0) / totalWeight;
-
-    if (entries.length >= 5) {
-      const prevValue = await this.getStateValue(`${DH_Did}.state.water.currentMlPerSqm`)
-      || WATER_TRACKING.DEFAULT_ML_PER_SQM;
-      const learningRate = Math.min(0.9, 0.3 + (0.6 * (entries.length / WATER_TRACKING.LEARNING_SAMPLES)));
-      const smoothedValue = (weightedAvg * learningRate) + (prevValue * (1 - learningRate));
-
-      await this.setStateAsync(`${DH_Did}.state.water.currentMlPerSqm`, {
-        val: Math.round(smoothedValue * 10) / 10,
-        ack: true
-      });
-    }
-  }
-
-  async calculateConsumptionStats(entries) {
-    const values = entries.map(e => e.value);
-    const mean = values.reduce((s, v) => s + v, 0) / values.length;
-    const stdDev = Math.sqrt(values.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / values.length);
-    const median = values.sort((a,b) => a-b)[Math.floor(values.length/2)];
-    const mad = values.reduce((s, v) => s + Math.abs(v - median), 0) / values.length;
-
-    return {
-      mean, stdDev, median, mad,
-      min: Math.min(...values),
-      max: Math.max(...values),
-      count: values.length
-    };
-  }
-
-  async calculateSmartRefillRatio(beforeRemoval, lastRemovalTime) {
-    const removalDuration = (Date.now() - lastRemovalTime) / 1000;
-
-    if (beforeRemoval < WATER_TRACKING.MAX_ML * 0.1) return 1.0;
-    if (removalDuration < 30) return 0.0;
-    if (removalDuration < 60) return 0.8;
-
-    return 1.0;
-  }
-
-  async updateWaterLevelState() {
-    const percent = Math.round((waterTracking.currentMl / WATER_TRACKING.MAX_ML) * 100);
-    await this.setStateAsync(`${DH_Did}.state.water.PureWaterTank`, {
-      val: percent,
-      ack: true
-    });
-
-    await this.setStateAsync(`${DH_Did}.state.water.current`, {
-      val: waterTracking.currentMl,
-      ack: true
-    });
-  }
-
-  async getWaterConsumptionRate() {
-    const rate = await this.getStateValue(`${DH_Did}.state.water.currentMlPerSqm`);
-    return rate ?? WATER_TRACKING.DEFAULT_ML_PER_SQM;
-  }
-
-  async getConsumptionData() {
-    const now = Date.now();
-
-    // Use cache if available and valid
-    if (consumptionDataCache.data &&
-        now - consumptionDataCache.lastUpdate < consumptionDataCache.cacheTTL) {
-      return consumptionDataCache.data;
-    }
-
-    try {
-      // Only query state if cache is invalid
-      const state = await this.getStateAsync(`${DH_Did}.state.water.consumptionData`);
-      let data = {};
-
-      // Only parse data if available
-      if (state?.val) {
-        try {
-          data = JSON.parse(state.val);
-
-          // Data cleaning
-          data = Object.entries(data).reduce((acc, [key, entries]) => {
-            if (Array.isArray(entries)) {
-              const filtered = entries.filter(entry =>
-                entry?.value > 0 && entry.value < 200
-              );
-              if (filtered.length) acc[key] = filtered.slice(-WATER_TRACKING.LEARNING_SAMPLES);
-            }
-            return acc;
-          }, {});
-
-        } catch (e) {
-          this.log.warn('Consumption data parse error - using empty set');
-        }
-      }
-
-      // Refresh cache
-      consumptionDataCache = {
-        data: data,
-        lastUpdate: now
-      };
-
-      return data;
-
-    } catch (e) {
-      this.log.error(`Failed to get consumption data: ${e.message}`);
-      return consumptionDataCache.data || {}; // Fallback to cache or empty object
-    }
-  }
-
-  async saveWaterData() {
-    try {
-    // Save roomData (Room-specific consumption)
-      await this.setStateAsync(`${DH_Did}.state.water.roomConsumption`, {
-        val: JSON.stringify(waterTracking.roomData),
-        ack: true
-      });
-
-      // Save consumptionData (Learning algorithm values)
-      const consumptionData = await this.getConsumptionData();
-      if (Object.keys(consumptionData).length > 0) {
-        await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
-          val: JSON.stringify(consumptionData),
-          ack: true
-        });
-      }
-
-      this.log.debug('All water tracking data saved');
-    } catch (e) {
-      this.log.error('Error saving data: ' + e.message);
-    }
-  }
-
-  //=================> Cleaning Lifecycle
-  async handleCleaningStart() {
-    waterTracking.initialMl = await this.getCurrentWater();
-    waterTracking.roomData = {}; // Reset room-specific data
-    isCleaningActive = true;
-    waterTracking.lastRoom = null;
-    await this.startAutoSave();
-    this.log.info('Water tracking initialized for new cleaning job');
-  }
-
-  async handleCleaningComplete() {
-    isCleaningActive = false;
-    this.stopAutoSave();
-    try {
-      if (!waterTracking?.isMopping || !waterTracking.roomData) return;
-
-      // Calculate total consumption from room data
-      const totalConsumed = await this.calculateTotalConsumption();
-      const totalArea = await this.getTotalCleanedArea();
-
-      if (totalArea > 1 && totalConsumed > 1) {
-        await this.updateWaterConsumptionStats(totalConsumed, totalArea);
-      }
-
-      await this.updateLearningStats(); // Generate new statistics
-      waterTracking.roomData = {}; // Reset tracking for next job
-
-    } catch (error) {
-      this.log.error(`Cleaning completion handler failed: ${error.message}`);
-    }
-  }
-
-  async calculateTotalConsumption() {
-    const total = Object.values(waterTracking.roomData)
-      .reduce((sum, room) => sum + room.consumedMl, 0);
-    return Math.round(total * 1000) / 1000; // Round to 3 decimal places
-  }
-
-  async getTotalCleanedArea() {
-    if (!waterTracking.roomData) return 0;
-
-    const totalArea = Object.values(waterTracking.roomData)
-      .reduce((sum, room) => sum + (room.maxCleanedArea || 0), 0);
-
-    return Math.round(totalArea * 100) / 100;
-  }
-
-  async updateWaterConsumptionStats(totalConsumed, totalArea) {
-    if (totalArea <= 0 || totalConsumed <= 0) {
-      this.log.warn(`Invalid consumption data: Area=${totalArea}m², Consumed=${totalConsumed}ml`);
-      return;
-    }
-
-    const actualMlPerSqm = totalConsumed / totalArea;
-    await this.updateConsumptionData(actualMlPerSqm);
-
-    const litersConsumed = (totalConsumed / 1000).toFixed(2);
-    this.log.info(`Cleaning completed: ${totalArea.toFixed(2)}m², ${litersConsumed}L, ${actualMlPerSqm.toFixed(2)}ml/m²`);
-  }
-
-  //=================> AutoSave Management
-  async startAutoSave() {
-    await this.stopAutoSave(); // Stop to be on the safe side
-    autoSaveInterval = setInterval(() => {
-      if (isCleaningActive) {
-        this.saveWaterData().catch(e =>
-          this.log.error('Autosave failed: ' + e.message)
-        );
-      }
-    }, 2 * 60 * 1000); // Every 2 minutes
-  }
-
-  async stopAutoSave() {
-    if (autoSaveInterval) {
-      clearInterval(autoSaveInterval);
-      autoSaveInterval = null;
-    }
-  }
-
-  //=================> Initialization Check
-  async checkInitialCleaningStatus() {
-    try {
-      await this.restorePersistedData();
-      await this.startAutoSave();
-      this.log.info('Active cleaning session detected - restored water tracking data');
-    } catch (e) {
-      this.log.error('Initial status check failed: ' + e.message);
-    }
-    firstWaterTrackingActive = true;
-  }
-
-  //=================> Tank Data Restoration
-  async restoreWaterTankData() {
-    try {
-    // 1. Restoration of water levels from persisted states
-      const beforeRemoval = await this.getStateValue(`${DH_Did}.state.water.beforeRemoval`) || 0;
-      const tankPercent = await this.getStateValue(`${DH_Did}.state.water.PureWaterTank`);
-      const currentMl = await this.getStateValue(`${DH_Did}.state.water.current`);
-
-      // Priority order for restoration:
-      // 1. Current ml value if available
-      // 2. Before removal value if available
-      // 3. Calculated from percentage if available
-      // 4. Default to MAX_ML
-      waterTracking.currentMl = currentMl !== null ? currentMl :
-        beforeRemoval > 0 ? beforeRemoval :
-          tankPercent !== null ? (tankPercent / 100) * WATER_TRACKING.MAX_ML :
-            WATER_TRACKING.MAX_ML;
-
-      // 2. Restoration of learning data
-      const consumptionData = await this.getStateValue(`${DH_Did}.state.water.consumptionData`);
-      if (consumptionData) {
-        try {
-          const parsedData = JSON.parse(consumptionData);
-          // Validate and clean the restored data
-          Object.keys(parsedData).forEach(key => {
-            if (!Array.isArray(parsedData[key])) {
-              delete parsedData[key];
-            } else {
-              parsedData[key] = parsedData[key].filter(entry =>
-                entry && typeof entry.value === 'number' && entry.value > 0 && entry.value < 200
-              );
-            }
-          });
-          await this.setStateAsync(`${DH_Did}.state.water.consumptionData`, {
-            val: JSON.stringify(parsedData),
-            ack: true
-          });
-        } catch (e) {
-          this.log.warn('Failed to parse persisted consumption data: ' + e.message);
-        }
-      }
-
-      // 3. Update the water level display
-      await this.updateWaterLevelState();
-
-      this.log.info(`Restored water level: ${waterTracking.currentMl}ml` +
-      (beforeRemoval > 0 ? ` (from beforeRemoval: ${beforeRemoval}ml)` :
-        tankPercent !== null ? ` (from tankPercent: ${tankPercent}%)` :
-          currentMl !== null ? ` (from currentMl: ${currentMl}ml)` :
-            ' (using default)'));
-
-    } catch (e) {
-      this.log.error('Water tank data restoration failed - resetting to default: ' + e.message);
-      waterTracking.currentMl = WATER_TRACKING.MAX_ML;
-      await this.updateWaterLevelState();
-    }
-  }
-
-  async restorePersistedData() {
-    if (!isCleaningActive) return;
-    try {
-    // 1. Restore water tank data first
-      await this.restoreWaterTankData();
-
-      // 2. Restore room consumption data
-      const roomData = await this.getStateValue(`${DH_Did}.state.water.roomConsumption`);
-      if (roomData) {
-        waterTracking.roomData = JSON.parse(roomData);
-
-        // Validate room data structure
-        Object.keys(waterTracking.roomData).forEach(room => {
-          if (!waterTracking.roomData[room].consumedMl) {
-            waterTracking.roomData[room].consumedMl = 0;
-          }
-          if (!waterTracking.roomData[room].maxCleanedArea) {
-            waterTracking.roomData[room].maxCleanedArea =
-            waterTracking.roomData[room].lastRecordedArea || 0;
-          }
-        });
-
-        this.log.info(`Restored room data for ${Object.keys(waterTracking.roomData).length} rooms`);
-
-        // Set the last active room (if available)
-        if (waterTracking.roomData) {
-          const rooms = Object.keys(waterTracking.roomData);
-          waterTracking.lastRoom = rooms[rooms.length - 1];
-        }
-      }
-
-    } catch (e) {
-      this.log.warn('Persisted data restoration failed - starting fresh: ' + e.message);
-      waterTracking.roomData = {};
-      waterTracking.currentMl = WATER_TRACKING.MAX_ML;
-      await this.updateWaterLevelState();
-    }
-  }
-
-  //=================> Helper Functions
-  async getCurrentWater() {
-    const current = await this.getStateValue(`${DH_Did}.state.water.current`);
-    return current ?? WATER_TRACKING.MAX_ML;
-  }
-
-  // Helper function to safely get state values
-  async getStateValue(stateId) {
-    try {
-      const state = await this.getStateAsync(stateId);
-      return state?.val;
-    } catch (error) {
-      this.log.error(`Failed to get state ${stateId}: ${error.message}`);
-      return null;
-    }
-  }
 
   async setcleansetPath(createpath, CsetS) {
     //let jsonString = `{${Object.entries(CsetS).map(([key, value]) => `"${key}":"${value}"`).join(', ')}}`;
@@ -5828,7 +10104,7 @@ class Dreamehome extends utils.Adapter {
 
   async DH_SendActionCleanCarpet(CarpetAction, SPvalue) {
 
-	              // Set vacuum mode with retry logic
+    // Set vacuum mode with retry logic
     let modeSetSuccessfully = false;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -5848,7 +10124,7 @@ class Dreamehome extends utils.Adapter {
     }
 
     if (!modeSetSuccessfully) {
-      this.log.info(`[Carpet] ${AlexaInfo[UserLang][46]}`);
+      this.log.info(`[Carpet] ${AlexaInfo[UserLang][601]}`);
       return;
     }
 
@@ -6189,8 +10465,8 @@ class Dreamehome extends utils.Adapter {
         } else {
           // If the cleaning is no longer paused, reset the timer
           if (pausedStartTime) {
-            this.log.info(AlexaInfo[UserLang][23](roomNumber)); // Cleaning resumed
-            this.speakToAlexa(AlexaInfo[UserLang][23](roomNumber), AlexaID, SpeakMode);
+            this.log.info(AlexaInfo[UserLang][504](roomNumber)); // Cleaning resumed
+            this.speakToAlexa(AlexaInfo[UserLang][504](roomNumber), AlexaID, SpeakMode);
             pausedStartTime = null; // Reset the timer
           }
         }
@@ -6223,8 +10499,8 @@ class Dreamehome extends utils.Adapter {
 
         // Check if cleaning is complete
         if (cleaningState.val === 100) {
-          this.log.info(AlexaInfo[UserLang][22](roomNumber)); // Cleaning completed
-          this.speakToAlexa(AlexaInfo[UserLang][22](roomNumber), AlexaID, SpeakMode);
+          this.log.info(AlexaInfo[UserLang][503](roomNumber)); // Cleaning completed
+          this.speakToAlexa(AlexaInfo[UserLang][503](roomNumber), AlexaID, SpeakMode);
           callback(false); // Success, start next room
         } else {
           // If cleaning is not complete, check again
@@ -6243,8 +10519,8 @@ class Dreamehome extends utils.Adapter {
   async startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex, AlexaID, SpeakMode) {
     // If all rooms have been cleaned, log a message and notify Alexa, then exit
     if (currentIndex >= selectedRooms.length) {
-      this.log.info(AlexaInfo[UserLang][11]); // "All rooms cleaned"
-      this.speakToAlexa(AlexaInfo[UserLang][11], SpeakMode);
+      this.log.info(AlexaInfo[UserLang][501]); // "All rooms cleaned"
+      this.speakToAlexa(AlexaInfo[UserLang][501], SpeakMode);
       isMonitorCleaningState = false; // Reset the Monitor for cleaning status
       isAbortCommandReceived = false; // Reset Flag to track if the abort command has been received
       return;
@@ -6296,8 +10572,8 @@ class Dreamehome extends utils.Adapter {
       (errorOccurred) => {
         if (errorOccurred) {
           // If an error occurs and cleaning cannot continue, log it and notify Alexa
-          this.log.info(AlexaInfo[UserLang][14](roomNumber, roomAction.name)); // Cleaning of room ${roomNumber} (${roomAction.name}) was aborted due to an error.
-          this.speakToAlexa(AlexaInfo[UserLang][14](roomNumber, roomAction.name), AlexaID, SpeakMode);
+          this.log.info(AlexaInfo[UserLang][502](roomNumber, roomAction.name)); // Cleaning of room ${roomNumber} (${roomAction.name}) was aborted due to an error.
+          this.speakToAlexa(AlexaInfo[UserLang][502](roomNumber, roomAction.name), AlexaID, SpeakMode);
         } else {
           // If cleaning was successful, proceed to the next room
           this.startNextRoomCleaning(robot, selectedRooms, roomActions, currentIndex + 1, AlexaID, SpeakMode);
@@ -6391,100 +10667,113 @@ class Dreamehome extends utils.Adapter {
 
   // Function to handle Auto-Empty process
   async startAutoEmpty(AlexaID, source) {
+    this.autoEmptyInProgress = true;
+
+    try {
     // Start Auto-Emptying command
-    await this.setStateAsync(`${DH_Did}.control.StartAutoEmpty`, true);
-    this.log.info('Robot sent for auto-emptying.');
-    //await this.speakToAlexa(AlexaInfo[UserLang][28], AlexaID); // Notify Alexa
+      await this.setStateAsync(`${DH_Did}.control.StartAutoEmpty`, true);
+      this.log.info('[AUTO-EMPTY] Robot sent for auto-emptying.');
+      await this.notifyUser(AlexaInfo[UserLang][101], AlexaID, source);
 
-    await this.notifyUser(AlexaInfo[UserLang][28], AlexaID, source);
+      // Wait for the robot to dock
+      await this.waitUntilDocked();
 
-    // Wait for the robot to start returning to dock (or until the robot is docked)
-    await this.waitUntilDocked();
+      // Track the auto-empty process
+      const emptyResult = await this.trackAutoEmptyProcess();
 
-    // Wait until Auto-Empty process starts (status changes to "Active")
-    let autoEmptyStatus;
-    do {
-      await this.wait(2000);  // Check every 2 seconds
-      autoEmptyStatus = (await this.getStateAsync(`${DH_Did}.state.AutoEmptyStatus`))?.val;
-      this.log.info(`Current Auto-Empty Status: ${autoEmptyStatus}`);  // Add logging to monitor status changes
-    } while (autoEmptyStatus !== DreameAutoEmptyStatus[UserLang][1]); // Wait for "Active"
+      if (emptyResult.success) {
+        this.log.info('[AUTO-EMPTY] ' + AlexaInfo[UserLang][102]);
+        await this.notifyUser(AlexaInfo[UserLang][102], AlexaID, source);
 
-    // Wait until Auto-Empty process is completed (status changes to "Idle")
-    do {
-      await this.wait(2000);  // Check every 2 seconds
-      autoEmptyStatus = (await this.getStateAsync(`${DH_Did}.state.AutoEmptyStatus`))?.val;
-      this.log.info(`Current Auto-Empty Status: ${autoEmptyStatus}`);  // Add logging to monitor status changes
-    } while (autoEmptyStatus === DreameAutoEmptyStatus[UserLang][1]); // Wait until it's not "Active" anymore (i.e., "Idle")
-
-    // Now, once auto-emptying is done, resume cleaning
-    this.log.info(AlexaInfo[UserLang][29]); //Auto-emptying completed. Resuming cleaning
-    await this.notifyUser(AlexaInfo[UserLang][29], AlexaID, source);
-
-    // Safely try to resume cleaning
-    await this.tryResumeCleaning(AlexaID);
-  }
-
-  async tryResumeCleaning(AlexaID) {
-    const statePath = `${DH_Did}.state.State`;
-    const pausedPath = `${DH_Did}.state.CleaningPaused`;
-
-    const state = (await this.getStateAsync(statePath))?.val;
-    const paused = (await this.getStateAsync(pausedPath))?.val;
-
-    const readableState = DreameStatus[UserLang]?.[state] ?? 'Unbekannt';
-
-    // Only resume cleaning if the robot is paused
-    if (state === DreameStatus[UserLang][1] || paused !== 0) {
-      this.log.info(AlexaInfo[UserLang][32]);
-      await this.setStateAsync(`${DH_Did}.control.Start`, true);
-      //await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][32]}.`, AlexaID);
-    } else {
-      this.log.warn(`Resume aborted: current status is '${readableState}' (${state}).`);
-      //await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][33]}.`, AlexaID);
+        // Safely try to resume cleaning
+        await this.tryResumeCleaning(AlexaID);
+      } else {
+        this.log.warn('[AUTO-EMPTY] Auto-empty process did not complete successfully');
+        await this.notifyUser('Auto-emptying was interrupted', AlexaID, source);
+      }
+    } catch (error) {
+      this.log.error('[AUTO-EMPTY] Error: ' + error.message);
+      await this.notifyUser('Auto-emptying failed: ' + error.message, AlexaID, source);
+    } finally {
+      this.autoEmptyInProgress = false;
     }
   }
 
-  // Function to handle Auto-Wash process
-  async startAutoWash(AlexaID, source) {
-  // Send robot to wash the mop
-    await this.setStateAsync(`${DH_Did}.control.StartWashing`, true);
-    this.log.info('Robot sent for mop washing.');
-    await this.notifyUser(AlexaInfo[UserLang][30], AlexaID, source);
+  // Track auto-empty process with timeout
+  async trackAutoEmptyProcess() {
+    this.log.info('[AUTO-EMPTY] Waiting for auto-empty to start...');
 
+    // Wait until status becomes "Active"
+    const startStatus = await this.waitForStatus(
+      `${DH_Did}.state.AutoEmptyStatus`,
+      DreameAutoEmptyStatus[UserLang][1], // "Active"
+      false,
+      120 // 4 minutes timeout (120 checks � 2 seconds)
+    );
 
-    // Wait until the robot is docked
-    await this.waitUntilDocked();
+    if (!startStatus) {
+      return { success: false, reason: 'start_timeout' };
+    }
 
-    // Wait until washing starts: status is "Washing", "Add clean water" oder "Adding Water"
-    const activeWashStatuses = [
-      DreameSelfWashBaseStatus[UserLang][1], // "Washing"
-      DreameSelfWashBaseStatus[UserLang][5], // "Add clean water"
-      DreameSelfWashBaseStatus[UserLang][6]  // "Adding Water"
-    ];
+    this.log.info(`[AUTO-EMPTY] Started: ${startStatus}`);
 
-    // Wait until washing process starts ("Washing", "Add clean water" oder "Adding Water")
-    let washStatus;
-    do {
-      await this.wait(2000);
-      washStatus = (await this.getStateAsync(`${DH_Did}.state.SelfWashBaseStatus`))?.val;
-	  this.log.info(`Current Self-Wash-Base Status: ${washStatus}`);  // Add logging to monitor status changes
-    } while (!activeWashStatuses.includes(washStatus));
+    // Wait until status is no longer "Active" (returns to "Idle")
+    const completedStatus = await this.waitForStatus(
+      `${DH_Did}.state.AutoEmptyStatus`,
+      DreameAutoEmptyStatus[UserLang][1], // "Active"
+      true,
+      300 // 10 minutes timeout (300 checks � 2 seconds)
+    );
 
-    // Wait until washing process is complete (status is NOT "Washing", "Add clean water" oder "Adding Water" anymore)
-    do {
-      await this.wait(2000);
-      washStatus = (await this.getStateAsync(`${DH_Did}.state.SelfWashBaseStatus`))?.val;
-	  this.log.info(`Current Self-Wash-Base Status: ${washStatus}`);  // Add logging to monitor status changes
-    } while (activeWashStatuses.includes(washStatus)); // Still "Washing"
+    if (!completedStatus) {
+      return { success: false, reason: 'completion_timeout' };
+    }
 
-    this.log.info(AlexaInfo[UserLang][31], AlexaID); // Mop washing completed. Resuming cleaning
-    await this.notifyUser(AlexaInfo[UserLang][31], AlexaID, source);
-
-    // Safely try to resume cleaning
-    await this.tryResumeCleaning(AlexaID);
+    this.log.info(`[AUTO-EMPTY] Completed: ${completedStatus}`);
+    return { success: true, finalStatus: completedStatus };
   }
 
-  //  Waits until the robot is successfully docked. 1: Skips unnecessary steps if already docked. 2: Handles "Return to charge" status efficiently.
+  // Function to wait for a specific status
+  async waitForStatus(statePath, targetValue, waitForNotEqual = false, maxChecks = 180) {
+    let status;
+    let checkCount = 0;
+
+    const processType = this.getCurrentProcessType();
+
+    do {
+    // Wait 2 seconds between checks
+      await this.wait(2000);
+
+      // Get current status
+      status = (await this.getStateAsync(statePath))?.val;
+      checkCount++;
+
+      // Log every 30 seconds for debugging
+      if (checkCount % 15 === 0) {
+        this.log.debug(`${processType} Check ${checkCount}: Status=${status}, Target=${targetValue}`);
+      }
+
+      // Timeout after max checks
+      if (checkCount >= maxChecks) {
+        this.log.warn(`${processType} Timeout waiting for status (${maxChecks * 2} seconds)`);
+        return null;
+      }
+
+    } while (waitForNotEqual ?
+      status === targetValue :    // Wait while equal to target (for completion)
+      status !== targetValue);    // Wait while not equal to target (for start)
+
+    return status;
+  }
+
+  // Function to determine current process type
+  getCurrentProcessType() {
+    if (this.autoWashInProgress) return '[AUTO-WASH]';
+    if (this.autoEmptyInProgress) return '[AUTO-EMPTY]';
+    return '[AUTO-TRACK]';
+  }
+
+  // Function to wait until the robot is successfully docked with timeout
   async waitUntilDocked() {
   // Possible states when the robot is considered "docked"
     const dockedStates = [
@@ -6493,7 +10782,10 @@ class Dreamehome extends utils.Adapter {
     ];
 
     const returnToChargeState = DreameChargingStatus[UserLang][5]; // "Return to charge"
+
     let chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+    let checkCount = 0;
+    const MAX_CHECKS = 300; // Maximum 10 minutes (300 checks � 2 seconds)
 
     // If already docked, exit early
     if (dockedStates.includes(chargingStatus)) {
@@ -6506,19 +10798,218 @@ class Dreamehome extends utils.Adapter {
 
     // Wait until robot starts returning (if not already in "Return to charge" state)
     if (chargingStatus !== returnToChargeState) {
+      this.log.info('Waiting for robot to start returning to dock...');
+
       do {
-        await this.wait(2000); // Check every 2 seconds
+        await this.wait(2000);
         chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+        checkCount++;
+
+        if (checkCount >= MAX_CHECKS) {
+          this.log.warn('Timeout waiting for robot to return to dock');
+          throw new Error('Robot docking timeout');
+        }
       } while (chargingStatus !== returnToChargeState);
     }
+
+    this.log.info('Robot returning to dock. Waiting for docking to complete...');
+
+    // Reset counter for docking phase
+    checkCount = 0;
 
     // Wait until docking is confirmed (status changes to "Charging" or "Charging completed")
     do {
       await this.wait(2000);
       chargingStatus = (await this.getStateAsync(`${DH_Did}.state.ChargingStatus`))?.val;
+      checkCount++;
+
+      if (checkCount >= MAX_CHECKS) {
+        this.log.warn('Timeout waiting for docking completion');
+        throw new Error('Docking completion timeout');
+      }
     } while (!dockedStates.includes(chargingStatus));
 
     this.log.info('Robot successfully docked.');
+  }
+
+  // Function to try to resume cleaning
+  async tryResumeCleaning(AlexaID) {
+    const statePath = `${DH_Did}.state.State`;
+    const pausedPath = `${DH_Did}.state.CleaningPaused`;
+
+    const state = (await this.getStateAsync(statePath))?.val;
+    const paused = (await this.getStateAsync(pausedPath))?.val;
+
+    const readableState = DreameStatus[UserLang]?.[state] ?? 'Unknown';
+
+    // Only resume cleaning if the robot is paused
+    if (state === DreameStatus[UserLang][1] || paused !== 0) {
+      this.log.info(`[RESUME] Resuming cleaning from state: ${readableState}`);
+      await this.setStateAsync(`${DH_Did}.control.Start`, true);
+    // Optional: await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][301]}.`, AlexaID);
+    } else {
+      this.log.warn(`[RESUME] Resume aborted: current status is '${readableState}' (${state}).`);
+    // Optional: await this.speakToAlexa(`${readableState}. ${AlexaInfo[UserLang][302]}.`, AlexaID);
+    }
+  }
+
+  // Function to handle Auto-Wash process (manually triggered)
+  async startAutoWash(AlexaID, source) {
+    this.autoWashInProgress = true;
+
+    try {
+    // Send robot to wash the mop
+      await this.setStateAsync(`${DH_Did}.control.StartWashing`, true);
+      this.log.info('[AUTO-WASH] Robot sent for mop washing.');
+      await this.notifyUser(AlexaInfo[UserLang][201], AlexaID, source);
+
+      // Wait until the robot is docked
+      await this.waitUntilDocked();
+
+      // Use the enhanced trackWashProcess function
+      const washResult = await this.trackWashProcessForAutoWash();
+
+      if (washResult.success) {
+        this.log.info('[AUTO-WASH] ' + AlexaInfo[UserLang][202], AlexaID);
+        await this.notifyUser(AlexaInfo[UserLang][202], AlexaID, source);
+
+        // Safely try to resume cleaning
+        await this.tryResumeCleaning(AlexaID);
+      } else {
+        this.log.warn('[AUTO-WASH] Wash process did not complete successfully');
+        await this.notifyUser('Auto-wash process was interrupted', AlexaID, source);
+      }
+    } catch (error) {
+      this.log.error('[AUTO-WASH] Error: ' + error.message);
+      await this.notifyUser('Auto-wash failed: ' + error.message, AlexaID, source);
+    } finally {
+      this.autoWashInProgress = false;
+    }
+  }
+
+  // Modified version of trackWashProcess specifically for auto-wash
+  async trackWashProcessForAutoWash() {
+  // Statuses that indicate washing is active
+    const activeStatuses = [
+      DreameSelfWashBaseStatus[UserLang][1], // "Washing"
+      DreameSelfWashBaseStatus[UserLang][5], // "Add clean water"
+      DreameSelfWashBaseStatus[UserLang][6]  // "Adding Water"
+    ];
+
+    this.log.info('[AUTO-WASH] Waiting for wash to start...');
+
+    // Wait until any active status appears
+    const startStatus = await this.waitForAnyStatus(
+      `${DH_Did}.state.SelfWashBaseStatus`,
+      activeStatuses,
+      false,
+      180 // 6 minutes timeout (180 checks � 2 seconds)
+    );
+
+    if (!startStatus) {
+      return { success: false, reason: 'start_timeout' };
+    }
+
+    this.log.info(`[AUTO-WASH] Started: ${startStatus}`);
+
+    // Wait until no active status is present
+    const completedStatus = await this.waitForAnyStatus(
+      `${DH_Did}.state.SelfWashBaseStatus`,
+      activeStatuses,
+      true,
+      300 // 10 minutes timeout (300 checks � 2 seconds)
+    );
+
+    if (!completedStatus) {
+      return { success: false, reason: 'completion_timeout' };
+    }
+
+    this.log.info(`[AUTO-WASH] Completed: ${completedStatus}`);
+
+    // Only call water tracker if it exists AND auto-wash is not in progress
+    if (this.waterTracker && !this.autoWashInProgress) {
+      try {
+        await this.waterTracker.handleMopWashComplete();
+        this.log.info('[AUTO-WASH] Water calculation done');
+      } catch (error) {
+        this.log.error(`[AUTO-WASH] Error calculating water: ${error.message}`);
+      }
+    }
+
+    return { success: true, finalStatus: completedStatus };
+  }
+
+  // Generic function to wait for any status in an array
+  async waitForAnyStatus(statePath, targetValues, waitForNone = false, maxChecks = 180) {
+    let status;
+    let checkCount = 0;
+
+    const processType = this.getCurrentProcessType();
+
+    do {
+      await this.wait(2000);
+      status = (await this.getStateAsync(statePath))?.val;
+      checkCount++;
+
+      if (checkCount % 15 === 0) {
+        this.log.debug(`${processType} Check ${checkCount}: Status=${status}`);
+      }
+
+      if (checkCount >= maxChecks) {
+        this.log.warn(`${processType} Timeout waiting for status`);
+        return null;
+      }
+
+    } while (waitForNone ?
+      targetValues.includes(status) :    // Wait while any target value is present
+      !targetValues.includes(status));   // Wait while no target value is present
+
+    return status;
+  }
+
+  // Automatic tracking function
+  async trackWashProcessSimple() {
+    if (this.autoWashInProgress) {
+      this.log.debug('[AUTO-TRACK] Skipping - manual auto-wash in progress');
+      return;
+    }
+
+    if (!this.waterTracker) return;
+
+    const activeStatuses = [
+      DreameSelfWashBaseStatus[UserLang][1], // "Washing"
+      DreameSelfWashBaseStatus[UserLang][5], // "Add clean water"
+      DreameSelfWashBaseStatus[UserLang][6]  // "Adding Water"
+    ];
+
+    this.log.info('[AUTO-TRACK] Waiting for wash to start...');
+
+    const status = await this.waitForAnyStatus(
+      `${DH_Did}.state.SelfWashBaseStatus`,
+      activeStatuses,
+      false
+    );
+
+    if (!status) return;
+
+    this.log.info(`[AUTO-TRACK] Started: ${status}`);
+
+    const completedStatus = await this.waitForAnyStatus(
+      `${DH_Did}.state.SelfWashBaseStatus`,
+      activeStatuses,
+      true
+    );
+
+    if (!completedStatus) return;
+
+    this.log.info(`[AUTO-TRACK] Completed: ${completedStatus}`);
+
+    try {
+      await this.waterTracker.handleMopWashComplete();
+      this.log.info('[AUTO-TRACK] Water calculation done');
+    } catch (error) {
+      this.log.error(`[AUTO-TRACK] Error: ${error.message}`);
+    }
   }
 
   async checkSingleComponentStatus(componentKey, AlexaID, source) {
@@ -6531,9 +11022,77 @@ class Dreamehome extends utils.Adapter {
     const label = comp.label?.[lang] || componentKey;
     const valueParts = [];
 
+    // Check if this is a Matrix model
+    const isMatrix = this.waterTracker?.directMopTracker?.isMatrix || false;
+
+    // Handle MopPad differently for Matrix models
+    if (isMatrix && componentKey === 'MopPad') {
+      // For Matrix models, report all three mop pads with BOTH percent and hours
+      const mopTypes = ['A', 'B', 'C'];
+      const mopReports = [];
+
+      for (const type of mopTypes) {
+        const mopPercent = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}Left`))?.val;
+        const mopHours = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}TimeLeft`))?.val;
+
+        if (mopPercent !== undefined && mopHours !== undefined) {
+          mopReports.push(`${type}: ${mopPercent}${units.percent} bei ${mopHours} ${units.hours}`);
+        } else if (mopPercent !== undefined) {
+          mopReports.push(`${type}: ${mopPercent}${units.percent}`);
+        } else if (mopHours !== undefined) {
+          mopReports.push(`${type}: ${mopHours} ${units.hours}`);
+        }
+      }
+
+      if (mopReports.length > 0) {
+        const report = `${label}: ${mopReports.join(', ')}`;
+        this.log.info('[Matrix-MopPad] ' + report);
+        await this.sendResponse(report, AlexaID, source);
+      } else {
+        await this.sendResponse(`${label}: ${AlexaInfo[UserLang][29]}`, AlexaID, source);
+      }
+
+      isComponentsSayState = false;
+      return;
+    }
+
+    // Handle individual Matrix mop pads (A, B, C)
+    if (isMatrix && ['MopPadA', 'MopPadB', 'MopPadC'].includes(componentKey)) {
+      const type = componentKey.replace('MopPad', '');
+      const mopPercent = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}Left`))?.val;
+      const mopHours = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}TimeLeft`))?.val;
+
+      if (mopPercent !== undefined && mopHours !== undefined) {
+        const report = `${label}: ${mopPercent}${units.percent} bei ${mopHours} ${units.hours}`;
+        this.log.info('[Matrix-MopPadSingle] ' + report);
+        await this.sendResponse(report, AlexaID, source);
+      } else if (mopPercent !== undefined) {
+        const report = `${label}: ${mopPercent}${units.percent}`;
+        this.log.info('[Matrix-MopPadSingle] ' + report);
+        await this.sendResponse(report, AlexaID, source);
+      } else if (mopHours !== undefined) {
+        const report = `${label}: ${mopHours} ${units.hours}`;
+        this.log.info('[Matrix-MopPadSingle] ' + report);
+        await this.sendResponse(report, AlexaID, source);
+      } else {
+        await this.sendResponse(`${label}: ${AlexaInfo[UserLang][29]}`, AlexaID, source);
+      }
+
+      isComponentsSayState = false;
+      return;
+    }
+
     // Read base value from state (e.g. 100 or 'OK')
     const stateID = `${DH_Did}.state.${componentKey}`;
-    const val = (await this.getStateAsync(stateID))?.val;
+    let val = (await this.getStateAsync(stateID))?.val;
+
+    // SPECIAL FALLBACK FOR PURE WATER TANK
+    if (componentKey === 'PureWaterTank') {
+      const waterPercentState = (await this.getStateAsync(`${DH_Did}.state.water.PureWaterTank`))?.val;
+      if (waterPercentState !== undefined && waterPercentState !== null) {
+        val = waterPercentState;
+      }
+    }
 
     if (val !== undefined && val !== null) {
       if (typeof val === 'number') {
@@ -6545,7 +11104,7 @@ class Dreamehome extends utils.Adapter {
 
       // Suggest reset if value is 0
       if (val === 0) {
-        const resetHint = AlexaInfo[UserLang][41].replace('{component}', label);
+        const resetHint = AlexaInfo[UserLang][407].replace('{component}', label);
         valueParts.push(`(${resetHint})`);
       }
     }
@@ -6558,7 +11117,7 @@ class Dreamehome extends utils.Adapter {
     if (timeVal !== undefined) valueParts.push(`${timeVal} ${units.hours}`);
 
     // Build final spoken report
-    const report = `${label}: ${valueParts.join(` ${AlexaInfo[UserLang][43]} `)}`.trim();
+    const report = `${label}: ${valueParts.join(` ${AlexaInfo[UserLang][28]} `)}`.trim();
 
     this.log.info('[SingleComponentStatus] ' + report);
     await this.sendResponse(report, AlexaID, source);
@@ -6582,25 +11141,40 @@ class Dreamehome extends utils.Adapter {
     return null; // no match
   }
 
-  // Function to check robot status and speak it
   async checkRobotStatus(command, AlexaID, source) {
-    const report = AlexaInfo[UserLang][40] + '\n'; // Intro text for the component status report
-    const lang = knownAbbreviations[UserLang] ? UserLang : 'EN'; // Fallback to 'EN' if UserLang is invalid
+    const report = AlexaInfo[UserLang][303] + '\n';
+    const lang = knownAbbreviations[UserLang] ? UserLang : 'EN';
     const units = knownAbbreviations[lang]?.units || { hours: 'h', percent: '%' };
+
+    // Check if this is a Matrix model
+    const isMatrix = this.waterTracker?.directMopTracker?.isMatrix || false;
 
     // Iterate through components
     const tempData = {};
 
     for (const comp of Object.values(components)) {
-      const stateID = `${DH_Did}.state.${comp.id}`; // Create state ID dynamically
-      const state = (await this.getStateAsync(stateID))?.val;
+      // Skip ALL MopPad-related components - we'll handle them separately
+      if (comp.id.includes('MopPad')) {
+        continue;
+      }
 
-      if (state === undefined || state === null) continue; // Skip if no state is found
+      const stateID = `${DH_Did}.state.${comp.id}`;
+      let state = (await this.getStateAsync(stateID))?.val;
 
-      const label = comp.label?.[lang] || comp.id || 'Unknown'; // Fallback to 'Unknown' if label is undefined
+      // SPECIAL FALLBACK FOR PURE WATER TANK
+      if (comp.id === 'PureWaterTank') {
+        const waterPercentState = (await this.getStateAsync(`${DH_Did}.state.water.PureWaterTank`))?.val;
+        if (waterPercentState !== undefined && waterPercentState !== null) {
+          state = waterPercentState;
+        }
+      }
+
+      if (state === undefined || state === null) continue;
+
+      const label = comp.label?.[lang] || comp.id || 'Unknown';
 
       const isTime = comp.id.toLowerCase().includes('time');
-      if (isTime && state === 0) continue; // Skip Time if state = 0
+      if (isTime && state === 0) continue;
 
       let valueText = '';
 
@@ -6610,37 +11184,75 @@ class Dreamehome extends utils.Adapter {
         } else {
           valueText = `${state}${units.percent}`;
         }
-
       } else {
         valueText = state.toString();
       }
 
       // If value is 0, append reset suggestion in parentheses
       if (state === 0) {
-        const resetHint = AlexaInfo[UserLang][41].replace('{component}', label);
+        const resetHint = AlexaInfo[UserLang][407].replace('{component}', label);
         valueText += ` (${resetHint})`;
       }
 
       // Check if the component is part of a group (e.g. MainBrush and MainBrushTimeLeft)
       if (comp.id.endsWith('TimeLeft') || comp.id.endsWith('Left')) {
-      // Find the main component name (e.g. MainBrush for MainBrushTimeLeft or MainBrushLeft)
+        // Find the main component name (e.g. MainBrush for MainBrushTimeLeft or MainBrushLeft)
         const mainComp = components[comp.id.replace(/(TimeLeft|Left)$/, '')];
 
         // Add the value to the main component in tempData
         if (mainComp) {
           const mainLabel = mainComp.label?.[lang] || mainComp.id || 'Unknown';
           if (tempData[mainLabel]) {
-            tempData[mainLabel] += ` ${AlexaInfo[UserLang][43]} ${valueText}`;  // Combine time and percent values
+            tempData[mainLabel] += ` ${AlexaInfo[UserLang][28]} ${valueText}`;
           } else {
             tempData[mainLabel] = valueText;
           }
         }
       } else {
-      // Add regular components directly
+        // Add regular components directly
         if (tempData[label]) {
-          tempData[label] += ` ${AlexaInfo[UserLang][43]} ${valueText}`;  // Combine time and percent values
+          tempData[label] += ` ${AlexaInfo[UserLang][28]} ${valueText}`;
         } else {
           tempData[label] = valueText;
+        }
+      }
+    }
+
+    // SPECIAL HANDLING FOR MOP PADS - based on model type
+    if (isMatrix) {
+      // Matrix models: Show MopPad A, B, C
+      const mopTypes = ['A', 'B', 'C'];
+      for (const type of mopTypes) {
+        const mopPercent = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}Left`))?.val;
+        const mopHours = (await this.getStateAsync(`${DH_Did}.state.MopPad${type}TimeLeft`))?.val;
+
+        if (mopPercent !== undefined || mopHours !== undefined) {
+          const label = `Mopp-Pad ${type}`;
+
+          // Combine percent and hours if both are available
+          if (mopPercent !== undefined && mopHours !== undefined) {
+            tempData[label] = `${mopPercent}${units.percent} bei ${mopHours} ${units.hours}`;
+          } else if (mopPercent !== undefined) {
+            tempData[label] = `${mopPercent}${units.percent}`;
+          } else if (mopHours !== undefined) {
+            tempData[label] = `${mopHours} ${units.hours}`;
+          }
+        }
+      }
+    } else {
+      // Non-Matrix models: Show only general MopPad
+      const mopPercent = (await this.getStateAsync(`${DH_Did}.state.MopPadLeft`))?.val;
+      const mopHours = (await this.getStateAsync(`${DH_Did}.state.MopPadTimeLeft`))?.val;
+
+      if (mopPercent !== undefined || mopHours !== undefined) {
+        const label = 'Mopp-Pad';
+
+        if (mopPercent !== undefined && mopHours !== undefined) {
+          tempData[label] = `${mopPercent}${units.percent} bei ${mopHours} ${units.hours}`;
+        } else if (mopPercent !== undefined) {
+          tempData[label] = `${mopPercent}${units.percent}`;
+        } else if (mopHours !== undefined) {
+          tempData[label] = `${mopHours} ${units.hours}`;
         }
       }
     }
@@ -6654,7 +11266,7 @@ class Dreamehome extends utils.Adapter {
     this.log.info('[RobotStatus Final Report]\n' + finalReport.trim());
     await this.sendResponse(finalReport, AlexaID, source);
 
-    isComponentsSayState = false; // Reset or update the flag after speaking
+    isComponentsSayState = false;
   }
 
 
@@ -6820,11 +11432,21 @@ class Dreamehome extends utils.Adapter {
 
     if (exists) {
       await this.setStateAsync(resetId, true);  // Trigger the reset
-      await this.speakToAlexa(AlexaInfo[UserLang][38](compId), AlexaID); // ${compId} has been reset.
-      this.log.info(AlexaInfo[UserLang][38](compId));
+      await this.speakToAlexa(AlexaInfo[UserLang][405](compId), AlexaID); // ${compId} has been reset.
+      this.log.info(AlexaInfo[UserLang][405](compId));
     } else {
-      await this.speakToAlexa(AlexaInfo[UserLang][39](compId), AlexaID); // Reset not available for ${compId}
-      this.log.info(AlexaInfo[UserLang][39](compId));
+
+      // Fallback for Matrix MopPads: If ResetMopPadA doesn't exist but it's a Matrix model,
+      // the user might have said "reset mop pad a" but only ResetMopPad exists
+      const isMatrix = this.waterTracker?.directMopTracker?.isMatrix || false;
+
+		        if (isMatrix && ['MopPadA', 'MopPadB', 'MopPadC'].includes(compId)) {
+        await this.speakToAlexa(AlexaInfo[UserLang][406](compId) + ' ' + AlexaInfo[UserLang][42], AlexaID);
+        this.log.info(AlexaInfo[UserLang][406](compId) + ' ' + AlexaInfo[UserLang][42]);
+      } else {
+        await this.speakToAlexa(AlexaInfo[UserLang][406](compId), AlexaID); // Reset not available for ${compId}
+        this.log.info(AlexaInfo[UserLang][406](compId));
+      }
     }
     isComponentsResetOneState = false;
   }
@@ -6849,8 +11471,8 @@ class Dreamehome extends utils.Adapter {
 
     await Promise.all(resetPromises);  // Wait for all resets to finish
     // Log and notify Alexa about all components reset
-    this.log.info(AlexaInfo[UserLang][36]);
-    await this.speakToAlexa(AlexaInfo[UserLang][36], AlexaID);
+    this.log.info(AlexaInfo[UserLang][403]);
+    await this.speakToAlexa(AlexaInfo[UserLang][403], AlexaID);
     isComponentsResetAllState = false;
   }
 
@@ -6993,7 +11615,7 @@ class Dreamehome extends utils.Adapter {
 
     // Handle missing cleanOrder
     if (cleanOrder === null) {
-      this.log.warn(AlexaInfo[UserLang][45](roomId));
+      this.log.warn(AlexaInfo[UserLang][30](roomId));
 		  cleanOrder = 1;
     }
     // If invalid, try fallback from cleanset
@@ -7168,7 +11790,7 @@ class Dreamehome extends utils.Adapter {
     let AlexaSpeakSentence = '';
     if (hasInvalidMode) {
       const roomList = invalidRooms.map(r => r.name || `Room ${r.roomId}`).join(', ');
-      AlexaSpeakSentence = AlexaInfo[UserLang][44](roomList);
+      AlexaSpeakSentence = AlexaInfo[UserLang][29](roomList);
     }
 
     return {
@@ -7435,18 +12057,18 @@ class Dreamehome extends utils.Adapter {
   // Displays the complete synonym submenu with all categories. Source - The source of the command ('alexa' or 'telegram')
   async sendSynonymSubmenu(AlexaID, source) {
     const submenu = [
-      AlexaInfo[UserLang][104], // "Which synonym category would you like?"
-      AlexaInfo[UserLang][105], // "1 Room names"
-      AlexaInfo[UserLang][106], // "2 Suction levels"
-      AlexaInfo[UserLang][107], // "3 Mopping levels"
-      AlexaInfo[UserLang][108], // "4 Emptying commands"
-      AlexaInfo[UserLang][109], // "5 Mop washing commands"
-      AlexaInfo[UserLang][110], // "6 Status check commands"
-      AlexaInfo[UserLang][111], // "7 Reset commands"
-      AlexaInfo[UserLang][112], // "8 All synonym categories"
+      AlexaInfo[UserLang][920], // "Which synonym category would you like?"
+      AlexaInfo[UserLang][921], // "1 Room names"
+      AlexaInfo[UserLang][922], // "2 Suction levels"
+      AlexaInfo[UserLang][923], // "3 Mopping levels"
+      AlexaInfo[UserLang][924], // "4 Emptying commands"
+      AlexaInfo[UserLang][925], // "5 Mop washing commands"
+      AlexaInfo[UserLang][926], // "6 Status check commands"
+      AlexaInfo[UserLang][927], // "7 Reset commands"
+      AlexaInfo[UserLang][929], // "8 All synonym categories"
 	  await this.generateSynonymExamples(),
-      AlexaInfo[UserLang][113],  // "Say the number or name"
-	  AlexaInfo[UserLang][128] // "Say 'back' to return to main menu"
+      AlexaInfo[UserLang][930],  // "Say the number or name"
+	  AlexaInfo[UserLang][947] // "Say 'back' to return to main menu"
     ].join('\n');
 
     await this.sendResponse(submenu, AlexaID, source);
@@ -7486,7 +12108,7 @@ class Dreamehome extends utils.Adapter {
     }
 
     // No match found - send error response
-    await this.sendResponse(AlexaInfo[UserLang][102], AlexaID, source);
+    await this.sendResponse(AlexaInfo[UserLang][918], AlexaID, source);
     return false;
   }
 
@@ -7503,7 +12125,7 @@ class Dreamehome extends utils.Adapter {
     const shuffled = [...allSynonyms].sort(() => Math.random() - 0.5);
     const examples = shuffled.slice(0, 5).join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][114]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][931]} ${examples}`, AlexaID, source);
   }
 
   async sendSuctionSynonyms(AlexaID, source) {
@@ -7518,7 +12140,7 @@ class Dreamehome extends utils.Adapter {
     const shuffled = [...allSynonyms].sort(() => Math.random() - 0.5);
     const examples = shuffled.slice(0, 5).join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][115]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][932]} ${examples}`, AlexaID, source);
   }
 
   async sendMoppingSynonyms(AlexaID, source) {
@@ -7533,7 +12155,7 @@ class Dreamehome extends utils.Adapter {
     const shuffled = [...allSynonyms].sort(() => Math.random() - 0.5);
     const examples = shuffled.slice(0, 5).join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][116]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][933]} ${examples}`, AlexaID, source);
   }
 
   async sendEmptyingSynonyms(AlexaID, source) {
@@ -7542,7 +12164,7 @@ class Dreamehome extends utils.Adapter {
       .map(command => `"${command}"`)
       .join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][117]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][934]} ${examples}`, AlexaID, source);
   }
 
   async sendWashingSynonyms(AlexaID, source) {
@@ -7551,7 +12173,7 @@ class Dreamehome extends utils.Adapter {
       .map(command => `"${command}"`)
       .join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][118]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][935]} ${examples}`, AlexaID, source);
   }
 
   async sendStatusSynonyms(AlexaID, source) {
@@ -7560,7 +12182,7 @@ class Dreamehome extends utils.Adapter {
       .map(command => `"${command}"`)
       .join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][119]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][936]} ${examples}`, AlexaID, source);
   }
 
   async sendResetSynonyms(AlexaID, source) {
@@ -7569,7 +12191,7 @@ class Dreamehome extends utils.Adapter {
       ...resetAllKeywords[UserLang]
     ].slice(0, 5).map(command => `"${command}"`).join(', ');
 
-    await this.sendResponse(`${AlexaInfo[UserLang][120]} ${examples}`, AlexaID, source);
+    await this.sendResponse(`${AlexaInfo[UserLang][937]} ${examples}`, AlexaID, source);
   }
 
   async sendAdditionalExamples(AlexaID, source) {
@@ -7578,7 +12200,7 @@ class Dreamehome extends utils.Adapter {
       await this.sendResponse(examples, AlexaID, source);
     } catch (error) {
       this.log.error('Failed to generate examples:', error);
-      await this.sendResponse(AlexaInfo[UserLang][93], AlexaID, source); // Fallback
+      await this.sendResponse(AlexaInfo[UserLang][913], AlexaID, source); // Fallback
     }
   }
 
@@ -7595,13 +12217,13 @@ class Dreamehome extends utils.Adapter {
     };
 
     const response = [
-      `${AlexaInfo[UserLang][121]} ${getRandomFromCategory(AlexaRoomsNameSynonyms[UserLang], 2)}`,
-      `${AlexaInfo[UserLang][122]} ${getRandomFromCategory(suctionSynonyms[UserLang], 2)}`,
-      `${AlexaInfo[UserLang][123]} ${getRandomFromCategory(moppingSynonyms[UserLang], 2)}`,
-      `${AlexaInfo[UserLang][124]} ${emptyActionWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
-      `${AlexaInfo[UserLang][125]} ${washActionWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
-      `${AlexaInfo[UserLang][126]} ${statusCheckWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
-      `${AlexaInfo[UserLang][127]} ${[...resetOneKeywords[UserLang], ...resetAllKeywords[UserLang]].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`
+      `${AlexaInfo[UserLang][939]} ${getRandomFromCategory(AlexaRoomsNameSynonyms[UserLang], 2)}`,
+      `${AlexaInfo[UserLang][940]} ${getRandomFromCategory(suctionSynonyms[UserLang], 2)}`,
+      `${AlexaInfo[UserLang][941]} ${getRandomFromCategory(moppingSynonyms[UserLang], 2)}`,
+      `${AlexaInfo[UserLang][942]} ${emptyActionWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
+      `${AlexaInfo[UserLang][943]} ${washActionWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
+      `${AlexaInfo[UserLang][944]} ${statusCheckWords[UserLang].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`,
+      `${AlexaInfo[UserLang][945]} ${[...resetOneKeywords[UserLang], ...resetAllKeywords[UserLang]].slice(0, 2).map(cmd => `"${cmd}"`).join(', ')}`
     ].join('. ');
 
     await this.sendResponse(response, AlexaID, source);
@@ -7631,16 +12253,16 @@ class Dreamehome extends utils.Adapter {
       const mopExamples = getRandomSynonyms(moppingSynonyms[lang], 2);
 
       return [
-        AlexaInfo[lang][91],
-        roomExamples ? `${AlexaInfo[lang][94]} ${roomExamples}` : AlexaInfo[lang][93],
-        suctionExamples ? `${AlexaInfo[lang][95]} ${suctionExamples}` : '',
-        mopExamples ? `${AlexaInfo[lang][96]} ${mopExamples}` : '',
-        AlexaInfo[lang][92]
+        AlexaInfo[lang][911],
+        roomExamples ? `${AlexaInfo[lang][914]} ${roomExamples}` : AlexaInfo[lang][913],
+        suctionExamples ? `${AlexaInfo[lang][915]} ${suctionExamples}` : '',
+        mopExamples ? `${AlexaInfo[lang][916]} ${mopExamples}` : '',
+        AlexaInfo[lang][912]
       ].filter(Boolean).join('\n');
 
     } catch (error) {
       this.log.error('Synonym example generation failed:', error);
-      return AlexaInfo[UserLang][93];
+      return AlexaInfo[UserLang][913];
     }
   }
 
@@ -7655,7 +12277,7 @@ class Dreamehome extends utils.Adapter {
         if (this.helpState?.active) {
           clearTimeout(this.helpState.timeout);
           this.helpState.active = false;
-          await this.sendResponse(AlexaInfo[UserLang][103], AlexaID, source); // "Help session ended"
+          await this.sendResponse(AlexaInfo[UserLang][919], AlexaID, source); // "Help session ended"
           return true;
         }
       }
@@ -7668,24 +12290,24 @@ class Dreamehome extends utils.Adapter {
           currentStep: 'main', // Main menu state
           timeout: setTimeout(() => {
             this.helpState.active = false;
-            this.sendResponse(AlexaInfo[UserLang][103], AlexaID, source);
+            this.sendResponse(AlexaInfo[UserLang][919], AlexaID, source);
           }, 180000) // 3-minute timeout
         };
 
         // Build main help menu with navigation hint
         const mainHelp = [
-          AlexaInfo[UserLang][60], // Main question
-          AlexaInfo[UserLang][61], // Option 1: Emptying
-          AlexaInfo[UserLang][62], // Option 2: Washing
-          AlexaInfo[UserLang][63], // Option 3: Status
-          AlexaInfo[UserLang][64], // Option 4: Resetting
-          AlexaInfo[UserLang][65], // Option 5: Room cleaning
-          AlexaInfo[UserLang][66], // Option 6: Carpet cleaning
-          AlexaInfo[UserLang][135], // Option 7: Dining table cleaning
-          AlexaInfo[UserLang][67], // Option 8: Synonyms
+          AlexaInfo[UserLang][901], // Main question
+          AlexaInfo[UserLang][902], // Option 1: Emptying
+          AlexaInfo[UserLang][903], // Option 2: Washing
+          AlexaInfo[UserLang][904], // Option 3: Status
+          AlexaInfo[UserLang][905], // Option 4: Resetting
+          AlexaInfo[UserLang][906], // Option 5: Room cleaning
+          AlexaInfo[UserLang][907], // Option 6: Carpet cleaning
+          AlexaInfo[UserLang][908], // Option 7: Dining table cleaning
+          AlexaInfo[UserLang][909], // Option 8: Synonyms
 
           //await this.generateSynonymExamples(), // Dynamic synonym examples
-          AlexaInfo[UserLang][68] // Instructions
+          AlexaInfo[UserLang][910] // Instructions
         ].join('\n');
 
         await this.sendResponse(mainHelp, AlexaID, source);
@@ -7697,7 +12319,7 @@ class Dreamehome extends utils.Adapter {
         clearTimeout(this.helpState.timeout);
         this.helpState.timeout = setTimeout(() => {
           this.helpState.active = false;
-          this.sendResponse(AlexaInfo[UserLang][103], AlexaID, source);
+          this.sendResponse(AlexaInfo[UserLang][919], AlexaID, source);
         }, 180000);
 
         const normalizedCommand = await this.normalizeCommand(commandLower);
@@ -7705,23 +12327,23 @@ class Dreamehome extends utils.Adapter {
         // RETURN TO MAIN MENU COMMANDS
         if (normalizedCommand.includes('zurück') || normalizedCommand.includes('back') ||
           normalizedCommand.includes('haupt') || normalizedCommand.includes('main')) {
-          await this.sendResponse(AlexaInfo[UserLang][129], AlexaID, source);
+          await this.sendResponse(AlexaInfo[UserLang][948], AlexaID, source);
 
           this.helpState.currentStep = 'main'; // Switch back to main menu
 
           // Redisplay main menu
           const mainHelp = [
-            AlexaInfo[UserLang][60],
-            AlexaInfo[UserLang][61],
-            AlexaInfo[UserLang][62],
-            AlexaInfo[UserLang][63],
-            AlexaInfo[UserLang][64],
-            AlexaInfo[UserLang][65],
-            AlexaInfo[UserLang][66],
-			  AlexaInfo[UserLang][135],
-            AlexaInfo[UserLang][67],
+            AlexaInfo[UserLang][901],
+            AlexaInfo[UserLang][902],
+            AlexaInfo[UserLang][903],
+            AlexaInfo[UserLang][904],
+            AlexaInfo[UserLang][905],
+            AlexaInfo[UserLang][906],
+            AlexaInfo[UserLang][907],
+			  AlexaInfo[UserLang][908],
+            AlexaInfo[UserLang][909],
             //await this.generateSynonymExamples(),
-            AlexaInfo[UserLang][68]
+            AlexaInfo[UserLang][910]
           ].join('\n');
 
           await this.sendResponse(mainHelp, AlexaID, source);
@@ -7735,7 +12357,7 @@ class Dreamehome extends utils.Adapter {
 
           clearTimeout(this.helpState.timeout);
           this.helpState.active = false;
-          await this.sendResponse(AlexaInfo[UserLang][103], AlexaID, source);
+          await this.sendResponse(AlexaInfo[UserLang][919], AlexaID, source);
           return true;
         }
 
@@ -7758,11 +12380,11 @@ class Dreamehome extends utils.Adapter {
           if (normalizedCommand.includes('1') || normalizedCommand.includes('empty') ||
           normalizedCommand.includes('entleer') || normalizedCommand.includes('leer')) {
             const response = [
-              AlexaInfo[UserLang][69], // Emptying introduction
-              AlexaInfo[UserLang][70], // Emptying example 1
-              AlexaInfo[UserLang][71]  // Emptying example 2
+              AlexaInfo[UserLang][104], // Emptying introduction
+              AlexaInfo[UserLang][105], // Emptying example 1
+              AlexaInfo[UserLang][106]  // Emptying example 2
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7770,11 +12392,11 @@ class Dreamehome extends utils.Adapter {
           if (normalizedCommand.includes('2') || normalizedCommand.includes('wash') ||
           normalizedCommand.includes('wasch') || normalizedCommand.includes('mop')) {
             const response = [
-              AlexaInfo[UserLang][72], // Washing introduction
-              AlexaInfo[UserLang][73], // Washing example 1
-              AlexaInfo[UserLang][74]  // Washing example 2
+              AlexaInfo[UserLang][204], // Washing introduction
+              AlexaInfo[UserLang][205], // Washing example 1
+              AlexaInfo[UserLang][206]  // Washing example 2
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7782,11 +12404,11 @@ class Dreamehome extends utils.Adapter {
           if (normalizedCommand.includes('3') || normalizedCommand.includes('status') ||
           normalizedCommand.includes('zustand') || normalizedCommand.includes('prüf')) {
             const response = [
-              AlexaInfo[UserLang][75], // Status introduction
-              AlexaInfo[UserLang][76], // Status example 1
-              AlexaInfo[UserLang][77]  // Status example 2
+              AlexaInfo[UserLang][305], // Status introduction
+              AlexaInfo[UserLang][306], // Status example 1
+              AlexaInfo[UserLang][307]  // Status example 2
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7794,11 +12416,11 @@ class Dreamehome extends utils.Adapter {
           if (normalizedCommand.includes('4') || normalizedCommand.includes('reset') ||
           normalizedCommand.includes('zurücksetz') || normalizedCommand.includes('rücksetz')) {
             const response = [
-              AlexaInfo[UserLang][78], // Reset introduction
-              AlexaInfo[UserLang][79], // Reset example 1
-              AlexaInfo[UserLang][80]  // Reset example 2
+              AlexaInfo[UserLang][410], // Reset introduction
+              AlexaInfo[UserLang][411], // Reset example 1
+              AlexaInfo[UserLang][412]  // Reset example 2
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7807,14 +12429,14 @@ class Dreamehome extends utils.Adapter {
           normalizedCommand.includes('raum') || normalizedCommand.includes('clean') ||
           normalizedCommand.includes('reinigung')) {
             const response = [
-              AlexaInfo[UserLang][81], // Room cleaning patterns
-              AlexaInfo[UserLang][82], // Vacuum example
-              AlexaInfo[UserLang][83], // Mopping example
-              AlexaInfo[UserLang][84], // Combined example
-              AlexaInfo[UserLang][88], // Suction levels
-              AlexaInfo[UserLang][89]  // Mopping levels
+              AlexaInfo[UserLang][505], // Room cleaning patterns
+              AlexaInfo[UserLang][506], // Vacuum example
+              AlexaInfo[UserLang][507], // Mopping example
+              AlexaInfo[UserLang][508], // Combined example
+              AlexaInfo[UserLang][509], // Suction levels
+              AlexaInfo[UserLang][510]  // Mopping levels
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7822,28 +12444,28 @@ class Dreamehome extends utils.Adapter {
           if (normalizedCommand.includes('6') || normalizedCommand.includes('carpet') ||
           normalizedCommand.includes('teppich') || normalizedCommand.includes('shampoo')) {
             const response = [
-              AlexaInfo[UserLang][85], // Carpet cleaning patterns
-              AlexaInfo[UserLang][86], // Shampoo example
-              AlexaInfo[UserLang][87], // Alternative example
-              AlexaInfo[UserLang][90]  // Carpet intensities
+              AlexaInfo[UserLang][607], // Carpet cleaning patterns
+              AlexaInfo[UserLang][608], // Shampoo example
+              AlexaInfo[UserLang][609], // Alternative example
+              AlexaInfo[UserLang][610]  // Carpet intensities
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
           // OPTION 7 - DINING TABLE CLEANING
           if (normalizedCommand.includes('7') || normalizedCommand.includes('dining') ||
-    normalizedCommand.includes('esstisch') || normalizedCommand.includes('tisch') ||
-    normalizedCommand.includes('table')) {
+            normalizedCommand.includes('esstisch') || normalizedCommand.includes('tisch') ||
+            normalizedCommand.includes('table')) {
             const response = [
-              AlexaInfo[UserLang][136], // Dining table introduction
-              AlexaInfo[UserLang][137], // Dining table example 1
-              AlexaInfo[UserLang][138], // Dining table example 2 (sweeping only)
-              AlexaInfo[UserLang][139], // Dining table example 3 (mopping only)
-              AlexaInfo[UserLang][140], // Dining table example 4 (both)
-              AlexaInfo[UserLang][141]  // Dining table modes
+              AlexaInfo[UserLang][706], // Dining table introduction
+              AlexaInfo[UserLang][707], // Dining table example 1
+              AlexaInfo[UserLang][708], // Dining table example 2 (sweeping only)
+              AlexaInfo[UserLang][709], // Dining table example 3 (mopping only)
+              AlexaInfo[UserLang][710], // Dining table example 4 (both)
+              AlexaInfo[UserLang][711]  // Dining table modes
             ].join('\n');
-            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][101], AlexaID, source);
+            await this.sendResponse(response + '\n' + AlexaInfo[UserLang][917], AlexaID, source);
             return true;
           }
 
@@ -7858,7 +12480,7 @@ class Dreamehome extends utils.Adapter {
       return false;
     } catch (err) {
       this.log.error('Help command error: ' + err);
-      await this.sendResponse(AlexaInfo[UserLang][102], AlexaID, source);
+      await this.sendResponse(AlexaInfo[UserLang][918], AlexaID, source);
       return false;
     }
   }
@@ -7871,6 +12493,31 @@ class Dreamehome extends utils.Adapter {
     try {
       this.log.info('Cleaning up resources...');
 
+		    // Stop and destroy the WaterTracker // Stop mop tracker if it exists and needs tracking
+      if (this.waterTracker) {
+        this.waterTracker.destroy();
+        this.waterTracker = null;
+      }
+
+
+
+
+	    // Disconnect MQTT client
+      if (this.mqttClient) {
+        this.mqttClient.end(true);
+      }
+
+	    // Stop refresh token interval
+      if (this.refreshTokenInterval) {
+        clearInterval(this.refreshTokenInterval);
+      }
+
+
+	    // Stop device map update interval
+      if (DH_UpdateMapInterval) {
+        clearInterval(DH_UpdateMapInterval);
+      }
+
       // Cleanup monitoring
       if (this.monitor) {
         this.monitor.stop();
@@ -7881,6 +12528,17 @@ class Dreamehome extends utils.Adapter {
       if (this.memoryManager) {
         this.memoryManager.disableAutoCleanup();
         this.log.info('Memory manager stopped');
+      }
+
+	  	  // Cleanup learning System
+	  if (this.learningSystem) {
+        this.learningSystem.destroy();
+      }
+
+	  // Cleanup cleaning history
+	  if (this.history) {
+        this.history.destroy();
+        this.history = null;
       }
 
       this.DH_Clean();
@@ -7907,7 +12565,7 @@ class Dreamehome extends utils.Adapter {
         }
         if (id.indexOf('.NewMap') !== -1) {
           this.log.info('Generate Map');
-          await this.DH_GenerateMap(DH_CurMap, DH_Did, DH_Map, UserLang, fullQuality, DH_ScaleValue, CheckArrayRooms, roomData, canvas, context, ColorsItems, ColorsCarpet, RoomsStrokeColor, RoomsLineWidth, WallColor, WallStrokeColor, WallLineWidth, DoorsColor, DoorsStrokeColor, DoorsLineWidth, ChargerColor, ChargerStrokeColor, ChargerLineWidth, CarpetColor, CarpetStrokeColor, CarpetLineWidth);
+          await this.DH_GenerateMap(DH_CurMap, DH_Did, DH_Map, UserLang, fullQuality, DH_ScaleValue, CheckArrayRooms, roomData, canvas, context, ColorsItems, ColorsCarpet, RoomsStrokeColor, RoomsLineWidth, WallColor, WallStrokeColor, WallLineWidth, DoorsColor, DoorsStrokeColor, DoorsLineWidth, ChargerColor, ChargerStrokeColor, ChargerLineWidth, CarpetColor, CarpetStrokeColor, CarpetLineWidth, AlexacleanModes);
 
           this.setStateAsync(id, false, true);
           return;
@@ -8123,11 +12781,85 @@ class Dreamehome extends utils.Adapter {
 
         if ((id.toString().includes('.control.')) && (!id.toString().endsWith('.control.NaturalLanguageCommand'))) {
           let SETURLData;
+
+			   // Check for mop pad reset buttons
+          if (id.toString().includes('ResetMopPad') && state.val === true) {
+            const stateId = id.toString();
+
+            // Check if DirectMopTracker exists and is active
+            if (
+              this.waterTracker &&
+            this.waterTracker.directMopTracker &&
+            this.waterTracker.directMopTracker.needsTracking
+            ) {
+            // DirectMopTracker reset detected
+              this.log.info('[WaterTracking] DirectMopTracker reset detected');
+
+              try {
+                const buttonName = id.split('.').pop();
+
+                if (buttonName === 'ResetMopPadA') {
+                  await this.waterTracker.directMopTracker.resetMatrixMopType('A');
+                }
+                else if (buttonName === 'ResetMopPadB') {
+                  await this.waterTracker.directMopTracker.resetMatrixMopType('B');
+                }
+                else if (buttonName === 'ResetMopPadC') {
+                  await this.waterTracker.directMopTracker.resetMatrixMopType('C');
+                }
+                else if (buttonName === 'ResetMopPad') {
+                  await this.waterTracker.directMopTracker.resetMopPad();
+                }
+
+                this.log.info(
+                  `[WaterTracking] DirectMopTracker reset completed for ${buttonName}`
+                );
+
+                // Reset the button state
+                await this.setState(id, false, true);
+                return;
+
+              } catch (error) {
+                this.log.error(
+                  `[WaterTracking] Error during DirectMopTracker reset: ${error.message}`
+                );
+                // If DirectMopTracker fails, fall back to API-based logic
+              }
+            }
+
+            // No DirectMopTracker available or fallback required: continue with API-based logic
+            this.log.info('[WaterTracking] API-based reset (no DirectMopTracker or fallback)');
+          }
+
+          // Check for detergent reset button
+          if (id.toString().includes('ResetDetergent') && state.val === true) {
+
+            try {
+              // 1. Local reset if detergent module exists
+              if (this.waterTracker?.detergentModule?.hasDetergentTank) {
+                this.log.info('[Detergent] Resetting local detergent tracking');
+                await this.waterTracker.detergentModule.handleDetergentRefill('full');
+			        // 3. Reset button state and EXIT function
+                await this.setState(id, false, true);
+                return;
+              }
+
+            } catch (error) {
+              this.log.error(`[Detergent] Error during reset: ${error.message}`);
+            }
+          }
+
           for (const [SPkey, SPvalue] of Object.entries(DreameActionProperties)) {
             const ControlObject = SPvalue.replace(/\w\S*/g, function(SPName) {
               return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
             }).replace(/\s/g, '');
             if (id.split('.').pop() == ControlObject) {
+
+              if (SPkey === 'S0P0') {
+				  await this.loadAllReadOnlyProperties();
+                continue;
+              }
+
               let PropertiesMethod = false;
               const requestId = Math.floor(Math.random() * 9000) + 1000;
               this.log.info('Send Command: ' + SPvalue);
@@ -8285,6 +13017,7 @@ class Dreamehome extends utils.Adapter {
                   RESETCData.data.params = PiidAction;
                   await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, RESETCData);
                 }
+
                 const GetCloudRequestDeviceData = await this.DH_URLSend(DH_Domain + DH_DHURLSENDA + DH_Host + DH_DHURLSENDB, SETURLData);
                 const path = DH_Did + '.control.' + SPvalue.replace(/\w\S*/g, function(SPName) {
                   return SPName.charAt(0).toUpperCase() + SPName.substr(1).toLowerCase();
@@ -8300,6 +13033,7 @@ class Dreamehome extends utils.Adapter {
             }
           }
         }
+
         if (id.toString().indexOf('.showlog') !== -1) {
           LogData = state.val;
           if (LogData) {
@@ -8353,7 +13087,6 @@ class Dreamehome extends utils.Adapter {
 
       }
 
-
       if (id.toString().endsWith('.DiningTableZone')) {
         if (state.val) {
           this.setStateAsync(id, false, true);
@@ -8363,6 +13096,177 @@ class Dreamehome extends utils.Adapter {
 
 	  }
 
+      if (id.toString().endsWith('.history.cleaning.sync') && state.val === true) {
+        this.log.info('[HISTORY] Manual sync triggered from VIS');
+
+        if (this.history) {
+          const now = Date.now();
+          this.log.info('[HISTORY] Starting update check');
+          // Checks every 10 seconds for new history data (max ~4 min)
+          await this.history.waitForNewCleaning(now);
+        }
+
+        await this.setStateAsync(id, false, true);
+      }
+
+      // Handle reload trigger for the currently selected history entry
+      if (id.toString().endsWith('.vis.history.reload') && state.val === true) {
+        this.log.info('[HISTORY] Manual reload triggered from VIS');
+
+        if (this.history) {
+          // Get the currently selected index from state
+          const selectedIndexState = await this.getStateAsync(`${DH_Did}.vis.history.selectedIndex`);
+          const selectedIndex = selectedIndexState?.val;
+
+          this.log.info(`[HISTORY] Selected index from state: ${selectedIndex} (type: ${typeof selectedIndex})`);
+
+          if (selectedIndex !== undefined && selectedIndex !== null && selectedIndex !== -1) {
+            // Load the raw history array (NOT the formatted object)
+            const rawState = await this.getStateAsync(`${DH_Did}.history.cleaning.raw`);
+
+            if (rawState && rawState.val) {
+              const historyArray = JSON.parse(rawState.val);
+              this.log.info(`[HISTORY] Raw history array length: ${historyArray.length}`);
+
+              // Convert selectedIndex to a number if it is a string
+              const index = parseInt(selectedIndex);
+
+              if (!isNaN(index) && index >= 0 && index < historyArray.length) {
+                const currentEntry = historyArray[index];
+
+                this.log.info(`[HISTORY] Current entry at index ${index}:`);
+                this.log.info(`  - date: ${currentEntry.date}`);
+                this.log.info(`  - mapFileBase: ${currentEntry.mapFileBase}`);
+                this.log.info(`  - mapObjectName: ${currentEntry.mapObjectName}`);
+                this.log.info(`  - hasPath: ${currentEntry.hasPath}`);
+                this.log.info(`  - pathPoints: ${currentEntry.pathPoints || 0}`);
+
+                if (currentEntry && currentEntry.mapObjectName) {
+                  this.log.info(`[HISTORY] Reloading map data for: ${currentEntry.mapFileBase || currentEntry.mapObjectName}`);
+
+                  try {
+                    // Reload full map data including all details
+                    const fullData = await this.history.loadMapFileWithDetails(
+                      currentEntry.mapObjectName,
+                      currentEntry.key
+                    );
+
+                    if (fullData) {
+                      this.log.info(`[HISTORY] Full data loaded, enriching entry...`);
+
+                      // Enrich the entry with the loaded map data
+                      await this.history.enrichCleaningWithMapData(currentEntry, fullData);
+
+                      this.log.info(`[HISTORY] After enrichment:`);
+                      this.log.info(`  - parsedTr: ${!!currentEntry.parsedTr} (points: ${currentEntry.parsedTr?.pointCount || 0})`);
+                      this.log.info(`  - obstacles: ${currentEntry.obstacles?.length || 0}`);
+                      this.log.info(`  - sa: ${currentEntry.sa?.length || 0}`);
+
+                      // Update the entry in the history array
+                      historyArray[index] = currentEntry;
+
+                      // Save the updated history array back to state
+                      await this.history.saveCleaningHistory(historyArray);
+
+                      // Update the completeMapData state for persistence
+                      const completeMapDataState = await this.getStateAsync(`${DH_Did}.history.cleaning.completeMapData`);
+                      let completeMapData = {};
+                      if (completeMapDataState && completeMapDataState.val) {
+                        completeMapData = JSON.parse(completeMapDataState.val);
+                      }
+
+                      const mapKey = currentEntry.mapObjectName || currentEntry.fileName;
+                      completeMapData[mapKey] = {
+                        parsedTr: currentEntry.parsedTr,
+                        obstacles: currentEntry.obstacles,
+                        sa: currentEntry.sa,
+                        cleanset: currentEntry.cleanset,
+                        blockedSegments: currentEntry.blockedSegments,
+                        hasObstacles: currentEntry.hasObstacles,
+                        timestamp: Date.now()
+                      };
+
+                      await this.setStateAsync(`${DH_Did}.history.cleaning.completeMapData`, {
+                        val: JSON.stringify(completeMapData),
+                        ack: true
+                      });
+
+                      // Update the selected history entry for VIS
+                      await this.setStateAsync(`${DH_Did}.vis.history.selectedHistory`, {
+                        val: JSON.stringify(currentEntry),
+                        ack: true
+                      });
+
+                      // Update path data if available
+                      if (currentEntry.parsedTr) {
+                        await this.setStateAsync(`${DH_Did}.vis.history.historyPath`, {
+                          val: JSON.stringify(currentEntry.parsedTr),
+                          ack: true
+                        });
+                      }
+
+                      this.log.info(`[HISTORY] Successfully reloaded: path=${!!currentEntry.parsedTr}, obstacles=${currentEntry.obstacles?.length || 0}`);
+
+                    } else {
+                      this.log.warn(`[HISTORY] No full data returned for ${currentEntry.mapObjectName}`);
+                    }
+                  } catch (error) {
+                    this.log.error(`[HISTORY] Error reloading map data: ${error.message}`);
+                  }
+                } else {
+                  this.log.warn(`[HISTORY] No mapObjectName for entry at index ${index}`);
+                  this.log.warn(`[HISTORY] Entry keys: ${Object.keys(currentEntry).join(', ')}`);
+                }
+              } else {
+                this.log.warn(`[HISTORY] Invalid index ${index} (array length: ${historyArray.length})`);
+              }
+            } else {
+              this.log.warn(`[HISTORY] No raw history data found`);
+            }
+          } else {
+            this.log.info(`[HISTORY] No history selected (index: ${selectedIndex})`);
+          }
+
+          // Reset the reload trigger state
+          await this.setStateAsync(id, false, true);
+        }
+      }
+
+      if (id.toString().endsWith('.history.cleaning.loadDate') && state.val) {
+        this.log.info(`[HISTORY] Load date request: ${state.val}`);
+
+        if (this.history) {
+          try {
+            const request = JSON.parse(state.val);
+            const targetTimestamp = request.timestamp;
+            const targetDate = request.date;
+
+            this.log.info(`[HISTORY] Searching for cleaning on ${targetDate} (timestamp: ${targetTimestamp})`);
+
+            await this.history.loadHistoryByDate(targetTimestamp);
+
+          } catch (error) {
+            this.log.error(`[HISTORY] Failed to load date: ${error.message}`);
+          }
+        }
+      }
+
+	  // Manual reset of the clean water tank
+      if (id.toString().endsWith('.state.water.ResetPureWaterTank') && !state.ack) {
+        const newPercent = parseInt(state.val);
+
+        if (!isNaN(newPercent) && newPercent >= 0 && newPercent <= 100 && this.waterTracker) {
+          this.log.info(`[WaterTank] Manual reset from VIS: ${newPercent}%`);
+
+          // Call the WaterTracker method to handle the manual reset
+          await this.waterTracker.handleManualWaterTankReset(newPercent);
+        }
+      }
+
+      // Forward to the Learning System if this is a config state
+      if (id.includes('.state.learning.config.') && this.learningSystem) {
+        this.learningSystem.handleConfigChange(id, state);
+      }
 
       if ((id.toString().endsWith('.summary') && AlexaIsPresent) || id.toString().endsWith('.communicate.request') || id.toString().endsWith('.control.NaturalLanguageCommand')) {
         let command = state.val;
@@ -8461,7 +13365,7 @@ class Dreamehome extends utils.Adapter {
           isComponentsResetAllState = true;
           await this.setForeignStateAsync(id, '');  // Confirm the Reset-All command
           await this.resetAllComponents(LastAlexaID);  // Reset all components
-          this.log.info(AlexaInfo[UserLang][36]);  // Log the command
+          this.log.info(AlexaInfo[UserLang][403]);  // Log the command
         }
 
         // Trigger Reset-Component only if "Reset All" is not detected
@@ -8626,6 +13530,60 @@ class Dreamehome extends utils.Adapter {
           }
         }
 
+        /*const learningCommands = {
+  'EN': {
+    'what have you learned': 'show_learning',
+    'show learning statistics': 'show_stats',
+    'how often was': 'room_stats',
+    'recommendation for': 'recommendation',
+    'clear learning history': 'clear_learning',
+    'reset learning system': 'reset_learning',
+    'ignore last cleaning': 'ignore_last',
+    'which rooms learned': 'learned_rooms',
+    'confidence information': 'confidence_info',
+    'optimal settings': 'optimal_settings',
+    'which room is': 'room_detection',
+    'how do you detect': 'detection_info'
+  },
+    'DE': {
+    'was hast du gelernt': 'show_learning',
+    'zeige lernstatistiken': 'show_stats',
+    'wie oft wurde': 'room_stats',
+    'empfehlung für': 'recommendation',
+    'lösche lernhistorie': 'clear_learning',
+    'zurücksetzen lernsystem': 'reset_learning',
+    'ignoriere letzte reinigung': 'ignore_last',
+    'welche räume gelernt': 'learned_rooms',
+    'vertrauenswertigkeit': 'confidence_info',
+    'optimale einstellungen': 'optimal_settings',
+    'welcher raum ist': 'room_detection',
+    'wie erkennst du': 'detection_info'
+  }
+};*/
+
+        // Check if the learning system exists
+        if (this.learningSystem) {
+          // Handle learning command and pass the response callback
+          const isLearningCommand = await this.learningSystem.handleLearningCommand(
+            commandLower,
+            UserLang,
+            async (response) => {
+              await this.sendResponse(response, LastAlexaID, commandSource);  // Send the response to Alexa
+            }
+          );
+
+          // If the command is related to learning
+          if (isLearningCommand) {
+            // Clear the state of the corresponding foreign state
+            await this.setForeignStateAsync(id, '');
+
+            // Update the last command time to the current time
+            lastCommandTime = currentTime;
+            return;
+          }
+        }
+
+
         // Carpet cleaning command processing
         let hasCarpetKeyword = null;
         if (roomFound) {
@@ -8677,7 +13635,7 @@ class Dreamehome extends utils.Adapter {
 
                 // Handle missing intensity specification
                 if (!detectedIntensity) {
-                  const message = AlexaInfo[UserLang][50](roomName);
+                  const message = AlexaInfo[UserLang][604](roomName);
                   this.log.info(`[Carpet] ${message}`);
                   await this.speakToAlexa(message, LastAlexaID, 1);
                   continue;
@@ -8708,8 +13666,8 @@ class Dreamehome extends utils.Adapter {
 
               // Abort if no valid rooms found
               if (successfulRooms === 0) {
-                this.log.info(`[Carpet] ${AlexaInfo[UserLang][49]}`);
-                await this.speakToAlexa(AlexaInfo[UserLang][49], LastAlexaID, 1);
+                this.log.info(`[Carpet] ${AlexaInfo[UserLang][603]}`);
+                await this.speakToAlexa(AlexaInfo[UserLang][603], LastAlexaID, 1);
                 return;
               }
 
@@ -8733,8 +13691,8 @@ class Dreamehome extends utils.Adapter {
               }
 
               if (!modeSetSuccessfully) {
-                this.log.info(`[Carpet] ${AlexaInfo[UserLang][46]}`);
-                await this.speakToAlexa(AlexaInfo[UserLang][46], LastAlexaID, 1);
+                this.log.info(`[Carpet] ${AlexaInfo[UserLang][601]}`);
+                await this.speakToAlexa(AlexaInfo[UserLang][601], LastAlexaID, 1);
                 return;
               }
 
@@ -8754,12 +13712,12 @@ class Dreamehome extends utils.Adapter {
                   roomsByIntensity[cleanIntensity].push(roomName); // Add room to the corresponding intensity group
                 });
 
-                // Prepare data for AlexaInfo[51] (the message format)
+                // Prepare data for AlexaInfo[605] (the message format)
                 const intensityGroups = Object.entries(roomsByIntensity)
                   .map(([intensity, rooms]) => [rooms.join(', '), intensity]); // Format groups as [rooms, intensity]
 
-                // Generate the message using the prepared data and AlexaInfo[51] format
-                const combinedMessage = AlexaInfo[UserLang][51](
+                // Generate the message using the prepared data and AlexaInfo[605] format
+                const combinedMessage = AlexaInfo[UserLang][605](
                   cleaningDetails.map(d => d.split(' (')[0]).join(', '),  // Extract room names from cleaning details
                   intensityGroups  // Grouped rooms by intensity
                 );
@@ -8774,7 +13732,7 @@ class Dreamehome extends utils.Adapter {
                 this.log.error(`[Carpet] Cleaning execution failed: ${execError.message}`);
 
                 // Notify the user of failure with a specific message from AlexaInfo
-                await this.speakToAlexa(AlexaInfo[UserLang][46], LastAlexaID, 1); // Example: "Carpet cleaning failed"
+                await this.speakToAlexa(AlexaInfo[UserLang][601], LastAlexaID, 1); // Example: "Carpet cleaning failed"
               }
 
             }
@@ -8782,7 +13740,7 @@ class Dreamehome extends utils.Adapter {
           } catch (err) {
             this.log.error(`[Carpet] General processing error: ${err.message}`);
             if (hasCarpetKeyword) {
-              await this.speakToAlexa(AlexaInfo[UserLang][46], LastAlexaID, 1);
+              await this.speakToAlexa(AlexaInfo[UserLang][601], LastAlexaID, 1);
             }
             throw err;
           } finally {
@@ -8841,23 +13799,78 @@ class Dreamehome extends utils.Adapter {
               const success = await this.cleanDiningTableZone(targetRoom);
 
               if (success) {
-                await this.speakToAlexa(AlexaInfo[UserLang][130](targetRoom), LastAlexaID, 1);
+                await this.speakToAlexa(AlexaInfo[UserLang][701](targetRoom), LastAlexaID, 1);
                 this.log.info(`[DiningTable] Cleaning successfully started in ${targetRoom}`);
               } else {
-                await this.speakToAlexa(AlexaInfo[UserLang][133], LastAlexaID, 1);
+                await this.speakToAlexa(AlexaInfo[UserLang][704], LastAlexaID, 1);
                 this.log.error('[DiningTable] Cleaning could not be started');
               }
             } else {
-              await this.speakToAlexa(AlexaInfo[UserLang][131], LastAlexaID, 1);
+              await this.speakToAlexa(AlexaInfo[UserLang][702], LastAlexaID, 1);
               this.log.warn('[DiningTable] No room with dining table found (Detect intensity from the command)');
             }
           } catch (error) {
             this.log.error(`[DiningTable] Error in dining table cleaning: ${error.message}`);
-            await this.speakToAlexa(AlexaInfo[UserLang][133], LastAlexaID, 1);
+            await this.speakToAlexa(AlexaInfo[UserLang][704], LastAlexaID, 1);
           }
 
           await this.setForeignStateAsync(id, '');
           return; // Important: return early!
+        }
+
+
+        // =========== AUTO-COMPLETE WITH LEARNING SYSTEM ===========
+
+        //if (this.learningSystem && this.learningSystem.config.Enabled && Object.keys(roomActions).length > 0)
+        if (this.learningSystem && Object.keys(roomActions).length > 0 && roomFound && (!hasCarpetKeyword)) {
+          // 1. CHECK NATURAL CLEANING COMMANDS
+          const naturalCommand = await this.learningSystem.processNaturalCommand(commandLower, UserLang);
+          if (naturalCommand.found) {
+            this.log.info(
+              `[NaturalCommand] Detected: "${commandLower}" -> ${JSON.stringify(naturalCommand)}`
+            );
+
+
+
+            // Attempt to auto-complete the command using the learning system
+            const completed = await this.learningSystem.autoCompleteCommand(roomActions, UserLang, LastAlexaID, 1);
+
+            // Log the results of the auto-completion
+            for (const room of completed) {
+              // If a recommendation is found with a high enough confidence
+              if (room.recommendation && room.recommendation.confidence >= 60) {
+                this.log.info(`[AUTO-COMPLETE] ${room.roomName}: ` +
+                   `suction=${room.settings.suction} (${room.recommendation.confidence}%), ` +
+                   `mopping=${room.settings.mopping} (${room.recommendation.confidence}%)`);
+
+                // Provide a confirmation message to Alexa for high-confidence completions
+                if (room.recommendation.confidence >= 80) {
+                  const autoCompleteMessage = AlexaInfo[UserLang][802] + ' ' +
+                                   AlexaInfo[UserLang][804](
+                                     room.settings.suction,
+                                     room.settings.mopping,
+                                     room.roomName
+                                   );
+                  this.log.info(`[AUTO-COMPLETE] ${autoCompleteMessage}`);
+                  await this.speakToAlexa(autoCompleteMessage, LastAlexaID, 1);
+                }
+              }
+            }
+
+            // Start the cleaning process directly
+            isCleaningCommand = true;
+
+            this.log.info(`[AUTO-COMPLETE] Cleaning command activated for ${Object.keys(roomActions).length} room(s)`);
+
+          } else {
+            // NO cleaning command -> skip learning system
+            this.log.info(
+              `[NaturalCommand] No cleaning command detected: "${commandLower}"`
+            );
+            //await this.setForeignStateAsync(id, '');
+            //return; // Abort early
+          }
+
         }
 
         // If no room was found or carpet cleaning detected, exit early
@@ -8871,25 +13884,24 @@ class Dreamehome extends utils.Adapter {
         // Check for missing cleaning attributes
         const { ambiguousCommand, missingCleaningModeRooms } = await this.checkForMissingCleaningAttributes(selectedRooms, roomActions);
 
-        // If ambiguity is detected, ask for clarification
+        // If ambiguity is detected in the command, ask for clarification from the user
         if (ambiguousCommand) {
           if (LastAlexaID) {
+            // If there is only one room with missing cleaning mode, ask for clarification for that room
             if (missingCleaningModeRooms.length === 1) {
-              const {
-                name,
-                missing
-              } = missingCleaningModeRooms[0];
+              const { name, missing } = missingCleaningModeRooms[0];
               const clarificationMessage = AlexaInfo[UserLang][25](name, missing);
               this.log.info('Speak: ' + clarificationMessage);
               await this.speakToAlexa(clarificationMessage, LastAlexaID, 1);
             } else {
+              // If multiple rooms have missing cleaning modes, provide a clarification message for all
               const roomMessages = missingCleaningModeRooms.map(room => `${room.name}: ${room.missing}`).join('; ');
               const clarificationMessage = AlexaInfo[UserLang][26](roomMessages);
               this.log.info('Speak: ' + clarificationMessage);
               await this.speakToAlexa(clarificationMessage, LastAlexaID, 1);
             }
           }
-          return; // Exit early if ambiguity is found
+          return; // Exit early if ambiguity is found and clarification is required
         }
 
         // If no mode was explicitly set, keep it 1 (Saugen und Wischen / Vacuum and Mop)
