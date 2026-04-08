@@ -1,643 +1,975 @@
+# ioBroker.dreamehome
+
 ![Logo](admin/dreamehome.png)
 
-# ioBroker.dreamehome
+**ioBroker adapter for Dreame vacuum robots** | **ioBroker-Adapter für Dreame Staubsaugroboter**
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
-![Number of Installations](https://iobroker.live/badges/dreamehome-installed.svg)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[![NPM](https://nodei.co/npm/iobroker.dreamehome.png?downloads=true)](https://nodei.co/npm/iobroker.dreamehome/)
-
-**Tests:** ![Test and Release](https://github.com/spayrosam/ioBroker.dreamehome/workflows/Test%20and%20Release/badge.svg)
-
-## dreamehome adapter for ioBroker
-
-Adapter for dreame home devices
-
-
-***To display the map, create an HTML widget with a size of 1024x1024 or as needed, and insert the following code: {dreamehome.0.XXXXXX.vis.vishtml1}
-Here, XXXXXX is the number of your robot.***
-
-## Changelog
-
-<!--
-    Placeholder for the next version (at the beginning of the line):
-    ### **WORK IN PROGRESS**
--->
-### 1.1.0 (07.12.2025)
- 
-1. **System Requirement Update:** Minimum Node.js version is now 20.x
-2.  **Dreame Matrix10 Ultra:** Carpet commands are now fully supported.
-3.  **Polygon Carpet Detection:** Can now detect and handle polygon-shaped carpets.
-4. **Bug Fixes:** Fixed issue where robot did not respond to commands sent via the HTML/Vis interface.
-5. **Help Menu Update:** The voice/chat help menu (Alexa/Telegram) has been extended with "Dining Table" cleaning options.
-6.  **New Dining Table Function:** Automatic detection and cleaning on command.
-    For dining table cleaning, use these patterns:
-    
-    🇬🇧 English commands:
-    *   `"Alexa, clean the dining table in the {ROOM}"`
-    *   `"Alexa, vacuum under the kitchen table"` (sweeping only)
-    *   `"Alexa, mop around the dining table"` (mopping only)
-    *   `"Alexa, clean dining table thoroughly"` (sweeping & mopping)
-    
-    🇩🇪 Deutsche Befehle:
-    *   `"Alexa, reinige den Esstisch im {ROOM}"`
-    *   `"Alexa, sauge unter dem Küchentisch"` (nur Saugen)
-    *   `"Alexa, wische rund um den Esstisch"` (nur Wischen)
-    *   `"Alexa, reinige den Esstisch gründlich"` (Saugen & Wischen)
-
-
----
-### 1.0.0 (06.10.2025)
-#### Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.
-1. Voice Command Help System: 7 categories
-    - Emptying the dustbin
-    - Washing the mop
-    - Checking component status
-    - Resetting components
-    - Room cleaning
-    - Carpet cleaning
-    - Synonym examples and voice commands
-2. Synonym Help System: 8 categories with dynamic random examples
-    - Room names
-    - Suction levels  
-    - Mopping levels
-    - Emptying commands
-    - Mop washing commands
-    - Status check commands
-    - Reset commands
-    - All categories overview
-
-3. Multi-Platform Support: Full integration for both Alexa (voice) and Telegram (text)
-   
-    **Alexa Voice Commands:**
-
-        User: "Alexa, help with robot"
-        → System: Displays main help menu with options 1-7
-
-        User: "Seven" 
-        → System: Shows synonym submenu with 8 categories
-
-        User: "One"
-        → System: "Room name synonyms: 'living room', 'guest room', 'office', 'bedroom'"
-
-        User: "Back"
-        → System: Returns to main help menu, options 1-7 remain available
-
-    **Telegram Text Commands:**
-
-        User: "help robot"
-        → System: Shows main help menu with numbered options
-
-        User: "7"
-        → System: Displays synonym submenu categories 1-8
-
-        User: "examples"
-        → System: "ROOMS: 'kitchen', 'study' | SUCTION: 'quiet', 'soft'"
-
-        User: "back"
-        → System: Navigates back to main menu
-
-### 0.1.8 (15.07.2025)
-1. Admin Interface Updated:
-   - Allows adding multiple robots to different instances at once.
-2. Improvements:
-    - Improvement 1: Performance optimizations for resource consumption.
-    - Improvement 2: Enhanced user interface of the admin panel.
-    - VIS Improvements: Improved visualizations and UI elements.
-3. Language Support:
-    - German language added: German language support integrated under VIS.
-    
-### 0.1.7 (08.07.2025)
-1. Memory Optimization
-2. Added Robots with Encrypted Maps
-3. Status for Consumed Elements under VIS (Filters, Brushes, etc.)
-4. Extension of the Settings Menu under VIS
-![grafik](https://github.com/user-attachments/assets/93eede3d-e8cf-4f83-bad6-335dcdf6bc70)
-
-![grafik](https://github.com/user-attachments/assets/4328c91f-8811-4beb-8a6f-450f923428b4)
-
-![grafik](https://github.com/user-attachments/assets/4deb3705-4df9-4d55-a85a-e2671469fa9d)
-
-
-### 0.1.6 (18.05.2025)
-1. Optimized for minimal resource consumption
-2. Radial menu issue with invisible menu parts at the screen edges has been fixed
-
-### 0.1.5 (18.05.2025) 
-
-![DreameHome1 5 gif](https://github.com/user-attachments/assets/93bb5f6c-15d1-4a11-8597-503a69a7a51a)
-
-![DreamHome Map1](https://github.com/user-attachments/assets/38ff506f-6cdd-4bdd-a6b7-074aeb45cf8c)
-
-![DreamHome Map2](https://github.com/user-attachments/assets/ba3f9211-922f-4fec-a3ec-a068edd91b76)
-
-
-![DreamHome Map3](https://github.com/user-attachments/assets/9724ddd8-f0c7-4536-81f0-6e801ff0f00d)
-
- **New Features**
-
-
-***Dynamic VIS Objects & Map Creation***
-  Integration of dynamic visualization objects for flexible and customizable display.
-
-***Action Dropdown Menu***
-  New control options available: *Pause*, *Clean*, *Charge*, *Stop*.
-
-***General Cleaning Menu (currently disabled)***
-  Prepared function for initiating a full-area cleaning through a centralized control menu.
-
-***New Functional Buttons in Map View***
-  Added actions: *Button Lock*, *Empty Robot*, *Wash Mop*, *Play*, *Pause*, *Clean*, *Charge*, *Selected*.
-
-***Toggleable Cleaning Path & History Path***
-  Current cleaning and history paths can be shown or hidden individually.
-
-***Radial Menu Per Room***
-  Each room now features its own radial menu for individual configuration: *Suction*, *Water Level*, *Repeat*, *Cleaning Mode*, *Route*.
-
-***Animated Icons for Active Cleaning***
-  Rooms currently being cleaned are now highlighted with animated symbols.
-
-***Realistic Robot Icons***
-  Default symbols have been replaced with detailed and realistic robot representations.
+**Language** | **Sprache:** [English](#english) | [Deutsch](#deutsch)
 
 ---
 
-**Improvements**
+<a name="english"></a>
+# 🇬🇧 English Documentation
 
-***More Efficient Code***
-  Optimized algorithms significantly reduce memory and CPU usage.
+## 📋 Table of Contents
 
-***Save & Restore 3D Map Rotation***
-  The current camera position, rotation, as well as selected rooms and carpets are saved and correctly restored after adapter restarts or page reloads.
+- [Features](#features-en)
+- [Supported Models](#supported-models-en)
+- [Installation](#installation-en)
+- [Configuration](#configuration-en)
+- [Voice Control](#voice-control-en)
+- [VIS Widgets](#vis-widgets-en)
+- [Learning System](#learning-system-en)
+- [Water Tracking](#water-tracking-en)
+- [Troubleshooting](#troubleshooting-en)
 
-***Improved Cleaning Status***
+---
 
-  * Fixed issues with loading cleaning status to ensure the history is accurately filled with data.
-  * The progress of ongoing cleaning tasks is now displayed correctly and in real time.
+<a name="features-en"></a>
+## ✨ Features
+
+### 🔌 **Cloud Integration**
+- Full Dreame cloud connection
+- Automatic token management with refresh
+- Real-time MQTT communication with the robot
+
+### 🗺️ **Interactive Maps (VIS)**
+- **3D map view** with rotation, zoom and perspective
+- Clickable rooms and carpets for selection
+- Live robot position with animation
+- Cleaning path with color-coded room assignment
+- Display of walls, doors and furniture
+- **Cleaning history** as overlay with path preview
+- Component status (brushes, filters, etc.) with progress bars
+
+### 🎤 **Voice Control**
+- **Alexa integration**: Natural voice commands
+- **Telegram support**: Control via chat
+- **Multilingual** (German/English)
+
+### 🧠 **Learning System**
+- Analyzes cleaning patterns per room
+- Learns preferred settings (suction level, water amount)
+- Can auto-complete missing voice commands
+- Provides recommendations with confidence values
+
+### 💧 **Water Tracking**
+- For models with water tank and washing station
+- Calculates consumption per m² (ml/m²)
+- Learns from historical data (AI-powered)
+- Separate tracking for **detergent**
+- Warnings for low levels
+
+### 🧹 **Comprehensive Control**
+- Start/Pause/Stop/Charging
+- Room-by-room cleaning with individual settings
+- Carpet cleaning with intensity levels
+- Dining table zones (automatic detection)
+- Auto-empty and mop washing
+- Component reset (brushes, filters, sensors)
+
+### 📊 **Status & Monitoring**
+- All robot states (suction level, water amount, errors)
+- Wear parts with remaining lifetime
+- Cleaning history with statistics
+- Resource monitoring (memory, event loop)
 
 ---
 
-**New Cleaning Start Logic**
+<a name="supported-models-en"></a>
+## 🤖 Supported Models
 
-There are now ***three ways*** to start a cleaning session:
+The adapter supports almost all Dreame vacuum robots with cloud connection:
 
-1. ***Full Cleaning via Map Click***
-   Click *Clean* on the map: general cleaning settings from the app will be applied, and cleaning starts immediately.
+| Series | Models | Special Features |
+|--------|--------|------------------|
+| **Matrix / X-Series** | Matrix 10 Ultra/Pro, X30 Ultra, X40 Ultra | 5.0L tank, mop types A/B/C |
+| **L-Series** | L20 Ultra, L30 Ultra, L10s Ultra/Pro | 4.5L / 4.0L tank |
+| **Z-Series** | Z10, Z20, Z30 Pro | 5.0L tank |
+| **W-Series** | W10, W20, W30 | 4.0L tank |
+| **F-Series** | F9, F10 | 3.0L tank |
+| **D-Series** | D9, D10, D20 | 2.0L - 2.5L tank |
 
-2. ***Targeted Room Cleaning***
-
-   * Click on individual rooms to select them (they will blink green).
-   * Then press *Clean Selected* – only the selected rooms will be cleaned.
-   * Room-specific settings (*Suction*, *Water Level*, *Repeat*, *Cleaning Mode*, *Route*) can be adjusted via the gear icon in each room label.
-
-3. ***Clean Selected Without Selection***
-   If *Clean Selected* is pressed with no rooms selected, ***all rooms*** will be cleaned according to the individual settings defined under each room label.
-
-    
-### 0.1.4 (27.04.2025) 
-<details>
-  <summary>Click to expand</summary>
-<img src=https://github.com/user-attachments/assets/eb74b8fa-9283-41a0-9870-15738f51bcf1/>
-<img src=https://github.com/user-attachments/assets/5ca82581-e571-4c79-8b06-35661e620167/>
-<img src=https://github.com/user-attachments/assets/c6cf9040-3deb-4c4e-a321-365592ed3581/>
-
-
- **Interactive Map - New Features**
-
-Main Functions:
-- Data Preparation:  
-  Loads robot position history, determines adapter path for state storage, and processes data into the required format.
-  
-- Map Creation:  
-  Generates an HTML document, renders the map based on robot mapping data (rooms, walls, doors, charging station), and implements a 3D view with rotation and zoom.
-
-- Interactive Features:  
-  Real-time robot tracking, clickable room and carpet selection, cleaning progress display, "Map Spectacle" animation modes, and charging station status animations.
-
-- User Interface:  
-  Modern menu system with animations, adjustable rotation, perspective, and zoom settings, plus live display of robot status and cleaning data.
-
-Technical Details:
-- Map rendered as HTML canvas with SVG elements.
-- WebSocket integration for real-time updates.
-- Advanced 3D transformations using CSS.
-
-Special Highlights:
-- 23 unique charging station animations (charging, error, cleaning, etc.).
-- Dynamic room color changes based on cleaning progress.
-- "Map Spectacle" enables cinematic camera movements.
-- Menu system with automatic timeout.
-
-This update delivers a full real-time, interactive visualization of the robot's environment, with detailed animations and dynamic status tracking.
-
-**Fixed**
-**Alexa Voice Control - Improvements**
-
-- Cleaning can now be reliably started via Alexa voice commands. Commands like "vacuum," "mop," or "start mopping" now work as expected — even for specific rooms or using different cleaning modes in different rooms.
-- Resetting components via voice command is now fully functional. Components such as filters, brushes, and sensors can be reset through Alexa, with clear voice feedback indicating whether the reset was successful or necessary.
-- The entire control logic has been revised. Everything now works reliably — including Alexa voice feedback after commands.
-</details>
-    
-### 0.1.3 (07.04.2025) 
-
-<details>
-  <summary>Click to expand</summary>
-    
-Fixed support for status control and validation as well as synonym extensions
-  </details>
-  
-### 0.1.2 (06.04.2025) 
-
-<details>
-  <summary>Click to expand</summary>
-
-New Features & Enhancements:
-- Component Control & Status Reporting:
-  - Added support for controlling and checking the status of the following components:
-    - Main Brush, Side Brush, Filter, Mop Pad, Silver Ion, Detergent, Pure Water Tank, Dirty Water Tank
-  - Ability to reset individual components or all components.
-  - Status reporting for components like Time Left (e.g., Mop Pad Time Left, Main Brush Time Left).
-
-- Flexible Command Recognition:
-  - Commands like emptying (`empty`, `auto empty`, `clean bin`, etc.) and mop cleaning (`wash`, `auto wash`, `clean mop`, etc.) are now recognized and trigger the respective actions.
-  - Support for resetting components (individual or all) with commands like reset main brush, reset all, etc.
-  - Component-specific status requests via flexible synonyms like "Check Main Brush Status" or "Check Mop Pad".
-
-Improved Command Flexibility:
-  - Dynamic Command Parsing: The command parser now recognizes various synonyms for robot-related commands (`robot`, `vacuum`, `dreame`, etc.), emptying (`empty`, `auto empty`, etc.), washing (`wash`, `mop cleaning`, etc.), and resetting components (`reset main brush`, `reset all`, etc.).
-  - Language-Specific Synonyms: Commands are dynamically matched based on language (EN/DE), ensuring accurate recognition regardless of phrasing.
+*For unlisted models, tank capacity is automatically detected or a default value is used.*
 
 ---
-🇺🇸 Example Scenarios (Voice Commands)
-To make your voice command work, always say a word like 'robot', 'dreame', 'vacuum', 'vacuum cleaner'
-Scenario 1: General Status Check
 
-   "Alexa, check robot status."
+<a name="installation-en"></a>
+## 📦 Installation
 
-     📌 The system will provide a complete status report of your Dreame robot, including:
-    - Battery level  
-    - Current room (if cleaning)  
-    - Status and remaining life of components like the mop pad, main brush, side brush, filter, water tanks, detergent, silver ion unit, and sensors  
+### Requirements
 
-Scenario 2: Clean the Mop
+- **Node.js 18 or higher** (with `--expose-gc` recommended)
+- **ioBroker js-controller 5.0 or higher**
+- **Canvas library** for map rendering
 
-   "Alexa, clean the mop."
+### Installation via GitHub (adapter is not available in the official npm repository)
+#### Method 1: Via ioBroker Admin UI
 
-     📌 The robot will return to the station and start the mop cleaning process. This ensures that the mop pad is rinsed and ready for further cleaning.
+1. Open ioBroker admin interface
+2. Go to "Adapters" → "Custom Adapters"
+3. Add the following GitHub URL: https://github.com/spayrosam/ioBroker.dreamehome
+4. Click "Install"
 
-Scenario 3: Reset a Single Component
+### Important: Canvas Library
 
-   "Alexa, reset filter."
+The canvas library is required for map rendering. Check installation with:
 
-     📌 The system detects that you're referring to the filter and resets its usage timer. This is useful after you've cleaned or replaced it.
+```bash
+cd /opt/iobroker
+npm list canvas
+```
 
-Scenario 4: Empty the Dustbin
+If not installed:
 
-   "Alexa, empty the dustbin."
-
-     📌 The robot will go to the station and start the auto-empty process, removing dust and debris from the bin automatically.
-
-Scenario 5: Reset All Components
-
-   "Alexa, reset all components."
-
-     📌 This command will reset the usage time of all components (brushes, filter, mop pad, detergent, silver ion, sensors, etc.) at once נperfect after a full service or replacement.
+```bash
+cd /opt/iobroker
+npm install canvas
+```
 
 ---
-🇩🇪 Beispiel-Szenarien (Sprachbefehle)
-Damit dein Sprachbefehl funktioniert, sag immer ein Wort wie 'roboter', 'dreame', 'staubsauger', 'saugroboter'
-Szenario 1: Allgemeiner Statusbericht
 
-   „Alexa, Roboterstatus prüfen.“
+<a name="configuration-en"></a>
+## ⚙️ Configuration
 
-     📌 Das System gibt einen vollständigen Statusbericht deines Dreame Saugroboters aus, inklusive:
-    - Batteriestand  
-    - Aktueller Raum (falls Reinigung läuft)  
-    - Zustand und verbleibende Lebensdauer aller Komponenten wie Mopp-Pad, Hauptbürste, Seitenbürste, Filter, Wassertanks, Reinigungsmittel, Silberioneneinheit und Sensoren  
+### Basic Settings
 
-Szenario 2: Mopp reinigen
+| Field | Description |
+|-------|-------------|
+| **Username** | Your Dreame account (email) |
+| **Password** | Your Dreame password |
+| **Device Index** | For multiple robots: 0 = first device |
+| **Auto-Fallback** | Automatically switch to first device |
 
-   „Alexa, Roboter Mopp reinigen.“
+### Advanced Settings
 
-     📌 Der Roboter kehrt zur Station zurück und startet die Mopp-Reinigung. Das Mopp-Pad wird dabei gespült und für die nächste Reinigung vorbereitet.
+| Field | Description | Default |
+|-------|-------------|---------|
+| **Update Interval** | How often data is fetched | 60 seconds |
+| **Memory Limit** | Maximum heap memory | 150 MB |
+| **Event Loop Limit** | Max. event loop lag | 50 ms |
+| **Enable GC** | Garbage collection | true |
+| **Memory Cleaner** | Automatic memory cleanup | true |
+| **Cleaner Threshold** | When to clean | 300 MB |
+| **Cleaner Interval** | How often to check | 30 seconds |
 
-Szenario 3: Einzelne Komponente zurücksetzen
-
-   „Alexa, Roboter Filter zurücksetzen.“
-
-     📌 Das System erkennt, dass du den Filter meinst, und setzt die Nutzungsanzeige zurück – ideal nach einer Reinigung oder einem Austausch.
-
-Szenario 4: Staubbehälter entleeren
-
-   „Alexa, Roboter Staubbehälter leeren.“
-
-     📌 Der Roboter fährt zur Station und startet den Auto-Entleerungsvorgang. Der Staubbehälter wird automatisch geleert.
-
-Szenario 5: Alle Komponenten zurücksetzen
-
-   „Alexa, Roboter alle komponenten zurücksetzen.“
-
-     📌 Mit diesem Befehl setzt das System die Nutzungszeit aller Komponenten (Bürsten, Filter, Mopp-Pad, Reinigungsmittel, Silberionen, Sensoren usw.) gleichzeitig zurück – ideal nach einer Wartung oder einem Kompletttausch.
-   </details>
-   
-### 0.1.1 (02.04.2025) 
-
-<details>
-  <summary>Click to expand</summary>
-    
-- The code has been mostly refactored
-   </details>
-   
-### 0.1.0 (30.03.2025) 
-
-<details>
-  <summary>Click to expand</summary>
-    
-New Features:
-- Increased Flexibility in Cleaning Control:  
-  The adapter now allows you to set a different cleaning mode (suction, mopping, or a combination of both) for each room individually. This goes beyond the default limitations of the Dreame robot, which usually accepts only one cleaning mode for all rooms.
-
-- Support for Alternative Room and Cleaning Descriptors:  
-  Room names and cleaning actions are now more flexible. Terms like "Living room mop wet" or "Parlor mop intensive" are automatically treated as equivalent, so you can use different terms to trigger the same cleaning mode.
-
-- Automatic Mapping of Rooms and Commands:  
-  The adapter translates alternative room identifiers (e.g., "Living room," "Parlor," "salon") into the accepted standard identifiers, enabling seamless and user-friendly control. Similarly, various phrasing for suction or mopping (e.g., "vacuuming" or "sweeping") are correctly recognized and mapped to the appropriate cleaning mode.
-
-Examples of New Commands:
-- "Living room mop wet" = "Parlor mop intensive"
-- "Bedroom vacuum strong" = "Master bedroom vacuum intensive" = "Masterroom vacuum heavy"
-- "Kitchen vacuum and mop wet and ultra" = "Kitchen nook vacuum and mop drenched and full"
-
-Improvements:
-- Avoidance of Duplicate or Conflicting Commands:  
-  The system automatically checks if conflicting cleaning modes or repeated commands for the same room are sent within a short time frame to prevent unwanted duplicate actions.
-
-- Better Control of Active Cleaning Processes:  
-  If a cleaning process is already running, the adapter detects this and asks the user if the ongoing process should be stopped and a new one started. This ensures a smoother user experience and prevents simultaneous cleaning operations.
-
-🇺🇸 Documentation
 ---
-Scenario 1: Multiple Rooms with Mixed Modes and Repetitions
-- Command: „Living room vacuum high and Kitchen vacuum medium and Kitchen mop low 2 times“
-- Explanation:
-  - „Living room vacuum high“: The robot starts vacuuming the living room at high suction power.
-  - „Kitchen vacuum medium“: In the kitchen, the vacuum mode is set to medium.
-  - „Kitchen mop low 2 times“: In the kitchen, the mop mode is set to low, and the mopping process is repeated twice.
-  
-  Action: The robot will first clean the living room (vacuum high), then the kitchen (vacuum medium), and afterward perform the low mopping mode in the kitchen twice.
 
-Scenario 2: Two Rooms with One Mode (Only Vacuuming or Mopping)
-- Command: „Hallway vacuum high and Bathroom mop intensive“
-- Explanation:
-  - „Hallway vacuum high“: The robot will work in the hallway with the highest vacuum mode.
-  - „Bathroom mop intensive“: The bathroom will be mopped with the highest mop mode (Intensive).
+<a name="voice-control-en"></a>
+## 🎤 Voice Control
 
-  Action: The robot will start vacuuming in the hallway on high mode and then move to the bathroom to mop intensively.
+### Alexa Integration
 
-Scenario 3: User Abort with Missing Modes
-- Command: „Living room vacuum and Kitchen mop“
-- Explanation:
-  - The vacuuming mode for the kitchen is missing, making this an incomplete command.
-  
-  Action: Since the vacuuming mode for the kitchen is not specified and a gap in the command is detected, Alexa will prompt the user to correct the missing mode.
+The adapter automatically detects if the Alexa adapter is installed. You can use natural voice commands with Alexa.
 
-  Alexa Response: „The following rooms are missing settings: Living room: Suction level and Kitchen: Mopping level. Please define the missing values.“
+> **Important**: Commands for component status, reset, auto-empty and mop washing **MUST** include a robot keyword like "robot", "vacuum", or "dreame". Room cleaning commands work with or without robot keywords.
 
-Scenario 4: Different Cleaning Modes with Room and Mode Synonyms
-- Command: „Parlor vacuum intensive and Kitchen mop after vacuum low and strong and Bathroom mop intensive“
-- Explanation:
-  - The user uses the synonym „Parlor“ instead of „Living room.“ Since DreameHome supports this flexibility, „Parlor“ is recognized as „Living room,“ and the mode „Vacuum intensive“ is applied.
-  - The kitchen is cleaned with „Vacuum low followed by mopping strong,“ and the bathroom is mopped intensively.
-  
-  Action: The robot will perform the following actions:
-  - Parlor (Living room) vacuum intensive
-  - Kitchen mop low after vacuum strong
-  - Bathroom mop intensive
+### Robot Keywords (must be included in certain commands)
 
-Scenario 5: Repeated Cleaning of a Room
-- Command: „Living room vacuum high 3 times and Bathroom mop intensive 2 times“
-- Explanation:
-  - The robot is asked to clean the living room three times with the "high" vacuum mode and the bathroom twice with the "intensive" mop mode.
-  
-  Action: The robot will start cleaning the living room with high suction mode and repeat the process three times. Afterward, it will move to the bathroom to mop intensively twice.
+| English Keywords |
+|------------------|
+| `robot`, `dreame`, `vacuum`, `vacuum cleaner`, `cleaning robot`, `robot cleaner`, `vacuum bot`, `robovac` |
 
-Scenario 6: Stopping Cleaning When an Abort Command Is Given
-- Command: „"stop cleaning", "stop vacuuming", "stop cleaning process", "robot off", "please stop cleaning", "end cleaning", "pause cleaning", "vacuuming stop", "vacuum cleaner off", "robot turn off", "vacuuming end", "cleaning stop", "vacuuming disable", "floor cleaning stop", "vacuum cleaner turn off", "vacuumer off", "robot deactivate", "dreame stop", "dreame off", "dreame stop cleaning"“
-- Explanation:
-  - A user can give the command "Stop cleaning" at any time to end the ongoing process.
+### Basic Commands
 
-  Action: When the stop command is given, the robot will immediately stop cleaning and return to its charging station. If the robot is actively cleaning, the process will be aborted.
+| What to say to Alexa |
+|----------------------|
+| "Alexa, start the robot" |
+| "Alexa, start cleaning" |
+| "Alexa, stop the robot" |
+| "Alexa, stop cleaning" |
+| "Alexa, pause the robot" |
+| "Alexa, pause" |
+| "Alexa, robot return to charge" |
+| "Alexa, return to charge" |
 
-  Alexa Response: „The cleaning has been stopped, and the robot is returning to the charging station.“
-  
-🇩🇪 Dokumentation
+### Room Cleaning
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, vacuum the kitchen" |
+| "Alexa, mop the bathroom" |
+| "Alexa, vacuum the living room twice" |
+| "Alexa, vacuum the kitchen quiet" |
+| "Alexa, vacuum the kitchen standard" |
+| "Alexa, vacuum the kitchen strong" |
+| "Alexa, vacuum the kitchen turbo" |
+| "Alexa, mop the bathroom low" |
+| "Alexa, mop the bathroom medium" |
+| "Alexa, mop the bathroom high" |
+
+### Combined Room Commands
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, vacuum the kitchen twice and mop the bathroom" |
+| "Alexa, vacuum the kitchen quiet and mop the bathroom high" |
+| "Alexa, vacuum the kitchen three times and mop the bathroom twice" |
+
+### Auto-Empty (MUST include robot keyword)
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, robot empty" |
+| "Alexa, robot auto empty" |
+| "Alexa, vacuum empty" |
+| "Alexa, dreame empty" |
+
+### Mop Washing (MUST include robot keyword)
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, robot wash" |
+| "Alexa, robot auto wash" |
+| "Alexa, vacuum wash" |
+| "Alexa, dreame wash mop" |
+
+### Component Status (MUST include robot keyword)
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, robot status" |
+| "Alexa, robot check" |
+| "Alexa, robot how is the filter" |
+| "Alexa, robot check filter" |
+| "Alexa, robot how is the main brush" |
+| "Alexa, robot check side brush" |
+| "Alexa, robot how is the mop pad" |
+| "Alexa, robot check sensor" |
+| "Alexa, robot how is the detergent" |
+| "Alexa, robot check water tank" |
+
+### Component Reset (MUST include robot keyword)
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, robot reset everything" |
+| "Alexa, robot reset all components" |
+| "Alexa, robot reset filter" |
+| "Alexa, robot reset main brush" |
+| "Alexa, robot reset side brush" |
+| "Alexa, robot reset mop pad" |
+
+### Cancel Commands
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, cancel cleaning" |
+| "Alexa, stop cleaning" |
+
+### Carpet Cleaning
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, clean the carpet in the living room" |
+| "Alexa, clean the carpet in the bedroom" |
+| "Alexa, carpet in the living room light" |
+| "Alexa, carpet in the living room medium" |
+| "Alexa, carpet in the living room strong" |
+
+### Dining Table Cleaning
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, clean the dining table" |
+| "Alexa, clean the dining table in the living room" |
+| "Alexa, vacuum under the dining table" |
+| "Alexa, mop around the dining table" |
+| "Alexa, clean dining table quick" |
+| "Alexa, clean dining table standard" |
+| "Alexa, clean dining table thorough" |
+
+### Help Menu
+
+| What to say to Alexa |
+|----------------------|
+| "Alexa, help for the robot" |
+| "Alexa, robot help" |
+| "Alexa, help for the vacuum" |
+
+The help menu will then guide you through:
+- **1** Emptying the dustbin
+- **2** Washing the mop
+- **3** Checking component status
+- **4** Resetting components
+- **5** Room cleaning
+- **6** Carpet cleaning
+- **7** Dining table cleaning
+- **8** Synonym examples and voice commands
+
 ---
-Szenario 1: Mehrere Räume mit gemischten Modi und Wiederholungen
-- Befehl: „Wohnzimmer saugen hoch und Küche saugen mittel und Küche wischen niedrig 2 mal“
-- Erklärung:
-  - „Wohnzimmer saugen hoch“: Der Roboter startet im Wohnzimmer mit dem Saugmodus auf hoher Stufe.
-  - „Küche saugen mittel“: In der Küche wird der Saugmodus auf mittlerer Stufe eingestellt.
-  - „Küche wischen niedrig 2 mal“: In der Küche wird der Wischmodus auf niedriger Stufe eingestellt, und der Wischvorgang wird zweimal wiederholt.
-  
-  Aktion: Der Roboter wird zuerst das Wohnzimmer reinigen (Saugen hoch), dann die Küche (Saugen mittel), und danach den Wischmodus auf niedrig in der Küche zweimal ausführen.
 
-Szenario 2: Zwei Räume mit einem Modus (nur Saugen oder Wischen)
-- Befehl: „Flur saugen hoch und Bad wischen intensiv“
-- Erklärung:
-  - „Flur saugen hoch“: Der Roboter wird im Flur mit dem höchsten Saugmodus arbeiten.
-  - „Bad wischen intensiv“: Das Bad wird mit dem höchsten Wischmodus (Intensiv) gewischt.
+### Telegram Integration
 
-  Aktion: Der Roboter startet mit dem Saugen im Flur auf hoher Stufe und geht danach ins Bad, um dort intensiv zu wischen.
+The adapter also supports Telegram control. Send messages like:
 
-Szenario 3: Benutzerabbruch bei fehlenden Modi
-- Befehl: „Wohnzimmer saugen und Küche wischen“
-- Erklärung:
-  - Der Befehl fehlt für das „Saugen“ im Küchenbereich, was eine unvollständige Anweisung darstellt.
-  
-  Aktion: Da in der Küche der Saugmodus nicht angegeben wurde und eine Lücke im Befehl erkannt wird, fordert Alexa den Benutzer auf, den fehlenden Modus zu korrigieren.
+| Command |
+|---------|
+| `start the robot` |
+| `robot status` |
+| `robot reset filter` |
+| `robot empty` |
+| `robot wash` |
 
-  Antwort von Alexa: „Für folgende Räume fehlen Angaben: Wohnzimmer: Sauglevel und Küche: Wischlevel. Bitte definiere die fehlenden Werte.“
+---
 
-Szenario 4: Unterschiedliche Reinigungsmodi mit Raum- und Modus-Synonymen
-- Befehl: „Stube saugen intensiv und Küche wischen nach saugen niedrig und kraftvoll und Bad wischen intensiv“
-- Erklärung:
-  - Der Benutzer verwendet das Synonym „Stube“ anstelle von „Wohnzimmer“. Da Dreamehome diese Flexibilität unterstützt, wird „Stube“ als „Wohnzimmer“ erkannt und der Modus „Saugen intensiv“ wird zugeordnet.
-  - Die Küche wird mit „Saugen niedrig danach Wischen stark“ und das Bad mit „Wischen intensiv“ gereinigt.
-  
-  Aktion: Der Roboter wird die folgenden Schritte ausführen:
-  - Stube (Wohnzimmer) saugen intensiv
-  - Küche wischen niedrig nach saugen stark
-  - Bad wischen intensiv
+<a name="vis-widgets-en"></a>
+## 🖼️ VIS Widgets
 
-Szenario 5: Wiederholte Reinigung eines Raumes
-- Befehl: „Wohnzimmer saugen hoch 3 mal und Bad wischen intensiv 2 mal“
-- Erklärung:
-  - Der Roboter soll das Wohnzimmer dreimal mit dem Saugmodus „hoch“ und das Bad zweimal mit dem Wischmodus „intensiv“ reinigen.
-  
-  Aktion: Der Roboter startet die Reinigung im Wohnzimmer mit hohem Saugmodus und wiederholt den Vorgang dreimal. Danach geht er ins Bad, um zweimal mit dem intensiven Wischmodus zu reinigen.
+The adapter generates an interactive map for VIS. Access via:
 
-Szenario 6: Beenden der Reinigung, wenn ein Abbruchbefehl gegeben wird
-- Befehl: „"reinigung abbrechen", "reinigung stoppen", "stop reinigung", "roboter aus", "reinigung bitte abbrechen", "reinigung beenden", "reinigung unterbrechen", "reinigung anhalten", "saugvorgang stoppen", "staubsauger aus", "roboter abschalten", "staubsaugen beenden", "putzen stoppen", "staubsaugen stoppen", "staubsaugen deaktivieren", "bodenreinigung stoppen", "staubsauger ausschalten", "sauger aus", "roboter deaktivieren", "dreame stoppen", "dreame aus", "dreame reinigen beenden"“
-- Erklärung:
-  - Ein Benutzer kann jederzeit den Befehl „Stopp Reinigung“ geben, um den laufenden Vorgang zu beenden.
+`dreamehome.0.[YOUR-DID].vis.vishtml0`
 
-  Aktion: Wenn der Befehl zum Stoppen der Reinigung kommt, wird der Roboter sofort gestoppt und zur Ladestation zurückgeschickt. Falls der Roboter gerade aktiv reinigt, wird der Vorgang abgebrochen.
+### Map Features
 
-  Antwort von Alexa: „Die Reinigung wurde gestoppt und der Roboter fährt zur Ladestation.“
-</details>
+#### 🎮 **Control Menu** (right side)
+- Start/Pause/Stop/Charge
+- Auto-empty and mop washing
+- Cleaning mode selection (vacuum/mop/both)
+- Individual room settings
 
-### 0.9.0 (2025-03-21)
+#### 🔧 **View Menu**
+- 3D rotation (X/Y/Z)
+- Zoom and perspective
+- Background color
+- Show/hide paths and labels
 
-<details>
-  <summary>Click to expand</summary>
-    
-New Features:
+#### 📊 **Status Info** (top left)
+- Current room with cleaning progress
+- Battery level
+- Component status (brushes, filters, etc.)
 
-- Alexa Command Recognition: The system now recognizes various cleaning commands and supports multiple languages (English and German). It processes different cleaning modes, room names, and suction/mopping levels.  
-  - Example Alexa command (English): "Alexa, vacuum the living room twice on high."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, sauge das Wohnzimmer zweimal auf hoch."
+#### 🖱️ **Interaction**
+- **Click on rooms**: Select for targeted cleaning
+- **Click on carpets**: Targeted carpet cleaning
+- **Click on settings icon**: Individual room settings
 
-- Room Recognition: The system identifies specific rooms in a command and applies the requested cleaning mode. It can handle multiple rooms in a single command.  
-  - Example Alexa command (English): "Alexa, clean the kitchen and the bathroom."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, reinige die Küche und das Badezimmer."
+## 📜 Cleaning History System
 
-- Cleaning Modes: New cleaning modes are available based on the provided `AlexacleanModes`, such as Vacuum (5122), Mopping (5121), and Mop after Vacuum (5123).  
-  - Example Alexa command (English): "Alexa, mop after vacuuming the bathroom."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, wische nach dem Saugen im Badezimmer."
+The adapter includes a comprehensive cleaning history visualization system with:
 
-- Suction and Mopping Levels: The system now recognizes different suction and mopping levels based on the provided levels and synonyms, allowing detailed cleaning requests.  
-  - Example Alexa command (English): "Alexa, vacuum the living room on strong and mop it on wet."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, sauge das Wohnzimmer auf stark und wische es nass."
+- **List view** of all past cleanings with date, area, duration, and status
+- **Detail view** with complete statistics, room sequence, and individual settings
+- **Obstacle detection** for 30+ types (shoes, cables, pets, furniture legs, etc.)
+- **Blocked rooms** visualization with 45° hatch pattern and color-coded reasons
+- **Date picker** with calendar for easy navigation (Today, Yesterday, 7d, 30d)
+- **Path rendering** with room-based colors and segment detection
+- **Metadata & statistics** including motion actions, AI model, and obstacle counters
+- **Full German/English** language support
 
-- Cancellation of Cleaning: The system recognizes cancellation commands from the `AlexacancelKeywords` list and allows users to stop ongoing cleaning sessions.  
-  - Example Alexa command (English): "Alexa, cancel cleaning."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, abbreche die Reinigung."
+Click the history button (clock icon) on the map to get started.
 
-Improvements:
+---
 
-- Room-Specific Cleaning: Commands can now be given for specific rooms, and the robot will clean accordingly. If no room is specified, it will prompt the user to clarify.  
-  - Example Alexa command (English): "Alexa, clean the living room."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, reinige das Wohnzimmer."  
-  - Response (English): "Please specify the cleaning mode for the living room."  
-    Antwort (Deutsch): "Bitte gib den Reinigungsmodus für das Wohnzimmer an."
+<a name="learning-system-en"></a>
+## 🧠 Learning System
 
-- Error Handling: The system now handles missing cleaning mode, suction level, or water level in commands by prompting for the missing information.  
-  - Example response (English): "Please specify the cleaning mode for the kitchen. You forgot to define the clean mode, suction level, or water level."  
-    Beispielantwort (Deutsch): "Bitte gib den Reinigungsmodus für die Küche an. Du hast den Reinigungsmodus, das Sauglevel oder den Wasserlevel vergessen zu definieren."
+The adapter learns from your cleanings and becomes smarter over time.
 
-Bug Fixes:
+### How it Works
 
-- Command Ambiguity: Fixed an issue where commands for multiple rooms were misinterpreted or ignored when no cleaning mode was specified.  
-  - Example Alexa command (English): "Alexa, clean the kitchen and the bathroom without specifying the mode."  
-    Beispiel Alexa-Befehl (Deutsch): "Alexa, reinige die Küche und das Badezimmer, ohne den Modus anzugeben."  
-  - Response (English): "Please specify the cleaning mode for the kitchen and the bathroom."  
-    Antwort (Deutsch): "Bitte gib den Reinigungsmodus für die Küche und das Badezimmer an."
+1. **Data collection**: Every cleaning is analyzed (room, suction level, water amount, success)
+2. **Pattern recognition**: The system detects preferences per room
+3. **Recommendations**: For missing details in voice commands, learned values are suggested
 
-- Other Changes:
+### Learning Commands
 
-- Enhanced Voice Feedback: The system now provides more detailed and helpful feedback via Alexa, especially when a command is incomplete or unclear.  
-  - Example feedback (English): "Cleaning mode: 5122 (Sweeping), Rooms: Living Room, Kitchen."  
-    Beispielfeedback (Deutsch): "Reinigungsmodus: 5122 (Staubsaugen), Räume: Wohnzimmer, Küche."
-  </details>
-  
-### 0.0.8
+| What to say to Alexa |
+|----------------------|
+| "Alexa, what have you learned?" |
+| "Alexa, show learning statistics" |
+| "Alexa, recommendation for the kitchen" |
+| "Alexa, clear learning history" |
+| "Alexa, which rooms learned?" |
 
-<details>
-  <summary>Click to expand</summary>
-    
-New Features Added: Voice Commands Accepted with Alexa Adapter:
-</details>
+### Configurable Parameters
 
-### 0.0.7
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `MinCoverageForLearn` | Min. coverage to learn | 80% |
+| `MinCleaningsForConfidence` | Min. cleanings for high confidence | 3 |
+| `AutoCompleteMinConfidence` | Min. confidence for auto-completion | 60% |
+| `EnableTimeContext` | Consider time of day | true |
 
-<details>
-  <summary>Click to expand</summary>
-    
-- Fix for Command Execution Issues Due to Domain Changes from Dreame
-- New Control Features Added
-</details>
+---
 
-### 0.0.6
+<a name="water-tracking-en"></a>
+## 💧 Water Tracking
 
-<details>
-  <summary>Click to expand</summary>
-    
-New Control Features Added:
-- Resume Clean Mode: Off/On
-- Child Lock: Off/On
-- Auto Add Detergent: Off/On
-- Auto Mount Mop: Off/On
-- Clean Genius: Off/Routine Cleaning/Deep Cleaning
-- Smart Auto Wash: Off/Works in Deep Mode/Works in Routine & Deep Mode
-- Smart Auto Mop: Off/Works in Deep Mode/Works in Routine & Deep Mode
-- Carpet Boost: Off/On
-- Intensive Carpet Cleaning: Off/On
-- Mop Scalable: Intelligence/Standard/High Frequency
-- Mop Extension for Gap Cleaning: Off/On
-- Intensive Cleaning for Furniture Legs: Off/On
-- Fill-in Light: Off/On
-- Collision-Avoidance Mode: Off/On
-- Clean Route: Quick/Standard/Intensive/Deep
-- Live Video Prompts: The camera is blinking/Voice prompts
-- Volume: 1 to 100 
+### Supported Models
 
-Control Adjusted: 
-- Automatic switch off of the Genius Mode when the Custom Mode is activated.
-- The map folder has been optimized, and objects have been prepared for communication with the generated VIS.HTML
-</details>
+Tracking works automatically for models with:
+- Water tank in the docking station
+- Automatic mop washing function
 
-### 0.0.5
+### How it Works
 
-<details>
-  <summary>Click to expand</summary>
-    
-- The map has been improved and room settings are now visible.
-- Additionally, additional animations have been added to the charging station..
-</details>
+1. **Model detection**: Automatic detection of tank capacity
+2. **Consumption measurement**: Calculates ml/m² during cleaning
+3. **Learning AI**: Adapts consumption to your environment
+4. **Detergent**: Separate tracking for detergent
 
-### 0.0.4
+### Available States
 
-### 0.0.3
-<details>
-  <summary>Click to expand</summary>
-    
-- An animation has been added for the charging station.
-- Additionally, the history of the robot's position on the map has been corrected, and the map has been improved for better accuracy and user experience.
-</details>
+| State | Description |
+|-------|-------------|
+| `water.Current` | Current water level (ml) |
+| `water.PureWaterTank` | Water level in percent |
+| `water.CurrentMlPerSqm` | Current consumption (ml/m²) |
+| `water.LearningStats` | Learning statistics |
+| `water.RoomConsumption` | Consumption per room |
+| `detergent.CurrentMl` | Detergent (ml) |
+| `detergent.EstimatedRefillDate` | Estimated refill date |
 
-### 0.0.2
-<details>
-  <summary>Click to expand</summary>
-    
-- Fixed the crash after map download.
-- Added carpet cleaning function  *(To start the carpet cleaning, select the repetition under object CarpetRepetitionX and the suction strength under object CarpetSuctionLevelX, then set the object CleanCarpetX to true)*.
-- Added zone cleaning and spot cleaning features.
-- Room names are now visible under the Map.0 or M.01 folder
-</details>
+---
 
+<a name="troubleshooting-en"></a>
+## 🔍 Troubleshooting
 
-## License
+### Common Issues
 
-MIT License  
+#### 1. Cloud login fails
 
-Copyright (c) 2020-2026 Spayrosam  
+```
+Login error response: "invalid_grant"
+```
 
-Permission is hereby granted, free of charge, to any person obtaining a copy  
-of this software and associated documentation files (the "Software"), to deal  
-in the Software without restriction, including without limitation the rights  
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  
-copies of the Software, and to permit persons to whom the Software is  
-furnished to do so, subject to the following conditions:  
+**Solution:**
+- Check username and password
+- Two-factor authentication might be enabled
 
-The above copyright notice and this permission notice shall be included in all  
-copies or substantial portions of the Software.  
+#### 2. Map not generated
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
-SOFTWARE.
+```
+Error: Cannot find module 'canvas'
+```
+
+**Solution:** Install canvas library manually:
+```bash
+cd /opt/iobroker
+npm install canvas
+```
+
+#### 3. High memory usage
+
+**Solution:**
+- Enable Memory Cleaner in settings
+- Start Node.js with `--expose-gc`
+- Reduce update interval
+
+#### 4. Alexa doesn't recognize commands
+
+**Solution:**
+- Ensure Alexa adapter is installed
+- Check if `alexa2.0.History.summary` exists
+- For component status/reset: Make sure to include a robot keyword (e.g., "robot", "vacuum")
+- Say "Alexa, help for the robot" for examples
+
+### Enable Logging
+
+Set state `dreamehome.0.settings.showlog` to `true` for detailed logs.
+
+---
+
+<a name="deutsch"></a>
+# 🇩🇪 Deutsche Dokumentation
+
+## 📋 Inhaltsverzeichnis
+
+- [Features](#features-de)
+- [Unterstützte Modelle](#unterstützte-modelle-de)
+- [Installation](#installation-de)
+- [Konfiguration](#konfiguration-de)
+- [Sprachsteuerung](#sprachsteuerung-de)
+- [VIS-Widgets](#vis-widgets-de)
+- [Lernsystem](#lernsystem-de)
+- [Wasserverbrauchs-Tracking](#wasserverbrauchs-tracking-de)
+- [Fehlerbehebung](#fehlerbehebung-de)
+
+---
+
+<a name="features-de"></a>
+## ✨ Features
+
+### 🔌 **Cloud-Integration**
+- Vollständige Anbindung an die Dreame-Cloud
+- Automatisches Token-Management mit Refresh
+- MQTT-Echtzeitkommunikation mit dem Roboter
+
+### 🗺️ **Interaktive Karten (VIS)**
+- **3D-Kartenansicht** mit Rotation, Zoom und Perspektive
+- Klickbare Räume und Teppiche zur Auswahl
+- Live-Roboter-Position mit Animation
+- Reinigungspfad mit farbiger Raumzuordnung
+- Anzeige von Wänden, Türen und Möbeln
+- **Reinigungs-Historie** als Overlay mit Pfad-Vorschau
+- Komponenten-Status (Bürsten, Filter, etc.) mit Fortschrittsbalken
+
+### 🎤 **Sprachsteuerung**
+- **Alexa-Integration**: Natürliche Sprachbefehle
+- **Telegram-Support**: Steuerung per Chat
+- **Mehrsprachig** (Deutsch/Englisch)
+
+### 🧠 **Lernendes System**
+- Analysiert Reinigungsmuster pro Raum
+- Lernt bevorzugte Einstellungen (Saugstufe, Wassermenge)
+- Kann fehlende Sprachbefehle automatisch ergänzen
+- Gibt Empfehlungen mit Konfidenz-Werten
+
+### 💧 **Wasserverbrauchs-Tracking**
+- Für Modelle mit Wassertank und Waschstation
+- Berechnet Verbrauch pro m² (ml/m²)
+- Lernt aus historischen Daten (KI-gestützt)
+- Separate Verfolgung von **Reinigungsmittel** (Detergent)
+- Warnungen bei niedrigem Füllstand
+
+### 🧹 **Umfassende Steuerung**
+- Start/Pause/Stop/Charging
+- Raumweise Reinigung mit individuellen Einstellungen
+- Teppichreinigung mit Intensitätsstufen
+- Esstisch-Zonen (automatische Erkennung)
+- Auto-Empty und Mop-Washing
+- Komponenten-Reset (Bürsten, Filter, Sensoren)
+
+### 📊 **Status & Monitoring**
+- Alle Roboter-Status (Saugstufe, Wassermenge, Fehler)
+- Verschleißteile mit Restlebensdauer
+- Reinigungsverlauf mit Statistiken
+- Ressourcen-Monitoring (Speicher, Event-Loop)
+
+---
+
+<a name="unterstützte-modelle-de"></a>
+## 🤖 Unterstützte Modelle
+
+Der Adapter unterstützt nahezu alle Dreame-Staubsaugerroboter mit Cloud-Anbindung:
+
+| Serie | Modelle | Besonderheiten |
+|-------|---------|----------------|
+| **Matrix / X-Serie** | Matrix 10 Ultra/Pro, X30 Ultra, X40 Ultra | 5.0L Tank, Mop-Typen A/B/C |
+| **L-Serie** | L20 Ultra, L30 Ultra, L10s Ultra/Pro | 4.5L / 4.0L Tank |
+| **Z-Serie** | Z10, Z20, Z30 Pro | 5.0L Tank |
+| **W-Serie** | W10, W20, W30 | 4.0L Tank |
+| **F-Serie** | F9, F10 | 3.0L Tank |
+| **D-Serie** | D9, D10, D20 | 2.0L - 2.5L Tank |
+
+*Bei nicht gelisteten Modellen wird automatisch die Tankkapazität erkannt oder ein Standardwert verwendet.*
+
+---
+
+<a name="installation-de"></a>
+## 📦 Installation
+
+### Voraussetzungen
+
+- **Node.js 18 oder höher** (mit `--expose-gc` empfohlen)
+- **ioBroker js-controller 5.0 oder höher**
+- **Canvas-Bibliothek** für die Kartendarstellung
+
+### Installation über GitHub (Adapter ist nicht im offiziellen npm-Repository verfügbar)
+### Methode 1: Über die ioBroker-Admin-Oberfläche
+1. Öffne die ioBroker-Admin-Oberfläche
+2. Gehe zu "Adapter" → "Eigene Adapter"
+3. Füge folgende GitHub-URL hinzu: https://github.com/spayrosam/ioBroker.dreamehome
+4. Klicke auf "Installieren"
+
+### Wichtig: Canvas-Bibliothek
+
+Die Canvas-Bibliothek wird für die Kartendarstellung benötigt. Überprüfe die Installation mit:
+
+```bash
+cd /opt/iobroker
+npm list canvas
+```
+
+Falls nicht installiert:
+
+```bash
+cd /opt/iobroker
+npm install canvas
+```
+
+---
+
+<a name="konfiguration-de"></a>
+## ⚙️ Konfiguration
+
+### Grundeinstellungen
+
+| Feld | Beschreibung |
+|------|--------------|
+| **Benutzername** | Dein Dreame-Account (E-Mail) |
+| **Passwort** | Dein Dreame-Passwort |
+| **Geräteindex** | Bei mehreren Robotern: 0 = erstes Gerät |
+| **Auto-Fallback** | Automatisch auf erstes Gerät wechseln |
+
+### Erweiterte Einstellungen
+
+| Feld | Beschreibung | Standard |
+|------|--------------|----------|
+| **Aktualisierungsintervall** | Wie oft Daten abgerufen werden | 60 Sekunden |
+| **Speicher-Limit** | Maximaler Heap-Speicher | 150 MB |
+| **Event-Loop-Limit** | Max. Event-Loop-Verzögerung | 50 ms |
+| **GC aktivieren** | Garbage Collection | true |
+| **Memory Cleaner** | Automatische Speicherbereinigung | true |
+| **Cleaner-Schwelle** | Ab wann bereinigt wird | 300 MB |
+| **Cleaner-Intervall** | Wie oft geprüft wird | 30 Sekunden |
+
+---
+
+<a name="sprachsteuerung-de"></a>
+## 🎤 Sprachsteuerung
+
+### Alexa-Integration
+
+Der Adapter erkennt automatisch, ob der Alexa-Adapter installiert ist. Du kannst natürliche Sprachbefehle mit Alexa verwenden.
+
+> **Wichtig**: Befehle für Komponenten-Status, Reset, Auto-Empty und Mop-Washing **MÜSSEN** ein Robot-Keyword wie "roboter", "saugroboter" oder "dreame" enthalten. Raumreinigungsbefehle funktionieren mit oder ohne Robot-Keyword.
+
+### Robot-Keywords (müssen in bestimmten Befehlen enthalten sein)
+
+| Deutsche Keywords |
+|-------------------|
+| `roboter`, `dreame`, `staubsauger`, `saugroboter`, `putzroboter`, `staubi`, `saug-bot`, `reinigungsroboter` |
+
+### Grundlegende Befehle
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, starte den Roboter" |
+| "Alexa, starte die Reinigung" |
+| "Alexa, stoppe den Roboter" |
+| "Alexa, stoppe die Reinigung" |
+| "Alexa, pausiere den Roboter" |
+| "Alexa, pausiere" |
+| "Alexa, Roboter zur Ladestation" |
+| "Alexa, zur Ladestation" |
+
+### Raumreinigung
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, saug die Küche" |
+| "Alexa, wisch das Bad" |
+| "Alexa, saug das Wohnzimmer zweimal" |
+| "Alexa, saug die Küche leise" |
+| "Alexa, saug die Küche standard" |
+| "Alexa, saug die Küche stark" |
+| "Alexa, saug die Küche turbo" |
+| "Alexa, wisch das Bad niedrig" |
+| "Alexa, wisch das Bad mittel" |
+| "Alexa, wisch das Bad hoch" |
+
+### Kombinierte Raum-Befehle
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, saug die Küche zweimal und wisch das Bad" |
+| "Alexa, saug die Küche leise und wisch das Bad hoch" |
+| "Alexa, saug die Küche dreimal und wisch das Bad zweimal" |
+
+### Auto-Empty (MUSS Robot-Keyword enthalten)
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Roboter leeren" |
+| "Alexa, Saugroboter entleeren" |
+| "Alexa, Dreame leeren" |
+| "Alexa, Staubsauger leeren" |
+
+### Mop-Washing (MUSS Robot-Keyword enthalten)
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Roboter waschen" |
+| "Alexa, Saugroboter Mopp waschen" |
+| "Alexa, Dreame waschen" |
+| "Alexa, Roboter Mopp reinigen" |
+
+### Komponenten-Status (MUSS Robot-Keyword enthalten)
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Roboter Status" |
+| "Alexa, Roboter prüfen" |
+| "Alexa, Roboter wie ist der Filter" |
+| "Alexa, Roboter prüfe Filter" |
+| "Alexa, Roboter wie ist die Hauptbürste" |
+| "Alexa, Roboter prüfe Seitenbürste" |
+| "Alexa, Roboter wie ist das Wischpad" |
+| "Alexa, Roboter prüfe Sensor" |
+| "Alexa, Roboter wie ist das Reinigungsmittel" |
+| "Alexa, Roboter prüfe Wassertank" |
+
+### Komponenten zurücksetzen (MUSS Robot-Keyword enthalten)
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Roboter alles zurücksetzen" |
+| "Alexa, Roboter alle Komponenten zurücksetzen" |
+| "Alexa, Roboter Filter zurücksetzen" |
+| "Alexa, Roboter Hauptbürste zurücksetzen" |
+| "Alexa, Roboter Seitenbürste zurücksetzen" |
+| "Alexa, Roboter Wischpad zurücksetzen" |
+
+### Abbruch-Befehle
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Reinigung abbrechen" |
+| "Alexa, stoppe Reinigung" |
+
+### Teppichreinigung
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, reinige den Teppich im Wohnzimmer" |
+| "Alexa, reinige den Teppich im Schlafzimmer" |
+| "Alexa, Teppich im Wohnzimmer leicht" |
+| "Alexa, Teppich im Wohnzimmer mittel" |
+| "Alexa, Teppich im Wohnzimmer stark" |
+
+### Esstisch-Reinigung
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, reinige den Esstisch" |
+| "Alexa, reinige den Esstisch im Wohnzimmer" |
+| "Alexa, saug unter dem Esstisch" |
+| "Alexa, wisch um den Esstisch" |
+| "Alexa, reinige Esstisch schnell" |
+| "Alexa, reinige Esstisch standard" |
+| "Alexa, reinige Esstisch gründlich" |
+
+### Hilfemenü
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, Hilfe für den Roboter" |
+| "Alexa, Roboter Hilfe" |
+| "Alexa, Hilfe für den Staubsauger" |
+
+Das Hilfemenü führt dich dann durch:
+- **1** Staubbehälter leeren
+- **2** Mopp waschen
+- **3** Komponentenstatus prüfen
+- **4** Komponenten zurücksetzen
+- **5** Raumreinigung
+- **6** Teppichreinigung
+- **7** Esstisch-Reinigung
+- **8** Synonym-Beispiele und Sprachbefehle
+
+---
+
+### Telegram-Integration
+
+Der Adapter unterstützt auch die Steuerung über Telegram. Sende Nachrichten wie:
+
+| Befehl |
+|--------|
+| `starte den Roboter` |
+| `Roboter Status` |
+| `Roboter Filter zurücksetzen` |
+| `Roboter leeren` |
+| `Roboter waschen` |
+
+---
+
+<a name="vis-widgets-de"></a>
+## 🖼️ VIS-Widgets
+
+Der Adapter generiert eine interaktive Karte für das VIS. Zugriff über:
+
+`dreamehome.0.[DEIN-DID].vis.vishtml0`
+
+### Features der Karte
+
+#### 🎮 **Steuerungsmenü** (rechts)
+- Start/Pause/Stop/Charge
+- Auto-Empty und Mop-Washing
+- Reinigungsmodus-Auswahl (Saugen/Wischen/Beides)
+- Individuelle Raumeinstellungen
+
+#### 🔧 **Ansichtsmenü**
+- 3D-Rotation (X/Y/Z)
+- Zoom und Perspektive
+- Hintergrundfarbe
+- Ein-/Ausblenden von Pfaden und Labels
+
+#### 📊 **Status-Infos** (oben links)
+- Aktueller Raum mit Reinigungsfortschritt
+- Batteriestand
+- Komponenten-Status (Bürsten, Filter, etc.)
+
+#### 🖱️ **Interaktion**
+- **Klick auf Räume**: Auswahl für gezielte Reinigung
+- **Klick auf Teppiche**: Gezielte Teppichreinigung
+- **Klick auf Einstellungs-Icon**: Individuelle Raum-Einstellungen
+
+## 📜 Reinigungsverlauf-System
+
+Der Adapter enthält ein umfassendes Reinigungsverlauf-System mit:
+
+- **Listenansicht** aller vergangenen Reinigungen mit Datum, Fläche, Dauer und Status
+- **Detailansicht** mit vollständigen Statistiken, Raumreihenfolge und individuellen Einstellungen
+- **Hinderniserkennung** für über 30 Typen (Schuhe, Kabel, Haustiere, Möbelbeine, usw.)
+- **Blockierte Räume** Visualisierung mit 45°-Schraffurmuster und farbcodierten Gründen
+- **Datumsauswahl** mit Kalender zur einfachen Navigation (Heute, Gestern, 7T, 30T)
+- **Pfaddarstellung** mit raumbasierten Farben und Segmenterkennung
+- **Metadaten & Statistiken** inklusive Bewegungsaktionen, KI-Modell und Hinderniszähler
+- **Vollständige Deutsch/Englisch** Sprachunterstützung
+
+Klicke auf die Verlaufsschaltfläche (Uhrensymbol) auf der Karte, um zu beginnen.
+
+---
+
+<a name="lernsystem-de"></a>
+## 🧠 Lernsystem
+
+Der Adapter lernt aus deinen Reinigungen und wird mit der Zeit intelligenter.
+
+### Wie es funktioniert
+
+1. **Datenerfassung**: Jede Reinigung wird analysiert (Raum, Saugstufe, Wassermenge, Erfolg)
+2. **Mustererkennung**: Das System erkennt Vorlieben pro Raum
+3. **Empfehlungen**: Bei fehlenden Angaben in Sprachbefehlen werden gelernte Werte vorgeschlagen
+
+### Lernbefehle
+
+| Was du zu Alexa sagen musst |
+|-----------------------------|
+| "Alexa, was hast du gelernt?" |
+| "Alexa, zeige Lernstatistiken" |
+| "Alexa, Empfehlung für die Küche" |
+| "Alexa, lösche Lernhistorie" |
+| "Alexa, welche Räume gelernt?" |
+
+### Konfigurierbare Parameter
+
+| Parameter | Beschreibung | Standard |
+|-----------|--------------|----------|
+| `MinCoverageForLearn` | Min. Abdeckung zum Lernen | 80% |
+| `MinCleaningsForConfidence` | Min. Reinigungen für hohe Konfidenz | 3 |
+| `AutoCompleteMinConfidence` | Min. Konfidenz für Auto-Vervollständigung | 60% |
+| `EnableTimeContext` | Tageszeit berücksichtigen | true |
+
+---
+
+<a name="wasserverbrauchs-tracking-de"></a>
+## 💧 Wasserverbrauchs-Tracking
+
+### Unterstützte Modelle
+
+Das Tracking funktioniert automatisch für Modelle mit:
+- Wassertank in der Basisstation
+- Automatischer Mop-Waschfunktion
+
+### Wie es funktioniert
+
+1. **Modellerkennung**: Automatische Erkennung der Tankkapazität
+2. **Verbrauchsmessung**: Berechnet ml/m² während der Reinigung
+3. **Lernende KI**: Passt den Verbrauch an deine Gegebenheiten an
+4. **Reinigungsmittel**: Separates Tracking für Detergent
+
+### Verfügbare States
+
+| State | Beschreibung |
+|-------|--------------|
+| `water.Current` | Aktueller Wasserstand (ml) |
+| `water.PureWaterTank` | Wasserstand in Prozent |
+| `water.CurrentMlPerSqm` | Aktueller Verbrauch (ml/m²) |
+| `water.LearningStats` | Lernstatistiken |
+| `water.RoomConsumption` | Verbrauch pro Raum |
+| `detergent.CurrentMl` | Reinigungsmittel (ml) |
+| `detergent.EstimatedRefillDate` | Voraussichtliches Nachfüll-Datum |
+
+---
+
+<a name="fehlerbehebung-de"></a>
+## 🔍 Fehlerbehebung
+
+### Häufige Probleme
+
+#### 1. Verbindung zur Cloud schlägt fehl
+
+```
+Login error response: "invalid_grant"
+```
+
+**Lösung:**
+- Überprüfe Benutzername und Passwort
+- Eventuell ist die Zwei-Faktor-Authentifizierung aktiviert
+
+#### 2. Karte wird nicht generiert
+
+```
+Error: Cannot find module 'canvas'
+```
+
+**Lösung:** Canvas-Bibliothek manuell installieren:
+```bash
+cd /opt/iobroker
+npm install canvas
+```
+
+#### 3. Hoher Speicherverbrauch
+
+**Lösung:**
+- Aktiviere den Memory Cleaner in den Einstellungen
+- Starte Node.js mit `--expose-gc`
+- Reduziere das Aktualisierungsintervall
+
+#### 4. Alexa erkennt keine Befehle
+
+**Lösung:**
+- Stelle sicher, dass der Alexa-Adapter installiert ist
+- Prüfe ob `alexa2.0.History.summary` existiert
+- Bei Komponenten-Status/Reset: **MUSS** ein Robot-Keyword enthalten sein (z.B. "roboter", "saugroboter")
+- Sage "Alexa, Hilfe für den Roboter" für Beispiele
+
+### Logging aktivieren
+
+Setze den State `dreamehome.0.settings.showlog` auf `true`, um detaillierte Logs zu erhalten.
+
+---
+
+## 📝 Changelog
+
+### [2.0.0] - 2026-04-08
+- **Complete code rewrite** | **Komplett überarbeitete Codebasis**
+- New 3D map widget with interactive elements | Neues 3D-Karten-Widget mit interaktiven Elementen
+- Learning system for personalized cleaning | Lernendes System für personalisierte Reinigung
+- Water tracking with AI | Wasserverbrauchs-Tracking mit KI
+- Support for Matrix models (mop types A/B/C) | Unterstützung für Matrix-Modelle (Mop-Typen A/B/C)
+- Cleaning history system with obstacle detection, blocked rooms visualization, and date picker | Reinigungsverlauf-System mit Hinderniserkennung, blockierten Räumen und Datumsauswahl
+- Improved voice control with synonym recognition | Verbesserte Sprachsteuerung mit Synonym-Erkennung
+- Telegram integration | Telegram-Integration
+- Resource monitoring with automatic restart | Ressourcen-Monitoring mit automatischem Restart
+
+---
+
+## 📄 Lizenz / License
+
+MIT License
+
+Copyright (c) 2026 Spayrosam
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, AR
