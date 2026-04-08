@@ -16,7 +16,7 @@
     "url": "git+https://github.com/spayrosam/ioBroker.dreamehome.git"
   },
   "engines": {
-    "node": ">= 20"
+    "node": ">= 18"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
