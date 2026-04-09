@@ -6,6 +6,8 @@
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
+[![Number of Installations](https://iobroker.live/badges/dreamehome-installed.svg)](https://iobroker.live/badges/dreamehome-installed.svg)
+[![Test and Release](https://github.com/spayrosam/ioBroker.dreamehome/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/spayrosam/ioBroker.dreamehome/actions/workflows/test-and-release.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Language** | **Sprache:** [English](#english) | [Deutsch](#deutsch)
@@ -103,7 +105,7 @@ The adapter supports almost all Dreame vacuum robots with cloud connection:
 
 ### Requirements
 
-- **Node.js 18 or higher** (with `--expose-gc` recommended)
+- **Node.js 20 or higher** (with `--expose-gc` recommended)
 - **ioBroker js-controller 5.0 or higher**
 - **Canvas library** for map rendering
 
@@ -566,7 +568,7 @@ Der Adapter unterstützt nahezu alle Dreame-Staubsaugerroboter mit Cloud-Anbindu
 
 ### Voraussetzungen
 
-- **Node.js 18 oder höher** (mit `--expose-gc` empfohlen)
+- **Node.js 20 oder höher** (mit `--expose-gc` empfohlen)
 - **ioBroker js-controller 5.0 oder höher**
 - **Canvas-Bibliothek** für die Kartendarstellung
 
