@@ -4610,9 +4610,9 @@ class Dreamehome extends utils.Adapter {
         });
       }
 
-      // ========== FALLBACK FOR MISSING walls_info ==========
-      // 10. Check if walls_info exists, if not generate from pixel data
-      if (!jsonData.walls_info || !jsonData.walls_info.storeys || jsonData.walls_info.storeys.length === 0) {
+      // ========== FALLBACK FOR MISSING OR INVALID walls_info ==========
+      // 10. Check if walls_info exists and has valid rooms, if not generate from pixel data
+      if (!jsonData.walls_info?.storeys?.[0]?.rooms?.length) {
         this.log.warn('[MAP] No storeys structure found in JSON - generating walls_info from pixel data');
 
         // Generate walls_info from pixel data
@@ -6815,7 +6815,6 @@ class Dreamehome extends utils.Adapter {
     //await this.getProperty(4, 3); // CLEANED_AREA
     //await this.getProperty(4, 8); // CLEANING_START_TIME
     //await this.getProperty(4, 9); // CLEAN_LOG_FILE_NAME
-    //await this.requestMapDataFromCloud('ali_dreame/IU574398/2066037316/8', DH_CurrentFrameId);
     //await this.fetchCruisingHistory(25);
 
     if (this.history) {
