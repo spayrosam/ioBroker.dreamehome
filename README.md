@@ -941,6 +941,17 @@ Setze den State `dreamehome.0.settings.showlog` auf `true`, um detaillierte Logs
 
 ## 📝 Changelog
 
+### [2.0.1] - 2026-04-10
+
+*Added*
+- Obstacle filter panel with draggable UI (EN/DE)
+  
+*Changed*
+- Initial history load: 50 → 25 entries
+  
+*Fixed*
+- Map generation now correctly handles empty or invalid walls_info structures
+  
 ### [2.0.0] - 2026-04-08
 - **Complete code rewrite** | **Komplett überarbeitete Codebasis**
 - New 3D map widget with interactive elements | Neues 3D-Karten-Widget mit interaktiven Elementen
