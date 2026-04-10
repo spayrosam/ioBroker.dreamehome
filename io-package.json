@@ -1,13 +1,13 @@
 {
   "common": {
     "name": "dreamehome",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "news": {
-	  "2.0.0": {
+	  "2.0.1": {
         "en": "Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.",
         "de": "Breaking Change: Objektstruktur überarbeitet. Bitte prüfe nach dem Update deine Skripte und Visualisierungen."
       },
-	  "1.1.0": {
+	  "2.0.0": {
         "en": "Breaking change: Reworked object tree structure. Please check scripts and visualizations after update.",
         "de": "Breaking Change: Objektstruktur überarbeitet. Bitte prüfe nach dem Update deine Skripte und Visualisierungen."
       }
