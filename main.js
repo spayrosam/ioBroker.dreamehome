@@ -1,9 +1,13 @@
+/**
+Copyright (c) 2026 Spayrosam
+All rights reserved.
+Permission is granted to use this software for private, non-commercial purposes.
+Redistribution is allowed ONLY for use within ioBroker.
+Commercial use, resale, or redistribution outside of ioBroker is prohibited.
+The software is provided "as is", without warranty of any kind.
+*/
+
 'use strict';
-/*
- * Created with @iobroker/create-adapter v2.6.3
- */
-// The adapter-core module gives you access to the core ioBroker functions
-// you need to create an adapter
 const utils = require('@iobroker/adapter-core');
 const axios = require('axios').default;
 const Json2iob = require('json2iob');
