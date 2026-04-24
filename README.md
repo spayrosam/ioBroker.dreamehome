@@ -8,7 +8,13 @@
 [![Downloads](https://img.shields.io/npm/dm/iobroker.dreamehome.svg)](https://www.npmjs.com/package/iobroker.dreamehome)
 [![Number of Installations](https://iobroker.live/badges/dreamehome-installed.svg)](https://iobroker.live/badges/dreamehome-installed.svg)
 [![Test and Release](https://github.com/spayrosam/ioBroker.dreamehome/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/spayrosam/ioBroker.dreamehome/actions/workflows/test-and-release.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+⚠️ License Notice: 
+This project is NOT open source.
+- Free for private, non-commercial use only
+- Commercial use is strictly prohibited
+- Redistribution is allowed ONLY for use within ioBroker
+See LICENSE file for details.
 
 **Language** | **Sprache:** [English](#english) | [Deutsch](#deutsch)
 
@@ -967,22 +973,41 @@ Setze den State `dreamehome.0.settings.showlog` auf `true`, um detaillierte Logs
 
 ## 📄 Lizenz / License
 
-MIT License
+Custom Non-Commercial License for ioBroker Adapters (CNCL-ioB)
+Copyright © 2026 Spayrosam <spayrosam@gmail.com>
 
-Copyright (c) 2026 Spayrosam
+1. Permission
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted to use this software for private and non-commercial purposes.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Redistribution is allowed ONLY for the purpose of installation and usage within platforms such as ioBroker.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, AR
+2. Restrictions
+
+The following actions are strictly prohibited without prior written permission from the author:
+
+* Selling this software or any part of it
+* Using this software for commercial purposes
+* Integrating this software into commercial products or services
+* Redistributing the software outside of platforms like ioBroker
+* Republishing this software as a separate project
+* Claiming this software as your own work
+
+3. Modifications
+
+Modifications are allowed for private use only.
+
+Publishing modified versions is only allowed within ioBroker environments and must include clear attribution to the original author.
+
+4. Attribution
+
+The original author (Spayrosam <spayrosam@gmail.com>) must always be credited.
+
+5. Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.
+
+6. Additional Terms
+
+For any commercial use or distribution outside of ioBroker, explicit written permission from the author is required.
